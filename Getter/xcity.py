@@ -59,7 +59,7 @@ def getNum(a):
 
 def getYear(getRelease):
     try:
-        result = str(re.search('\d{4}', getRelease).group())
+        result = str(re.search(r'\d{4}', getRelease).group())
         return result
     except:
         return getRelease

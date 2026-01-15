@@ -56,7 +56,7 @@ def getScore(response):
 
 def getYear(release):
     try:
-        result = str(re.search('\d{4}', release).group())
+        result = str(re.search(r'\d{4}', release).group())
         return result
     except:
         return release

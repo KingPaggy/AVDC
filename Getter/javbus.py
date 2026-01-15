@@ -25,7 +25,7 @@ def getTitle(htmlcode):  # 获取标题
     doc = pq(htmlcode)
     title = str(doc('div.container h3').text())
     try:
-        title2 = re.sub('n\d+-', '', title)
+        title2 = re.sub(r'n\d+-', '', title)
         return title2
     except:
         return title
@@ -45,7 +45,7 @@ def getPublisher(htmlcode):  # 获取发行商
 
 def getYear(getRelease):  # 获取年份
     try:
-        result = str(re.search('\d{4}', getRelease).group())
+        result = str(re.search(r'\d{4}', getRelease).group())
         return result
     except:
         return getRelease
@@ -164,7 +164,7 @@ def getTag(htmlcode):  # 获取标签
 
 def find_number(number):
     # =======================================================================有码搜索
-    if not (re.match('^\d{4,}', number) or re.match('n\d{4}', number) or 'HEYZO' in number.upper()):
+    if not (re.match(r'^\d{4,}', number) or re.match(r'n\d{4}', number) or 'HEYZO' in number.upper()):
         htmlcode = get_html('https://www.javbus.com/search/' + number + '&type=1')
         html = etree.fromstring(htmlcode, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
         counts = len(html.xpath("//div[@id='waterfall']/div[@id='waterfall']/div"))

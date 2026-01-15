@@ -22,7 +22,7 @@ def get_config():
 
 # ========================================================================是否为无码
 def is_uncensored(number):
-    if re.match('^\d{4,}', number) or re.match('n\d{4}', number) or 'HEYZO' in number.upper():
+    if re.match(r'^\d{4,}', number) or re.match(r'n\d{4}', number) or 'HEYZO' in number.upper():
         return True
     config = get_config()
     prefix_list = str(config['uncensored']['uncensored_prefix']).split('|')
@@ -87,39 +87,39 @@ def getNumber(filepath, escape_string):
         if string in filename:
             filename = filename.replace(string, '')
     part = ''
-    if re.search('-CD\d+', filename):
-        part = re.findall('-CD\d+', filename)[0]
-    if re.search('-cd\d+', filename):
-        part = re.findall('-cd\d+', filename)[0]
+    if re.search(r'-CD\d+', filename):
+        part = re.findall(r'-CD\d+', filename)[0]
+    if re.search(r'-cd\d+', filename):
+        part = re.findall(r'-cd\d+', filename)[0]
     filename = filename.replace(part, '')
-    filename = str(re.sub("-\d{4}-\d{1,2}-\d{1,2}", "", filename))  # 去除文件名中时间
-    filename = str(re.sub("\d{4}-\d{1,2}-\d{1,2}-", "", filename))  # 去除文件名中时间
-    if re.search('^\D+\.\d{2}\.\d{2}\.\d{2}', filename):  # 提取欧美番号 sexart.11.11.11
+    filename = str(re.sub(r"-\d{4}-\d{1,2}-\d{1,2}", "", filename))  # 去除文件名中时间
+    filename = str(re.sub(r"\d{4}-\d{1,2}-\d{1,2}-", "", filename))  # 去除文件名中时间
+    if re.search(r'^\D+\.\d{2}\.\d{2}\.\d{2}', filename):  # 提取欧美番号 sexart.11.11.11
         try:
-            file_number = re.search('\D+\.\d{2}\.\d{2}\.\d{2}', filename).group()
+            file_number = re.search(r'\D+\.\d{2}\.\d{2}\.\d{2}', filename).group()
             return file_number
         except:
             return os.path.splitext(filepath.split('/')[-1])[0]
-    elif re.search('XXX-AV-\d{4,}', filename.upper()):  # 提取xxx-av-11111
-        file_number = re.search('XXX-AV-\d{4,}', filename.upper()).group()
+    elif re.search(r'XXX-AV-\d{4,}', filename.upper()):  # 提取xxx-av-11111
+        file_number = re.search(r'XXX-AV-\d{4,}', filename.upper()).group()
         return file_number
     elif '-' in filename or '_' in filename:  # 普通提取番号 主要处理包含减号-和_的番号
         if 'FC2' or 'fc2' in filename:
             filename = filename.upper().replace('PPV', '').replace('--', '-')
-        if re.search('FC2-\d{5,}', filename):  # 提取类似fc2-111111番号
-            file_number = re.search('FC2-\d{5,}', filename).group()
-        elif re.search('[a-zA-Z]+-\d+', filename):  # 提取类似mkbd-120番号
-            file_number = re.search('\w+-\d+', filename).group()
-        elif re.search('\d+[a-zA-Z]+-\d+', filename):  # 提取类似259luxu-1111番号
-            file_number = re.search('\d+[a-zA-Z]+-\d+', filename).group()
-        elif re.search('[a-zA-Z]+-[a-zA-Z]\d+', filename):  # 提取类似mkbd-s120番号
-            file_number = re.search('[a-zA-Z]+-[a-zA-Z]\d+', filename).group()
-        elif re.search('\d+-[a-zA-Z]+', filename):  # 提取类似 111111-MMMM 番号
-            file_number = re.search('\d+-[a-zA-Z]+', filename).group()
-        elif re.search('\d+-\d+', filename):  # 提取类似 111111-000 番号
-            file_number = re.search('\d+-\d+', filename).group()
-        elif re.search('\d+_\d+', filename):  # 提取类似 111111_000 番号
-            file_number = re.search('\d+_\d+', filename).group()
+        if re.search(r'FC2-\d{5,}', filename):  # 提取类似fc2-111111番号
+            file_number = re.search(r'FC2-\d{5,}', filename).group()
+        elif re.search(r'[a-zA-Z]+-\d+', filename):  # 提取类似mkbd-120番号
+            file_number = re.search(r'\w+-\d+', filename).group()
+        elif re.search(r'\d+[a-zA-Z]+-\d+', filename):  # 提取类似259luxu-1111番号
+            file_number = re.search(r'\d+[a-zA-Z]+-\d+', filename).group()
+        elif re.search(r'[a-zA-Z]+-[a-zA-Z]\d+', filename):  # 提取类似mkbd-s120番号
+            file_number = re.search(r'[a-zA-Z]+-[a-zA-Z]\d+', filename).group()
+        elif re.search(r'\d+-[a-zA-Z]+', filename):  # 提取类似 111111-MMMM 番号
+            file_number = re.search(r'\d+-[a-zA-Z]+', filename).group()
+        elif re.search(r'\d+-\d+', filename):  # 提取类似 111111-000 番号
+            file_number = re.search(r'\d+-\d+', filename).group()
+        elif re.search(r'\d+_\d+', filename):  # 提取类似 111111_000 番号
+            file_number = re.search(r'\d+_\d+', filename).group()
         else:
             file_number = filename
         return file_number
@@ -151,9 +151,9 @@ def getDataFromJSON(file_number, config, mode, appoint_url):  # 从JSON返回元
             if getDataState(json_data) == 0:
                 json_data = json.loads(avsox.main(file_number, appoint_url))
         # =======================================================================259LUXU-1111
-        elif re.match('\d+[a-zA-Z]+-\d+', file_number) or 'SIRO' in file_number.upper():
+        elif re.match(r'\d+[a-zA-Z]+-\d+', file_number) or 'SIRO' in file_number.upper():
             json_data = json.loads(mgstage.main(file_number, appoint_url))
-            file_number = re.search('[a-zA-Z]+-\d+', file_number).group()
+            file_number = re.search(r'[a-zA-Z]+-\d+', file_number).group()
             if getDataState(json_data) == 0:
                 json_data = json.loads(jav321.main(file_number, appoint_url))
             if getDataState(json_data) == 0:
@@ -164,10 +164,10 @@ def getDataFromJSON(file_number, config, mode, appoint_url):  # 从JSON返回元
         elif 'FC2' in file_number.upper():
             json_data = json.loads(javdb.main(file_number, appoint_url))
         # =======================================================================ssni00321
-        elif re.match('\D{2,}00\d{3,}', file_number) and '-' not in file_number and '_' not in file_number:
+        elif re.match(r'\D{2,}00\d{3,}', file_number) and '-' not in file_number and '_' not in file_number:
             json_data = json.loads(dmm.main(file_number, appoint_url))
         # =======================================================================sexart.15.06.14
-        elif re.search('\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
+        elif re.search(r'\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
             json_data = json.loads(javdb.main_us(file_number, appoint_url))
             if getDataState(json_data) == 0:
                 json_data = json.loads(javbus.main_us(file_number, appoint_url))
@@ -182,7 +182,7 @@ def getDataFromJSON(file_number, config, mode, appoint_url):  # 从JSON返回元
                 json_data = json.loads(javdb.main(file_number, appoint_url))
             if getDataState(json_data) == 0:
                 json_data = json.loads(avsox.main(file_number, appoint_url))
-    elif re.match('\D{2,}00\d{3,}', file_number) and mode != 7:
+    elif re.match(r'\D{2,}00\d{3,}', file_number) and mode != 7:
         json_data = {
             'title': '',
             'actor': '',
@@ -193,14 +193,14 @@ def getDataFromJSON(file_number, config, mode, appoint_url):  # 从JSON返回元
     elif mode == 3:  # 仅从javbus
         if isuncensored:
             json_data = json.loads(javbus.main_uncensored(file_number, appoint_url))
-        elif re.search('\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
+        elif re.search(r'\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
             json_data = json.loads(javbus.main_us(file_number, appoint_url))
         else:
             json_data = json.loads(javbus.main(file_number, appoint_url))
     elif mode == 4:  # 仅从jav321
         json_data = json.loads(jav321.main(file_number, isuncensored, appoint_url))
     elif mode == 5:  # 仅从javdb
-        if re.search('\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
+        if re.search(r'\D+\.\d{2}\.\d{2}\.\d{2}', file_number):
             json_data = json.loads(javdb.main_us(file_number, appoint_url))
         else:
             json_data = json.loads(javdb.main(file_number, appoint_url, isuncensored))
