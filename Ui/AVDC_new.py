@@ -1186,9 +1186,14 @@ class Ui_MainWindow(object):
         )
         self.pushButton_2.setText(_translate("MainWindow", "恢复默认"))
         self.pushButton.setText(_translate("MainWindow", "保存"))
+<<<<<<< HEAD
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_setting), _translate("MainWindow", "设置")
         )
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_about), _translate("MainWindow", "关于")
         )
+=======
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_setting), _translate("MainWindow", "设置"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_about), _translate("MainWindow", "关于"))
+>>>>>>> b79ef657ba901ef2c398b7ecc814c7d908152777

@@ -1,7 +1,11 @@
 
+<<<<<<< HEAD
 __pycache__/
 
 /log/
 
 
 /dev-log/
+=======
+Ui/__pycache__
+>>>>>>> b79ef657ba901ef2c398b7ecc814c7d908152777
