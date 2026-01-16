@@ -14,11 +14,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 774)
+        MainWindow.resize(800, 970)
+        MainWindow.setMinimumSize(QtCore.QSize(800, 970))
+        MainWindow.setMaximumSize(QtCore.QSize(800, 970))
         font = QtGui.QFont()
         font.setFamily("PingFang SC")
         MainWindow.setFont(font)
-        MainWindow.setMinimumSize(QtCore.QSize(800, 730))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -26,9 +27,7 @@ class Ui_MainWindow(object):
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName("tabWidget")
         self.tab_main = QtWidgets.QWidget()
-        self.tab_main.setLocale(
-            QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates)
-        )
+        self.tab_main.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
         self.tab_main.setObjectName("tab_main")
         self.gridLayout = QtWidgets.QGridLayout(self.tab_main)
         self.gridLayout.setObjectName("gridLayout")
@@ -230,7 +229,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.groupBox_MoveTool = QtWidgets.QGroupBox(self.tab_tool)
         self.groupBox_MoveTool.setMinimumSize(QtCore.QSize(650, 100))
-        self.groupBox_MoveTool.setMaximumSize(QtCore.QSize(800, 100))
+        self.groupBox_MoveTool.setMaximumSize(QtCore.QSize(800, 120))
         self.groupBox_MoveTool.setObjectName("groupBox_MoveTool")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.groupBox_MoveTool)
         self.gridLayout_2.setObjectName("gridLayout_2")
@@ -257,9 +256,7 @@ class Ui_MainWindow(object):
         self.pushButton_StartMove.setObjectName("pushButton_StartMove")
         self.gridLayout_2.addWidget(self.pushButton_StartMove, 0, 0, 1, 1)
         self.label_Move_man = QtWidgets.QLabel(self.groupBox_MoveTool)
-        self.label_Move_man.setAlignment(
-            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-        )
+        self.label_Move_man.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.label_Move_man.setWordWrap(True)
         self.label_Move_man.setObjectName("label_Move_man")
         self.gridLayout_2.addWidget(self.label_Move_man, 1, 0, 1, 2)
@@ -267,6 +264,8 @@ class Ui_MainWindow(object):
         self.groupBox_SingleScrap = QtWidgets.QGroupBox(self.tab_tool)
         self.groupBox_SingleScrap.setMinimumSize(QtCore.QSize(650, 200))
         self.groupBox_SingleScrap.setMaximumSize(QtCore.QSize(800, 200))
+        self.groupBox_SingleScrap.setFlat(False)
+        self.groupBox_SingleScrap.setCheckable(False)
         self.groupBox_SingleScrap.setObjectName("groupBox_SingleScrap")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.groupBox_SingleScrap)
         self.gridLayout_3.setObjectName("gridLayout_3")
@@ -335,7 +334,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.groupBox_SingleScrap)
         self.groupBox_EmbyActorAvatar = QtWidgets.QGroupBox(self.tab_tool)
         self.groupBox_EmbyActorAvatar.setMinimumSize(QtCore.QSize(650, 190))
-        self.groupBox_EmbyActorAvatar.setMaximumSize(QtCore.QSize(16777215, 190))
+        self.groupBox_EmbyActorAvatar.setMaximumSize(QtCore.QSize(16777215, 210))
         self.groupBox_EmbyActorAvatar.setObjectName("groupBox_EmbyActorAvatar")
         self.gridLayout_4 = QtWidgets.QGridLayout(self.groupBox_EmbyActorAvatar)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -387,8 +386,8 @@ class Ui_MainWindow(object):
         self.pushButton_Check.setObjectName("pushButton_Check")
         self.gridLayout_4.addWidget(self.pushButton_Check, 2, 0, 1, 1)
         self.label_EmbyActorAvatar_man = QtWidgets.QLabel(self.groupBox_EmbyActorAvatar)
-        self.label_EmbyActorAvatar_man.setMinimumSize(QtCore.QSize(600, 48))
-        self.label_EmbyActorAvatar_man.setMaximumSize(QtCore.QSize(16777215, 48))
+        self.label_EmbyActorAvatar_man.setMinimumSize(QtCore.QSize(600, 58))
+        self.label_EmbyActorAvatar_man.setMaximumSize(QtCore.QSize(16777215, 58))
         self.label_EmbyActorAvatar_man.setWordWrap(True)
         self.label_EmbyActorAvatar_man.setObjectName("label_EmbyActorAvatar_man")
         self.gridLayout_4.addWidget(self.label_EmbyActorAvatar_man, 2, 1, 1, 1)
@@ -424,198 +423,146 @@ class Ui_MainWindow(object):
         self.groupBox.setObjectName("groupBox")
         self.horizontalLayout_20 = QtWidgets.QHBoxLayout(self.groupBox)
         self.horizontalLayout_20.setObjectName("horizontalLayout_20")
-        spacerItem = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_20.addItem(spacerItem)
         self.radioButton = QtWidgets.QRadioButton(self.groupBox)
         self.radioButton.setObjectName("radioButton")
         self.horizontalLayout_20.addWidget(self.radioButton)
-        spacerItem1 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_20.addItem(spacerItem1)
         self.radioButton_2 = QtWidgets.QRadioButton(self.groupBox)
         self.radioButton_2.setObjectName("radioButton_2")
         self.horizontalLayout_20.addWidget(self.radioButton_2)
-        spacerItem2 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_20.addItem(spacerItem2)
         self.verticalLayout_2.addWidget(self.groupBox)
         self.groupBox_2 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_2.setObjectName("groupBox_2")
         self.horizontalLayout_21 = QtWidgets.QHBoxLayout(self.groupBox_2)
         self.horizontalLayout_21.setObjectName("horizontalLayout_21")
-        spacerItem3 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem3)
         self.radioButton_3 = QtWidgets.QRadioButton(self.groupBox_2)
         self.radioButton_3.setObjectName("radioButton_3")
         self.horizontalLayout_21.addWidget(self.radioButton_3)
-        spacerItem4 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem4)
         self.radioButton_4 = QtWidgets.QRadioButton(self.groupBox_2)
         self.radioButton_4.setObjectName("radioButton_4")
         self.horizontalLayout_21.addWidget(self.radioButton_4)
-        spacerItem5 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem5)
         self.verticalLayout_2.addWidget(self.groupBox_2)
         self.groupBox_3 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_3.setObjectName("groupBox_3")
         self.horizontalLayout_22 = QtWidgets.QHBoxLayout(self.groupBox_3)
         self.horizontalLayout_22.setObjectName("horizontalLayout_22")
-        spacerItem6 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_22.addItem(spacerItem6)
         self.radioButton_5 = QtWidgets.QRadioButton(self.groupBox_3)
         self.radioButton_5.setObjectName("radioButton_5")
         self.horizontalLayout_22.addWidget(self.radioButton_5)
-        spacerItem7 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem7 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_22.addItem(spacerItem7)
         self.radioButton_6 = QtWidgets.QRadioButton(self.groupBox_3)
         self.radioButton_6.setObjectName("radioButton_6")
         self.horizontalLayout_22.addWidget(self.radioButton_6)
-        spacerItem8 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_22.addItem(spacerItem8)
         self.verticalLayout_2.addWidget(self.groupBox_3)
         self.groupBox_4 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_4.setObjectName("groupBox_4")
         self.horizontalLayout_23 = QtWidgets.QHBoxLayout(self.groupBox_4)
         self.horizontalLayout_23.setObjectName("horizontalLayout_23")
-        spacerItem9 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_23.addItem(spacerItem9)
         self.radioButton_7 = QtWidgets.QRadioButton(self.groupBox_4)
         self.radioButton_7.setObjectName("radioButton_7")
         self.horizontalLayout_23.addWidget(self.radioButton_7)
-        spacerItem10 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem10 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_23.addItem(spacerItem10)
         self.radioButton_8 = QtWidgets.QRadioButton(self.groupBox_4)
         self.radioButton_8.setObjectName("radioButton_8")
         self.horizontalLayout_23.addWidget(self.radioButton_8)
-        spacerItem11 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_23.addItem(spacerItem11)
         self.verticalLayout_2.addWidget(self.groupBox_4)
         self.groupBox_5 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_5.setObjectName("groupBox_5")
         self.horizontalLayout_24 = QtWidgets.QHBoxLayout(self.groupBox_5)
         self.horizontalLayout_24.setObjectName("horizontalLayout_24")
-        spacerItem12 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_24.addItem(spacerItem12)
         self.radioButton_9 = QtWidgets.QRadioButton(self.groupBox_5)
         self.radioButton_9.setObjectName("radioButton_9")
         self.horizontalLayout_24.addWidget(self.radioButton_9)
-        spacerItem13 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem13 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_24.addItem(spacerItem13)
         self.radioButton_10 = QtWidgets.QRadioButton(self.groupBox_5)
         self.radioButton_10.setObjectName("radioButton_10")
         self.horizontalLayout_24.addWidget(self.radioButton_10)
-        spacerItem14 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem14 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_24.addItem(spacerItem14)
         self.verticalLayout_2.addWidget(self.groupBox_5)
         self.groupBox_6 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_6.setObjectName("groupBox_6")
         self.horizontalLayout_25 = QtWidgets.QHBoxLayout(self.groupBox_6)
         self.horizontalLayout_25.setObjectName("horizontalLayout_25")
-        spacerItem15 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem15 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_25.addItem(spacerItem15)
         self.radioButton_11 = QtWidgets.QRadioButton(self.groupBox_6)
         self.radioButton_11.setObjectName("radioButton_11")
         self.horizontalLayout_25.addWidget(self.radioButton_11)
-        spacerItem16 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem16 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_25.addItem(spacerItem16)
         self.radioButton_12 = QtWidgets.QRadioButton(self.groupBox_6)
         self.radioButton_12.setObjectName("radioButton_12")
         self.horizontalLayout_25.addWidget(self.radioButton_12)
-        spacerItem17 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem17 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_25.addItem(spacerItem17)
         self.verticalLayout_2.addWidget(self.groupBox_6)
         self.groupBox_7 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_7.setObjectName("groupBox_7")
         self.horizontalLayout_26 = QtWidgets.QHBoxLayout(self.groupBox_7)
         self.horizontalLayout_26.setObjectName("horizontalLayout_26")
-        spacerItem18 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem18 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_26.addItem(spacerItem18)
         self.radioButton_13 = QtWidgets.QRadioButton(self.groupBox_7)
         self.radioButton_13.setObjectName("radioButton_13")
         self.horizontalLayout_26.addWidget(self.radioButton_13)
-        spacerItem19 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem19 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_26.addItem(spacerItem19)
         self.radioButton_14 = QtWidgets.QRadioButton(self.groupBox_7)
         self.radioButton_14.setObjectName("radioButton_14")
         self.horizontalLayout_26.addWidget(self.radioButton_14)
-        spacerItem20 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_26.addItem(spacerItem20)
         self.verticalLayout_2.addWidget(self.groupBox_7)
         self.groupBox_8 = QtWidgets.QGroupBox(self.tab)
         self.groupBox_8.setObjectName("groupBox_8")
         self.horizontalLayout_27 = QtWidgets.QHBoxLayout(self.groupBox_8)
         self.horizontalLayout_27.setObjectName("horizontalLayout_27")
-        spacerItem21 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem21 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem21)
         self.checkBox = QtWidgets.QCheckBox(self.groupBox_8)
         self.checkBox.setObjectName("checkBox")
         self.horizontalLayout_27.addWidget(self.checkBox)
-        spacerItem22 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem22 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem22)
         self.checkBox_2 = QtWidgets.QCheckBox(self.groupBox_8)
         self.checkBox_2.setObjectName("checkBox_2")
         self.horizontalLayout_27.addWidget(self.checkBox_2)
-        spacerItem23 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem23 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem23)
         self.checkBox_3 = QtWidgets.QCheckBox(self.groupBox_8)
         self.checkBox_3.setObjectName("checkBox_3")
         self.horizontalLayout_27.addWidget(self.checkBox_3)
-        spacerItem24 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem24 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem24)
         self.checkBox_4 = QtWidgets.QCheckBox(self.groupBox_8)
         self.checkBox_4.setObjectName("checkBox_4")
         self.horizontalLayout_27.addWidget(self.checkBox_4)
-        spacerItem25 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem25 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_27.addItem(spacerItem25)
         self.verticalLayout_2.addWidget(self.groupBox_8)
         self.groupBox_9 = QtWidgets.QGroupBox(self.tab)
@@ -626,9 +573,7 @@ class Ui_MainWindow(object):
         self.comboBox_2.setObjectName("comboBox_2")
         self.horizontalLayout_28.addWidget(self.comboBox_2)
         self.verticalLayout_2.addWidget(self.groupBox_9)
-        spacerItem26 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem26 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem26)
         self.tabWidget_2.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
@@ -709,9 +654,7 @@ class Ui_MainWindow(object):
         self.label_11.setObjectName("label_11")
         self.gridLayout_7.addWidget(self.label_11, 7, 0, 1, 2)
         self.verticalLayout_5.addWidget(self.groupBox_11)
-        spacerItem27 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem27 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_5.addItem(spacerItem27)
         self.tabWidget_2.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
@@ -722,113 +665,83 @@ class Ui_MainWindow(object):
         self.groupBox_12.setObjectName("groupBox_12")
         self.horizontalLayout_29 = QtWidgets.QHBoxLayout(self.groupBox_12)
         self.horizontalLayout_29.setObjectName("horizontalLayout_29")
-        spacerItem28 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem28 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_29.addItem(spacerItem28)
         self.radioButton_15 = QtWidgets.QRadioButton(self.groupBox_12)
         self.radioButton_15.setObjectName("radioButton_15")
         self.horizontalLayout_29.addWidget(self.radioButton_15)
-        spacerItem29 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem29 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_29.addItem(spacerItem29)
         self.radioButton_16 = QtWidgets.QRadioButton(self.groupBox_12)
         self.radioButton_16.setObjectName("radioButton_16")
         self.horizontalLayout_29.addWidget(self.radioButton_16)
-        spacerItem30 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem30 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_29.addItem(spacerItem30)
         self.verticalLayout_3.addWidget(self.groupBox_12)
         self.groupBox_13 = QtWidgets.QGroupBox(self.tab_3)
         self.groupBox_13.setObjectName("groupBox_13")
         self.horizontalLayout_30 = QtWidgets.QHBoxLayout(self.groupBox_13)
         self.horizontalLayout_30.setObjectName("horizontalLayout_30")
-        spacerItem31 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem31 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_30.addItem(spacerItem31)
         self.radioButton_17 = QtWidgets.QRadioButton(self.groupBox_13)
         self.radioButton_17.setObjectName("radioButton_17")
         self.horizontalLayout_30.addWidget(self.radioButton_17)
-        spacerItem32 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem32 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_30.addItem(spacerItem32)
         self.radioButton_18 = QtWidgets.QRadioButton(self.groupBox_13)
         self.radioButton_18.setObjectName("radioButton_18")
         self.horizontalLayout_30.addWidget(self.radioButton_18)
-        spacerItem33 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem33 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_30.addItem(spacerItem33)
         self.verticalLayout_3.addWidget(self.groupBox_13)
         self.groupBox_14 = QtWidgets.QGroupBox(self.tab_3)
         self.groupBox_14.setObjectName("groupBox_14")
         self.horizontalLayout_31 = QtWidgets.QHBoxLayout(self.groupBox_14)
         self.horizontalLayout_31.setObjectName("horizontalLayout_31")
-        spacerItem34 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem34 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_31.addItem(spacerItem34)
         self.checkBox_5 = QtWidgets.QCheckBox(self.groupBox_14)
         self.checkBox_5.setObjectName("checkBox_5")
         self.horizontalLayout_31.addWidget(self.checkBox_5)
-        spacerItem35 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem35 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_31.addItem(spacerItem35)
         self.checkBox_6 = QtWidgets.QCheckBox(self.groupBox_14)
         self.checkBox_6.setObjectName("checkBox_6")
         self.horizontalLayout_31.addWidget(self.checkBox_6)
-        spacerItem36 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem36 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_31.addItem(spacerItem36)
         self.checkBox_7 = QtWidgets.QCheckBox(self.groupBox_14)
         self.checkBox_7.setObjectName("checkBox_7")
         self.horizontalLayout_31.addWidget(self.checkBox_7)
-        spacerItem37 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem37 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_31.addItem(spacerItem37)
         self.verticalLayout_3.addWidget(self.groupBox_14)
         self.groupBox_15 = QtWidgets.QGroupBox(self.tab_3)
         self.groupBox_15.setObjectName("groupBox_15")
         self.horizontalLayout_32 = QtWidgets.QHBoxLayout(self.groupBox_15)
         self.horizontalLayout_32.setObjectName("horizontalLayout_32")
-        spacerItem38 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem38 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_32.addItem(spacerItem38)
         self.radioButton_21 = QtWidgets.QRadioButton(self.groupBox_15)
         self.radioButton_21.setObjectName("radioButton_21")
         self.horizontalLayout_32.addWidget(self.radioButton_21)
-        spacerItem39 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem39 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_32.addItem(spacerItem39)
         self.radioButton_23 = QtWidgets.QRadioButton(self.groupBox_15)
         self.radioButton_23.setObjectName("radioButton_23")
         self.horizontalLayout_32.addWidget(self.radioButton_23)
-        spacerItem40 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem40 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_32.addItem(spacerItem40)
         self.radioButton_24 = QtWidgets.QRadioButton(self.groupBox_15)
         self.radioButton_24.setObjectName("radioButton_24")
         self.horizontalLayout_32.addWidget(self.radioButton_24)
-        spacerItem41 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem41 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_32.addItem(spacerItem41)
         self.radioButton_22 = QtWidgets.QRadioButton(self.groupBox_15)
         self.radioButton_22.setObjectName("radioButton_22")
         self.horizontalLayout_32.addWidget(self.radioButton_22)
-        spacerItem42 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem42 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_32.addItem(spacerItem42)
         self.verticalLayout_3.addWidget(self.groupBox_15)
         self.groupBox_16 = QtWidgets.QGroupBox(self.tab_3)
@@ -847,9 +760,7 @@ class Ui_MainWindow(object):
         self.label_13.setWordWrap(True)
         self.label_13.setObjectName("label_13")
         self.verticalLayout_3.addWidget(self.label_13)
-        spacerItem43 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem43 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_3.addItem(spacerItem43)
         self.tabWidget_2.addTab(self.tab_3, "")
         self.tab_4 = QtWidgets.QWidget()
@@ -920,9 +831,7 @@ class Ui_MainWindow(object):
         self.groupBox_21.setObjectName("groupBox_21")
         self.gridLayout_10 = QtWidgets.QGridLayout(self.groupBox_21)
         self.gridLayout_10.setObjectName("gridLayout_10")
-        spacerItem44 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem44 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_10.addItem(spacerItem44, 0, 4, 1, 1)
         self.radioButton_26 = QtWidgets.QRadioButton(self.groupBox_21)
         self.radioButton_26.setObjectName("radioButton_26")
@@ -933,13 +842,9 @@ class Ui_MainWindow(object):
         self.radioButton_27 = QtWidgets.QRadioButton(self.groupBox_21)
         self.radioButton_27.setObjectName("radioButton_27")
         self.gridLayout_10.addWidget(self.radioButton_27, 0, 3, 1, 1)
-        spacerItem45 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem45 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_10.addItem(spacerItem45, 0, 0, 1, 1)
-        spacerItem46 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem46 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout_10.addItem(spacerItem46, 0, 2, 1, 1)
         self.verticalLayout_6.addWidget(self.groupBox_21)
         self.groupBox_22 = QtWidgets.QGroupBox(self.tab_4)
@@ -956,9 +861,7 @@ class Ui_MainWindow(object):
         self.label_22.setObjectName("label_22")
         self.gridLayout_11.addWidget(self.label_22, 1, 0, 1, 2)
         self.verticalLayout_6.addWidget(self.groupBox_22)
-        spacerItem47 = QtWidgets.QSpacerItem(
-            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem47 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_6.addItem(spacerItem47)
         self.tabWidget_2.addTab(self.tab_4, "")
         self.verticalLayout_4.addWidget(self.tabWidget_2)
@@ -971,22 +874,16 @@ class Ui_MainWindow(object):
         self.pushButton_2.setMaximumSize(QtCore.QSize(92, 32))
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout_19.addWidget(self.pushButton_2)
-        spacerItem48 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem48 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_19.addItem(spacerItem48)
         self.pushButton = QtWidgets.QPushButton(self.widget)
         self.pushButton.setMinimumSize(QtCore.QSize(300, 32))
         self.pushButton.setMaximumSize(QtCore.QSize(300, 32))
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_19.addWidget(self.pushButton)
-        spacerItem49 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem49 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_19.addItem(spacerItem49)
-        spacerItem50 = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem50 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_19.addItem(spacerItem50)
         self.verticalLayout_4.addWidget(self.widget)
         self.tabWidget.addTab(self.tab_setting, "")
@@ -1021,59 +918,33 @@ class Ui_MainWindow(object):
         self.label_Type.setText(_translate("MainWindow", "系列:"))
         self.label_cover.setText(_translate("MainWindow", "封面图"))
         self.label_thumbnail.setText(_translate("MainWindow", "缩略图"))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_main), _translate("MainWindow", "主页")
-        )
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_log), _translate("MainWindow", "日志")
-        )
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_main), _translate("MainWindow", "主页"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_log), _translate("MainWindow", "日志"))
         self.groupBox_MoveTool.setTitle(_translate("MainWindow", "视频、字幕移动"))
         self.label_ExcludeDir.setText(_translate("MainWindow", "排除目录:"))
         self.pushButton_StartMove.setText(_translate("MainWindow", "开始移动"))
-        self.label_Move_man.setText(
-            _translate(
-                "MainWindow",
-                "‘视频目录’的所有子目录（不包括排除目录）下的视频及同名字幕，移动到‘视频目录’下的‘Mowie_mowed’目录下。",
-            )
-        )
+        self.label_Move_man.setText(_translate("MainWindow", "‘视频目录’的所有子目录（不包括排除目录）下的视频及同名字幕，移动到‘视频目录’下的‘Mowie_mowed’目录下。"))
         self.groupBox_SingleScrap.setTitle(_translate("MainWindow", "单文件刮削"))
         self.pushButton_ChooseFile.setText(_translate("MainWindow", "选择文件"))
         self.label_SerialNumber_2.setText(_translate("MainWindow", "影片番号:"))
         self.pushButton_StartScrap.setText(_translate("MainWindow", "开始刮削"))
         self.label_ScrapWeb_1.setText(_translate("MainWindow", "刮削网站:"))
         self.label_ScrapWeb_2.setText(_translate("MainWindow", "刮削网站:"))
-        self.label_SingleScrap_man.setText(
-            _translate(
-                "MainWindow",
-                "选择单个文件（视频目录下或子目录下）。不指定番号，则默认使用文件夹名作为番号进行刮削。",
-            )
-        )
+        self.label_SingleScrap_man.setText(_translate("MainWindow", "选择单个文件（视频目录下或子目录下）。不指定番号，则默认使用文件夹名作为番号进行刮削。"))
         self.groupBox_EmbyActorAvatar.setTitle(_translate("MainWindow", "Emby演员头像"))
         self.pushButton_AddAvatar.setText(_translate("MainWindow", "添加头像"))
         self.label_EmbyAddr.setText(_translate("MainWindow", "Emby地址 :"))
         self.label_APIKey.setText(_translate("MainWindow", "API密钥 :"))
         self.pushButton_Check.setText(_translate("MainWindow", "查看"))
-        self.label_EmbyActorAvatar_man.setText(
-            _translate(
-                "MainWindow",
-                "说明：\n"
-                "1、头像请放在程序目录下的Actor文件夹中；\n"
-                "2、密钥创建方法：Enby控制台->高级->API密钥->添加（APP名称任意）。",
-            )
-        )
+        self.label_EmbyActorAvatar_man.setText(_translate("MainWindow", "说明：\n"
+"1、头像请放在程序目录下的Actor文件夹中；\n"
+"2、密钥创建方法：Enby控制台->高级->API密钥->添加（APP名称任意）。"))
         self.groupBox_CropCover.setTitle(_translate("MainWindow", "裁剪封面图"))
         self.pushButton_6.setText(_translate("MainWindow", "选择缩略图"))
-        self.label_CropCover_man.setText(
-            _translate(
-                "MainWindow",
-                "说明：\n"
-                "1、对有些封面图（goster）不满意，比例不对或者分辨率太低，可使用此工具\n"
-                "2、此工具通过判断人脸位置，可以将缩略图（thunb）裁剪为封面图。",
-            )
-        )
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_tool), _translate("MainWindow", "工具")
-        )
+        self.label_CropCover_man.setText(_translate("MainWindow", "说明：\n"
+"1、对有些封面图（goster）不满意，比例不对或者分辨率太低，可使用此工具\n"
+"2、此工具通过判断人脸位置，可以将缩略图（thunb）裁剪为封面图。"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_tool), _translate("MainWindow", "工具"))
         self.groupBox.setTitle(_translate("MainWindow", "模式："))
         self.radioButton.setText(_translate("MainWindow", "刮削模式"))
         self.radioButton_2.setText(_translate("MainWindow", "整理模式"))
@@ -1101,9 +972,7 @@ class Ui_MainWindow(object):
         self.checkBox_3.setText(_translate("MainWindow", "fanart"))
         self.checkBox_4.setText(_translate("MainWindow", "thumb"))
         self.groupBox_9.setTitle(_translate("MainWindow", "网站选择"))
-        self.tabWidget_2.setTabText(
-            self.tabWidget_2.indexOf(self.tab), _translate("MainWindow", "普通设置")
-        )
+        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab), _translate("MainWindow", "普通设置"))
         self.groupBox_10.setTitle(_translate("MainWindow", "命名规则"))
         self.label_2.setText(_translate("MainWindow", "视频标题（本地文件）："))
         self.label_3.setText(_translate("MainWindow", "视频标题（媒体库中）："))
@@ -1116,17 +985,10 @@ class Ui_MainWindow(object):
         self.label_10.setText(_translate("MainWindow", "剧照目录："))
         self.label_9.setText(_translate("MainWindow", "成功输出目录："))
         self.label_4.setText(_translate("MainWindow", "视频目录："))
-        self.label_11.setText(
-            _translate(
-                "MainWindow",
-                "说明：\n"
-                "      1、’排除目录‘、’成功输出目录‘、’失败输出目录‘应为’视频目录‘下的目录。\n"
-                "      2、‘成功输出目录’、‘失败输出目录’不存在，则会在‘视频目录’下创建。",
-            )
-        )
-        self.tabWidget_2.setTabText(
-            self.tabWidget_2.indexOf(self.tab_2), _translate("MainWindow", "目录设置")
-        )
+        self.label_11.setText(_translate("MainWindow", "说明：\n"
+"      1、’排除目录‘、’成功输出目录‘、’失败输出目录‘应为’视频目录‘下的目录。\n"
+"      2、‘成功输出目录’、‘失败输出目录’不存在，则会在‘视频目录’下创建。"))
+        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_2), _translate("MainWindow", "目录设置"))
         self.groupBox_12.setTitle(_translate("MainWindow", "封面图添加水印"))
         self.radioButton_15.setText(_translate("MainWindow", "开"))
         self.radioButton_16.setText(_translate("MainWindow", "关"))
@@ -1144,17 +1006,10 @@ class Ui_MainWindow(object):
         self.radioButton_22.setText(_translate("MainWindow", "右下"))
         self.groupBox_16.setTitle(_translate("MainWindow", "水印大小"))
         self.label_12.setText(_translate("MainWindow", "TextLabel"))
-        self.label_13.setText(
-            _translate(
-                "MainWindow",
-                "说明：\n"
-                "     1、多个水印时，从首个水印顺时针添加。\n"
-                "     2、水印文件可自己替换。分辨率要求长宽 500x300 ，背景透明，格式png。",
-            )
-        )
-        self.tabWidget_2.setTabText(
-            self.tabWidget_2.indexOf(self.tab_3), _translate("MainWindow", "水印设置")
-        )
+        self.label_13.setText(_translate("MainWindow", "说明：\n"
+"     1、多个水印时，从首个水印顺时针添加。\n"
+"     2、水印文件可自己替换。分辨率要求长宽 500x300 ，背景透明，格式png。"))
+        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_3), _translate("MainWindow", "水印设置"))
         self.groupBox_19.setTitle(_translate("MainWindow", "代理设置"))
         self.label_15.setText(_translate("MainWindow", "IP+端口号"))
         self.label_14.setText(_translate("MainWindow", "代理："))
@@ -1168,30 +1023,81 @@ class Ui_MainWindow(object):
         self.label_19.setText(_translate("MainWindow", "多余字符串："))
         self.groupBox_21.setTitle(_translate("MainWindow", "无码封面"))
         self.radioButton_26.setText(_translate("MainWindow", "官方"))
-        self.label_20.setText(
-            _translate(
-                "MainWindow",
-                "说明：\n"
-                "     1、官方封面--完整、不清晰；裁剪封面--清晰、不完整。\n"
-                "     2、官方无图，自动裁切缩略图。",
-            )
-        )
+        self.label_20.setText(_translate("MainWindow", "说明：\n"
+"     1、官方封面--完整、不清晰；裁剪封面--清晰、不完整。\n"
+"     2、官方无图，自动裁切缩略图。"))
         self.radioButton_27.setText(_translate("MainWindow", "裁剪"))
         self.groupBox_22.setTitle(_translate("MainWindow", "无码番号"))
         self.label_21.setText(_translate("MainWindow", "无码番号前缀："))
-        self.label_22.setText(
-            _translate(
-                "MainWindow", "说明：只添加 HEYZO、n1111、111111-111 之外的前缀。"
-            )
-        )
-        self.tabWidget_2.setTabText(
-            self.tabWidget_2.indexOf(self.tab_4), _translate("MainWindow", "其他设置")
-        )
+        self.label_22.setText(_translate("MainWindow", "说明：只添加 HEYZO、n1111、111111-111 之外的前缀。"))
+        self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_4), _translate("MainWindow", "其他设置"))
         self.pushButton_2.setText(_translate("MainWindow", "恢复默认"))
         self.pushButton.setText(_translate("MainWindow", "保存"))
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_setting), _translate("MainWindow", "设置")
-        )
-        self.tabWidget.setTabText(
-            self.tabWidget.indexOf(self.tab_about), _translate("MainWindow", "关于")
-        )
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_setting), _translate("MainWindow", "设置"))
+        self.textBrowser_about.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><title>AVDC 使用说明</title><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'PingFang SC\'; font-size:13pt; font-weight:400; font-style:normal;\" bgcolor=\"#ffffff\">\n"
+"<h1 align=\"center\" style=\" margin-top:24px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a name=\"avdc\"></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:xx-large; font-weight:600; color:#24292e;\">A</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:xx-large; font-weight:600; color:#24292e;\">VDC </span></h1>\n"
+"<h2 style=\" margin-top:18px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">目录 </span></h2>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a href=\"#intro\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">一、功能简介</span></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a href=\"#project\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">二、项目简介</span></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a href=\"#number\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">三、常见番号命名参考</span></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a href=\"#settings\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">四、设置说明</span></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<h2 style=\" margin-top:18px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a name=\"intro\"></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">一</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">、功能简介 </span></h2>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">AVDC 是日本电影元数据抓取工具/刮削器，配合本地影片管理软件 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">EMBY、KODI、PLEX</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 等使用。 </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">它负责从各资源站抓取元数据，用于分类整理本地影片， 生成用于媒体库识别的 NFO、封面、缩略图、背景图等文件。 </span></p>\n"
+"<h2 style=\" margin-top:18px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a name=\"project\"></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">二</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">、项目简介 </span></h2>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">原始 GUI 版项目地址： </span><a href=\"https://github.com/moyy996/AVDC\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">https://github.com/moyy996/AVDC </span></a></p>\n"
+"<h2 style=\" margin-top:18px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a name=\"number\"></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">三</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">、常见番号命名参考 </span></h2>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">不区分大小写，刮削前尽量命名规范。</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">1、标准有码 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Javdb / Javbus：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">SSNI-111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">DMM：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">ssni00111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">2、无码 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Javdb、Javbus、Avsox： </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">111111-1111、111111_111、HEYZO-1111、n1111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">3、素人 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Mgstage：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">259LUXU-1111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Javdb：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">LUXU-1111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Fc2club：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">FC2-111111、FC2-PPV-111111、FC2PPV-111111</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4、欧美 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">Javdb / Javbus：</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">sexart.11.11.11</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">（系列.年.月.日） </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">5、自带字幕影片 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">可命名为例如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">ssni-xxx-c.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">、 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">ssni-xxx-C.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">、 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">abp-xxx-CD1-C.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">，用于标记带字幕。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">6、多集影片 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">多集影片可命名为 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">ssni-xxx-cd1.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">、 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">ssni-xxx-cd2.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">、 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">abp-xxx-CD1-C.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 等，使用 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">-CDn/-cdn</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 作为分集标记。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">7、多集、字幕顺序 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">推荐规则如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">abp-xxx-CD1-C.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">： 分集标记在前，字幕标记在后，并且字幕标记应紧挨扩展名， 如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">-C.mp4</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">8、外挂字幕文件 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">字幕文件名必须与影片文件名完全一致，才可一同移动。 目前支持 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">srt、ass、sub</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 等字幕类型。 </span></p>\n"
+"<h2 style=\" margin-top:18px; margin-bottom:8px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><a name=\"settings\"></a><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">四</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:x-large; font-weight:600; color:#24292e;\">、设置说明 </span></h2>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">更详细的说明见： </span><a href=\"https://github.com/moyy996/AVDC/blob/master/README.md\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; text-decoration: underline; color:#0000ff;\">https://github.com/moyy996/AVDC/blob/master/README.md </span></a></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.1 刮削模式 / 整理模式 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">刮削模式：通过番号抓取元数据、封面、缩略图、背景图。 整理模式：按女优对影片重命名并分类到女优文件夹。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.2 软链接模式 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">不移动视频，而是在目标目录创建软链接，适合需要继续做种的场景。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.3 调试模式 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">输出番号的完整元数据，便于排查问题。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.4 排除目录 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">多层目录刮削时，跳过配置中指定的目录。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.5 视频目录 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">要整理的视频所在目录，会递归遍历其下的所有子目录。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.6 命名规则 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">目录命名、媒体库标题、本地文件名均可使用占位符组合， 例如：[actor]/studio/number-[title] 等。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.7 代理设置 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">配置本地代理地址和端口（如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">127.0.0.1:1080</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">）， 建议使用日本节点并开启全局模式。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.8 连接超时与重试 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">timeout：超时时间（秒）；retry：超时重试次数。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.9 媒体库选择 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">选择目标媒体库软件；如 PLEX，需安装 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">XBMCnfoMoviesImporter</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 等插件。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.10 排除字符、目录、字符串 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">排除字符：创建文件夹时从名称中去掉指定字符，如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">\\()</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">。 </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">排除目录：多目录刮削时跳过如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">failed, JAV_output</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 等目录。 </span></p>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">排除字符串：刮削前先删除文件名中的多余字符串，字符串之间用 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">,</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 分隔。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.11 网站选择 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">可选择使用所有网站，或只使用指定网站 （如 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">avsox、javbus、dmm、javdb、fc2club、mgstage</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">）。 仅用 javdb 刮削时请注意请求频率，避免被封 IP。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.12 保存日志 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">开启后，每次运行会在程序目录的 </span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; font-weight:600; color:#ff0000;\">Log</span><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\"> 目录下生成一个日志文件， 日志可随时删除，不影响程序运行。 </span></p>\n"
+"<h3 style=\" margin-top:16px; margin-bottom:6px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:large; font-weight:600; color:#24292e;\">4.13 失败后移动文件 </span></h3>\n"
+"<p style=\" margin-top:4px; margin-bottom:4px; margin-left:24px; margin-right:24px; -qt-block-indent:0; text-indent:0px; line-height:160%;\"><span style=\" font-family:\'PingFang SC\',\'Microsoft YaHei\',\'sans-serif\'; font-size:14px; color:#24292e;\">刮削失败时，可选择不移动视频，或自动移动到失败输出目录，便于后续手动处理。 </span></p></body></html>"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_about), _translate("MainWindow", "关于"))

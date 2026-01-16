@@ -51,7 +51,6 @@ class AVDC_Main_UI(QMainWindow):
         self.Init()
         self.Load_Config()
         self.show_version()
-        self.setup_about_page()
 
         # ========================================================================打开日志文件
         if self.Ui.radioButton_9.isChecked():  # radioButton_log_on
@@ -124,22 +123,6 @@ class AVDC_Main_UI(QMainWindow):
         self.Ui.progressBar_avdc.setValue(0)  # 进度条清0
         self.progressBarValue.connect(self.set_processbar)
         self.Ui.progressBar_avdc.setTextVisible(True)
-
-    def setup_about_page(self):
-        # 原有的 setup_about_page 代码保持不变
-        _translate = QtCore.QCoreApplication.translate
-        self.Ui.textBrowser_about.setHtml(
-            _translate(
-                "AVDV",
-                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
-                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
-                "p, li { white-space: pre-wrap; }\n"
-                "</style></head><body style=\" font-family:'PingFang SC', 'Microsoft YaHei', sans-serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-                '<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:\'PingFang SC\', \'Microsoft YaHei\', sans-serif\'; font-size:20pt; font-weight:600;">AVDC</span></p>\n'
-                # ... (省略中间的长HTML内容，或者完整复制) ...
-                "</body></html>",
-            )
-        )
 
     # ========================================================================按钮点击事件
     def Init(self):
