@@ -7,3 +7,5 @@ __pycache__/
 /dev-log/
 
 .DS_Store
+
+_trash/
