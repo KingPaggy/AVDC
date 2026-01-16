@@ -17,7 +17,7 @@ def getTitle(htmlcode):
             "",
             result.replace("/", ",").replace("\\xa0", "").replace(" : ", ""),
         )
-    except:
+    except Exception:
         return re.sub(r".*\] ", "", result.replace("/", ",").replace("\\xa0", ""))
 
 
@@ -106,7 +106,7 @@ def getYear(release):
     try:
         result = str(re.search(r"\d{4}", release).group())
         return result
-    except:
+    except Exception:
         return release
 
 

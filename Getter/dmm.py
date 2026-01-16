@@ -22,8 +22,8 @@ def getActor(text):
                 "//td[contains(text(),'出演者')]/following-sibling::td/span/a/text()"
             )
         )
-            .strip(" ['']")
-            .replace("', '", ",")
+        .strip(" ['']")
+        .replace("', '", ",")
     )
     return result
 
@@ -34,7 +34,7 @@ def getStudio(text):
         result = html.xpath(
             "//td[contains(text(),'メーカー')]/following-sibling::td/a/text()"
         )[0]
-    except:
+    except Exception:
         result = html.xpath(
             "//td[contains(text(),'メーカー')]/following-sibling::td/text()"
         )[0]
@@ -43,7 +43,9 @@ def getStudio(text):
 
 def getRuntime(text):
     html = etree.fromstring(text, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result = html.xpath("//td[contains(text(),'収録時間')]/following-sibling::td/text()")[0]
+    result = html.xpath(
+        "//td[contains(text(),'収録時間')]/following-sibling::td/text()"
+    )[0]
     return re.search(r"\d+", str(result)).group()
 
 
@@ -53,7 +55,7 @@ def getLabel(text):
         result = html.xpath(
             "//td[contains(text(),'レーベル：')]/following-sibling::td/a/text()"
         )[0]
-    except:
+    except Exception:
         result = html.xpath(
             "//td[contains(text(),'レーベル：')]/following-sibling::td/text()"
         )[0]
@@ -66,7 +68,7 @@ def getNum(text):
         result = html.xpath(
             "//td[contains(text(),'品番：')]/following-sibling::td/a/text()"
         )[0]
-    except:
+    except Exception:
         result = html.xpath(
             "//td[contains(text(),'品番：')]/following-sibling::td/text()"
         )[0]
@@ -77,7 +79,7 @@ def getYear(getRelease):
     try:
         result = str(re.search(r"\d{4}", getRelease).group())
         return result
-    except:
+    except Exception:
         return getRelease
 
 
@@ -87,24 +89,24 @@ def getRelease(text):
         result = html.xpath(
             "//td[contains(text(),'発売日：')]/following-sibling::td/a/text()"
         )[0].lstrip("\n")
-    except:
+    except Exception:
         try:
             result = html.xpath(
                 "//td[contains(text(),'発売日：')]/following-sibling::td/text()"
             )[0].lstrip("\n")
-        except:
+        except Exception:
             result = "----"
     if result == "----":
         try:
             result = html.xpath(
                 "//td[contains(text(),'配信開始日：')]/following-sibling::td/a/text()"
             )[0].lstrip("\n")
-        except:
+        except Exception:
             try:
                 result = html.xpath(
                     "//td[contains(text(),'配信開始日：')]/following-sibling::td/text()"
                 )[0].lstrip("\n")
-            except:
+            except Exception:
                 pass
     return result.replace("/", "-")
 
@@ -115,7 +117,7 @@ def getTag(text):
         result = html.xpath(
             "//td[contains(text(),'ジャンル：')]/following-sibling::td/a/text()"
         )
-    except:
+    except Exception:
         result = html.xpath(
             "//td[contains(text(),'ジャンル：')]/following-sibling::td/text()"
         )
@@ -127,13 +129,13 @@ def getCover(text, number):
     cover_number = number
     try:
         result = html.xpath('//*[@id="' + cover_number + '"]/@href')[0]
-    except:
+    except Exception:
         # sometimes fanza modify _ to \u0005f for image id
         if "_" in cover_number:
             cover_number = cover_number.replace("_", r"\u005f")
         try:
             result = html.xpath('//*[@id="' + cover_number + '"]/@href')[0]
-        except:
+        except Exception:
             # (TODO) handle more edge case
             # print(html)
             # raise exception here, same behavior as before
@@ -148,7 +150,7 @@ def getDirector(text):
         result = html.xpath(
             "//td[contains(text(),'監督：')]/following-sibling::td/a/text()"
         )[0]
-    except:
+    except Exception:
         result = html.xpath(
             "//td[contains(text(),'監督：')]/following-sibling::td/text()"
         )[0]
@@ -165,7 +167,7 @@ def getOutline(text):
             result = str(html.xpath("//div[@class='mg-b20 lh4']//p/text()")[0]).replace(
                 "\n", ""
             )
-    except:
+    except Exception:
         # (TODO) handle more edge case
         # print(html)
         return ""
@@ -179,50 +181,57 @@ def getSeries(text):
             result = html.xpath(
                 "//td[contains(text(),'シリーズ：')]/following-sibling::td/a/text()"
             )[0]
-        except:
+        except Exception:
             result = html.xpath(
                 "//td[contains(text(),'シリーズ：')]/following-sibling::td/text()"
             )[0]
         return result
-    except:
+    except Exception:
         return ""
 
 
 def getExtrafanart(htmlcode):  # 获取剧照
-    html_pather = re.compile(r'<div id=\"sample-image-block\"[\s\S]*?<br></div></div>')
+    html_pather = re.compile(r"<div id=\"sample-image-block\"[\s\S]*?<br></div></div>")
     html = html_pather.search(htmlcode)
     if html:
         html = html.group()
-        extrafanart_pather = re.compile(r'<img.*?src=\"(.*?)\"')
+        extrafanart_pather = re.compile(r"<img.*?src=\"(.*?)\"")
         extrafanart_imgs = extrafanart_pather.findall(html)
         if extrafanart_imgs:
             s = []
             for img_url in extrafanart_imgs:
-                img_urls = img_url.rsplit('-', 1)
-                img_url = img_urls[0] + 'jp-' + img_urls[1]
+                img_urls = img_url.rsplit("-", 1)
+                img_url = img_urls[0] + "jp-" + img_urls[1]
                 s.append(img_url)
             return s
-    return ''
+    return ""
 
 
 def getScore(htmlcode):
     html = etree.fromstring(htmlcode, etree.HTMLParser())
-    result = str(html.xpath("//p[@class='d-review__average']/strong/text()")[0]).replace('\\n', '').replace('\n',
-                                                                                                            '').replace(
-        '点', '')
+    result = (
+        str(html.xpath("//p[@class='d-review__average']/strong/text()")[0])
+        .replace("\\n", "")
+        .replace("\n", "")
+        .replace("点", "")
+    )
     return result
 
 
 def getPublisher(htmlcode):
     html = etree.fromstring(htmlcode, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
     try:
-        result = html.xpath("//td[contains(text(),'レーベル')]/following-sibling::td/a/text()")[0]
-    except:
-        result = html.xpath("//td[contains(text(),'レーベル')]/following-sibling::td/text()")[0]
+        result = html.xpath(
+            "//td[contains(text(),'レーベル')]/following-sibling::td/a/text()"
+        )[0]
+    except Exception:
+        result = html.xpath(
+            "//td[contains(text(),'レーベル')]/following-sibling::td/text()"
+        )[0]
     return result
 
 
-def main(number, appoint_url=''):
+def main(number, appoint_url=""):
     # fanza allow letter + number + underscore, normalize the input here
     # @note: I only find the usage of underscore as h_test123456789
     fanza_search_number = number
@@ -242,24 +251,25 @@ def main(number, appoint_url=''):
         "https://www.dmm.co.jp/rental/-/detail/=/cid=",
     ]
     chosen_url = ""
-    htmlcode = ''
+    htmlcode = ""
     if appoint_url:
         chosen_url = appoint_url
         htmlcode = get_html(
             "https://www.dmm.co.jp/age_check/=/declared=yes/?{}".format(
                 urlencode({"rurl": appoint_url})
-            ))
+            )
+        )
     else:
         for url in fanza_urls:
             chosen_url = url + fanza_search_number
             final_url = "https://www.dmm.co.jp/age_check/=/declared=yes/?{}".format(
-                    urlencode({"rurl": chosen_url})
-                )
+                urlencode({"rurl": chosen_url})
+            )
             htmlcode = get_html(final_url)
             if "404 Not Found" not in htmlcode:
                 break
     if "404 Not Found" in htmlcode:
-        return json.dumps({"title": "", 'website': ''})
+        return json.dumps({"title": "", "website": ""})
     try:
         # for some old page, the input number does not match the page
         # for example, the url will be cid=test012
@@ -269,8 +279,8 @@ def main(number, appoint_url=''):
         release = getRelease(htmlcode)
         dic = {
             "title": getTitle(htmlcode).strip(),
-            'publisher': getPublisher(htmlcode),
-            'score': getScore(htmlcode),
+            "publisher": getPublisher(htmlcode),
+            "score": getScore(htmlcode),
             "studio": getStudio(htmlcode),
             "outline": getOutline(htmlcode),
             "runtime": getRuntime(htmlcode),
@@ -291,16 +301,18 @@ def main(number, appoint_url=''):
         }
     except TimeoutError:
         dic = {
-            'title': '',
-            'website': 'timeout',
+            "title": "",
+            "website": "timeout",
         }
     except Exception as error_info:
-        print('Error in dmm.main : ' + str(error_info))
+        print("Error in dmm.main : " + str(error_info))
         dic = {
-            'title': '',
-            'website': '',
+            "title": "",
+            "website": "",
         }
-    js = json.dumps(dic, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ':'))  # .encode('UTF-8')
+    js = json.dumps(
+        dic, ensure_ascii=False, sort_keys=True, indent=4, separators=(",", ":")
+    )  # .encode('UTF-8')
     return js
 
 
