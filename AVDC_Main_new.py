@@ -3,9 +3,9 @@
 import threading
 import json
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtGui import QPixmap, QTextCursor, QCursor, QIcon
-from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication, QMessageBox
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtGui import QPixmap, QTextCursor, QIcon
+from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication
+from PyQt5.QtCore import pyqtSignal
 import sys
 import time
 import os.path
@@ -193,7 +193,7 @@ class AVDC_Main_UI(QMainWindow):
             try:
                 index_json = str(item.text(0)).split(".")[0]
                 self.add_label_info(self.json_array[str(index_json)])
-            except:
+            except Exception:
                 print(item.text(0) + ": No info!")
 
     def pushButton_start_cap_clicked(self):
@@ -419,8 +419,6 @@ class AVDC_Main_UI(QMainWindow):
         update_check = 0
         save_log = 0
         website = ""
-        add_mark = 1
-        mark_size = 3
         mark_type = ""
         mark_pos = ""
         uncensored_poster = 0
@@ -429,7 +427,6 @@ class AVDC_Main_UI(QMainWindow):
         fanart_download = 0
         thumb_download = 0
         extrafanart_download = 0
-        extrafanart_folder = ""
         proxy_type = ""
         # ========================================================================common
         if self.Ui.radioButton.isChecked():  # 普通模式
@@ -878,7 +875,7 @@ class AVDC_Main_UI(QMainWindow):
             getweb = requests.get(str(url), headers=headers, timeout=10)
             getweb.encoding = "utf-8"
             actor_list = json.loads(getweb.text)
-        except:
+        except Exception:
             self.add_text_main("[-]Error! Check your emby_url or api_key!")
             actor_list["TotalRecordCount"] = 0
         return actor_list
@@ -1454,7 +1451,7 @@ class AVDC_Main_UI(QMainWindow):
                     img2 = img.crop((w / 1.9, 0, w, h))
                     img2.save(path + "/" + poster_name)
                     self.add_text_main("[+]Poster Cut!        " + poster_name)
-                except:
+                except Exception:
                     self.add_text_main("[-]Thumb cut failed!")
 
     def fix_size(self, path, naming_rule):
@@ -1719,8 +1716,8 @@ class AVDC_Main_UI(QMainWindow):
                             + "/"
                             + dir
                         )
-                    except:
-                        delete_empty_folder_failed = ""
+                    except Exception:
+                        pass
 
     def Core_Main(self, filepath, number, mode, count, appoint_url=""):
         # =======================================================================初始化所需变量
@@ -1887,18 +1884,6 @@ class AVDC_Main_UI(QMainWindow):
         # =======================================================================遍历电影列表 交给core处理
         for movie in movie_list:  # 遍历电影列表 交给core处理
             count += 1
-            # self.Ui.label_progress.setText("当前: " + str(count) + "/" + str(count_all)) # label_progress missing in new UI?
-            # I can use label_percent for this maybe, or just log it.
-            percentage_text = (
-                "当前: "
-                + str(count)
-                + "/"
-                + str(count_all)
-                + " "
-                + str(count / int(count_all) * 100)[:4]
-                + "%"
-            )
-
             percentage = str(count / int(count_all) * 100)[:4] + "%"
             value = int(count / int(count_all) * 100)
             self.add_text_main(
