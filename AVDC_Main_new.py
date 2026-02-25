@@ -4,8 +4,9 @@ import threading
 import json
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap, QTextCursor, QIcon
-from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication
+from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication, QShortcut
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QKeySequence
 import sys
 import time
 import os.path
@@ -13,6 +14,8 @@ import requests
 import shutil
 import base64
 import re
+import logging
+import traceback
 from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
 import os
@@ -35,12 +38,6 @@ class AVDC_Main_UI(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        # 初始化UI
-        self.Ui = Ui_MainWindow()
-        self.Ui.setupUi(self)
-
-        self.Init_Ui()
-
         # 初始化需要的变量
         self.version = "3.964"
         self.m_drag = False
@@ -48,6 +45,14 @@ class AVDC_Main_UI(QMainWindow):
         self.count_claw = 0  # 批量刮削次数
         self.select_file_path = ""
         self.json_array = {}
+
+        # 初始化UI
+        self.Ui = Ui_MainWindow()
+        self.Ui.setupUi(self)
+
+        # 初始化日志系统
+        self.setup_logger()
+        self.Init_Ui()
         self.Init()
         self.Load_Config()
         self.show_version()
@@ -124,6 +129,78 @@ class AVDC_Main_UI(QMainWindow):
         self.progressBarValue.connect(self.set_processbar)
         self.Ui.progressBar_avdc.setTextVisible(True)
 
+        # 设置快捷键：Ctrl+1,2,3,4,5 切换主标签页（使用 Ctrl 以提高兼容性）
+        self.shortcut_cmd1 = QtWidgets.QShortcut(QKeySequence("Ctrl+1"), self)
+        self.shortcut_cmd1.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(0))  # 主页
+
+        self.shortcut_cmd2 = QtWidgets.QShortcut(QKeySequence("Ctrl+2"), self)
+        self.shortcut_cmd2.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(1))  # 日志
+
+        self.shortcut_cmd3 = QtWidgets.QShortcut(QKeySequence("Ctrl+3"), self)
+        self.shortcut_cmd3.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(2))  # 工具
+
+        self.shortcut_cmd4 = QtWidgets.QShortcut(QKeySequence("Ctrl+4"), self)
+        self.shortcut_cmd4.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(3))  # 设置
+
+        self.shortcut_cmd5 = QtWidgets.QShortcut(QKeySequence("Ctrl+5"), self)
+        self.shortcut_cmd5.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(4))  # 关于
+
+        # 输出调试信息：快捷键已设置
+        print("快捷键已设置: Ctrl+1, Ctrl+2, Ctrl+3, Ctrl+4, Ctrl+5")
+        if hasattr(self, 'logger'):
+            self.logger.info("快捷键已设置: Ctrl+1, Ctrl+2, Ctrl+3, Ctrl+4, Ctrl+5")
+
+    def setup_logger(self):
+        """设置日志系统"""
+        try:
+            # 创建日志目录
+            if not os.path.exists("Log"):
+                os.makedirs("Log")
+
+            # 创建日志文件名
+            log_filename = f"Log/app_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.log"
+
+            # 配置日志格式
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(log_filename, encoding='utf-8'),
+                    logging.StreamHandler()  # 同时输出到控制台
+                ]
+            )
+
+            # 创建 logger
+            self.logger = logging.getLogger('AVDC')
+            self.logger.info("日志系统初始化完成")
+            self.logger.info(f"日志文件: {log_filename}")
+
+            # 记录系统信息
+            self.logger.info(f"Python版本: {sys.version}")
+            try:
+                self.logger.info(f"PyQt版本: {QtWidgets.qVersion()}")
+            except:
+                self.logger.info("PyQt版本: 获取版本号失败")
+
+        except Exception as e:
+            print(f"初始化日志系统失败: {str(e)}")
+            # 如果日志系统失败，创建一个简单的备用logger
+            self.logger = logging.getLogger('AVDC_Fallback')
+            self.logger.addHandler(logging.StreamHandler())
+            self.logger.error(f"日志系统初始化失败: {str(e)}")
+
+    def log_error(self, error, context=""):
+        """记录错误日志"""
+        error_msg = f"错误: {str(error)}"
+        if context:
+            error_msg += f" | 上下文: {context}"
+        self.logger.error(error_msg)
+        self.logger.debug(f"错误详情:\n{traceback.format_exc()}")
+
+    def log_info(self, message):
+        """记录信息日志"""
+        self.logger.info(message)
+
     # ========================================================================按钮点击事件
     def Init(self):
         self.Ui.treeWidget_number.clicked.connect(self.treeWidget_number_clicked)
@@ -184,9 +261,11 @@ class AVDC_Main_UI(QMainWindow):
         self.progressBarValue.emit(int(0))
         try:
             self.count_claw += 1
+            self.log_info(f"开始第 {self.count_claw} 次刮削")
             t = threading.Thread(target=self.AVDC_Main)
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
+            self.log_error(error_info, "pushButton_start_cap_clicked")
             self.add_text_main(
                 "[-]Error in pushButton_start_cap_clicked: " + str(error_info)
             )
@@ -1026,10 +1105,15 @@ class AVDC_Main_UI(QMainWindow):
                 self.log_txt.write((str(text) + "\n").encode("utf8"))
             self.Ui.textBrowser_log.append(text)
             self.Ui.textBrowser_log.moveCursor(QTextCursor.End)
+            # 记录到新的日志系统
+            if hasattr(self, 'logger'):
+                self.log_info(text)
         except Exception as error_info:
             self.Ui.textBrowser_log.append(
                 "[-]Error in add_text_main" + str(error_info)
             )
+            if hasattr(self, 'logger'):
+                self.log_error(error_info, "add_text_main")
 
     # ========================================================================移动到失败文件夹
     def moveFailedFolder(self, filepath, failed_folder):
