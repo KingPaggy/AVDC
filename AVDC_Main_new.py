@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 import threading
 import json
+import logging
+import logging.handlers
+import traceback
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QPixmap, QTextCursor, QIcon
+from PyQt5.QtGui import QPixmap, QTextCursor, QIcon, QKeySequence
 from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication, QShortcut
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import pyqtSignal, QT_VERSION_STR
 import sys
 import time
 import os.path
@@ -14,8 +16,6 @@ import requests
 import shutil
 import base64
 import re
-import logging
-import traceback
 from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
 import os
@@ -33,11 +33,55 @@ from Function.Function import (
 from Function.getHtml import get_html, get_proxies, get_config
 
 
+# ======================================================================== 自定义日志处理器
+class UIHandler(logging.Handler):
+    """将日志输出到UI界面的处理器"""
+    def __init__(self, text_browser):
+        super().__init__()
+        self.text_browser = text_browser
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            # 使用 Qt 的信号机制安全地更新 UI
+            from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
+            QMetaObject.invokeMethod(self.text_browser, "append",
+                                  Qt.QueuedConnection,
+                                  Q_ARG(str, msg))
+        except Exception:
+            self.handleError(record)
+
+
+class ToggleableFileHandler(logging.FileHandler):
+    """支持动态开关的文件处理器"""
+    def __init__(self, filename, mode='a', encoding=None, delay=False):
+        super().__init__(filename, mode, encoding, delay)
+        self.enabled = True
+        self._file_handle = None
+
+    def emit(self, record):
+        if not self.enabled:
+            return
+        return super().emit(record)
+
+    def set_enabled(self, enabled):
+        """启用或禁用文件输出"""
+        if self.enabled == enabled:
+            return
+        self.enabled = enabled
+        if enabled and self.stream is None:
+            self.stream = self._open()
+
+
 class AVDC_Main_UI(QMainWindow):
     progressBarValue = pyqtSignal(int)  # 进度条信号量
 
     def __init__(self):
         super().__init__()
+        # 初始化UI
+        self.Ui = Ui_MainWindow()
+        self.Ui.setupUi(self)
+
         # 初始化需要的变量
         self.version = "3.964"
         self.m_drag = False
@@ -46,29 +90,13 @@ class AVDC_Main_UI(QMainWindow):
         self.select_file_path = ""
         self.json_array = {}
 
-        # 初始化UI
-        self.Ui = Ui_MainWindow()
-        self.Ui.setupUi(self)
-
-        # 初始化日志系统
+        # 初始化日志系统（需在 Init_Ui 之前完成）
         self.setup_logger()
+
         self.Init_Ui()
         self.Init()
         self.Load_Config()
         self.show_version()
-
-        # ========================================================================打开日志文件
-        if self.Ui.radioButton_9.isChecked():  # radioButton_log_on
-            if not os.path.exists("Log"):
-                os.makedirs("Log")
-            log_name = (
-                "Log/" + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) + ".txt"
-            )
-            self.log_txt = open(log_name, "wb", buffering=0)
-            self.add_text_main("[-]Created log file: " + log_name)
-            self.add_text_main(
-                "[*]======================================================"
-            )
         self.show()
 
     def Init_Ui(self):
@@ -129,7 +157,7 @@ class AVDC_Main_UI(QMainWindow):
         self.progressBarValue.connect(self.set_processbar)
         self.Ui.progressBar_avdc.setTextVisible(True)
 
-        # 设置快捷键：Ctrl+1,2,3,4,5 切换主标签页（使用 Ctrl 以提高兼容性）
+        # 设置快捷键：Ctrl+1,2,3,4,5 切换主标签页
         self.shortcut_cmd1 = QtWidgets.QShortcut(QKeySequence("Ctrl+1"), self)
         self.shortcut_cmd1.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(0))  # 主页
 
@@ -145,57 +173,111 @@ class AVDC_Main_UI(QMainWindow):
         self.shortcut_cmd5 = QtWidgets.QShortcut(QKeySequence("Ctrl+5"), self)
         self.shortcut_cmd5.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(4))  # 关于
 
-        # 输出调试信息：快捷键已设置
-        print("快捷键已设置: Ctrl+1, Ctrl+2, Ctrl+3, Ctrl+4, Ctrl+5")
-        if hasattr(self, 'logger'):
-            self.logger.info("快捷键已设置: Ctrl+1, Ctrl+2, Ctrl+3, Ctrl+4, Ctrl+5")
+    def cleanup_old_logs(self, max_keep=100):
+        """清理旧日志文件，仅保留最新的 max_keep 个"""
+        log_dir = "Log"
+        if not os.path.exists(log_dir):
+            return
+
+        try:
+            # 获取所有日志文件
+            log_files = []
+            for filename in os.listdir(log_dir):
+                if filename.startswith("app_") and filename.endswith(".log"):
+                    filepath = os.path.join(log_dir, filename)
+                    # 获取文件修改时间
+                    mtime = os.path.getmtime(filepath)
+                    log_files.append((filepath, mtime))
+
+            # 按修改时间排序（最新的在前面）
+            log_files.sort(key=lambda x: x[1], reverse=True)
+
+            # 删除超出限制的旧日志文件
+            if len(log_files) > max_keep:
+                files_to_delete = log_files[max_keep:]
+                deleted_count = 0
+                for filepath, _ in files_to_delete:
+                    try:
+                        os.remove(filepath)
+                        deleted_count += 1
+                    except Exception as e:
+                        print(f"删除日志文件失败: {filepath}, 错误: {str(e)}")
+
+                if deleted_count > 0:
+                    print(f"已清理 {deleted_count} 个旧日志文件")
+
+        except Exception as e:
+            print(f"清理旧日志文件失败: {str(e)}")
 
     def setup_logger(self):
-        """设置日志系统"""
+        """设置统一的日志系统"""
         try:
             # 创建日志目录
             if not os.path.exists("Log"):
                 os.makedirs("Log")
 
-            # 创建日志文件名
-            log_filename = f"Log/app_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.log"
-
-            # 配置日志格式
-            logging.basicConfig(
-                level=logging.DEBUG,
-                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                handlers=[
-                    logging.FileHandler(log_filename, encoding='utf-8'),
-                    logging.StreamHandler()  # 同时输出到控制台
-                ]
-            )
+            # 清理旧日志文件，仅保留最新的100个
+            self.cleanup_old_logs(max_keep=100)
 
             # 创建 logger
             self.logger = logging.getLogger('AVDC')
-            self.logger.info("日志系统初始化完成")
-            self.logger.info(f"日志文件: {log_filename}")
+            self.logger.setLevel(logging.DEBUG)
+            self.logger.handlers.clear()  # 清除可能存在的旧处理器
 
-            # 记录系统信息
-            self.logger.info(f"Python版本: {sys.version}")
-            try:
-                self.logger.info(f"PyQt版本: {QtWidgets.qVersion()}")
-            except:
-                self.logger.info("PyQt版本: 获取版本号失败")
+            # 设置日志格式
+            formatter = logging.Formatter('%(message)s')
+
+            # 1. 控制台处理器
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
+            console_handler.setFormatter(formatter)
+            self.logger.addHandler(console_handler)
+
+            # 2. UI 界面处理器（输出到 textBrowser_log）
+            ui_handler = UIHandler(self.Ui.textBrowser_log)
+            ui_handler.setLevel(logging.INFO)
+            ui_handler.setFormatter(formatter)
+            self.logger.addHandler(ui_handler)
+
+            # 3. 文件处理器（可动态开关）
+            log_filename = f"Log/app_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.log"
+            self.log_file_handler = ToggleableFileHandler(log_filename, encoding='utf-8')
+            self.log_file_handler.setLevel(logging.DEBUG)
+            self.log_file_handler.setFormatter(formatter)
+
+            # 根据配置启用/禁用文件日志
+            file_log_enabled = self.Ui.radioButton_9.isChecked()
+            self.log_file_handler.set_enabled(file_log_enabled)
+
+            self.logger.addHandler(self.log_file_handler)
+
+            self.logger.info("[*]======================== AVDC ========================")
+            self.logger.info(f"[*]日志系统初始化完成")
+            self.logger.info(f"[*]日志文件: {log_filename}")
+            self.logger.info(f"[*]文件日志: {'启用' if file_log_enabled else '禁用'}")
+            self.logger.info(f"[*]Python版本: {sys.version.split()[0]}")
+            self.logger.info(f"[*]PyQt版本: {QT_VERSION_STR}")
+            self.logger.info("[*]======================================================")
 
         except Exception as e:
             print(f"初始化日志系统失败: {str(e)}")
-            # 如果日志系统失败，创建一个简单的备用logger
+            # 创建备用 logger
             self.logger = logging.getLogger('AVDC_Fallback')
+            self.logger.setLevel(logging.ERROR)
             self.logger.addHandler(logging.StreamHandler())
             self.logger.error(f"日志系统初始化失败: {str(e)}")
 
+    def toggle_file_logging(self, enabled):
+        """切换文件日志开关"""
+        if hasattr(self, 'log_file_handler'):
+            self.log_file_handler.set_enabled(enabled)
+            status = '启用' if enabled else '禁用'
+            self.logger.info(f"[*]文件日志已{status}")
+
     def log_error(self, error, context=""):
         """记录错误日志"""
-        error_msg = f"错误: {str(error)}"
-        if context:
-            error_msg += f" | 上下文: {context}"
+        error_msg = f"[-]Error{': ' + context if context else ': '} {str(error)}"
         self.logger.error(error_msg)
-        self.logger.debug(f"错误详情:\n{traceback.format_exc()}")
 
     def log_info(self, message):
         """记录信息日志"""
@@ -225,15 +307,9 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================显示版本号
     def show_version(self):
-        self.Ui.textBrowser_log.append(
-            "[*]======================== AVDC ========================"
-        )
-        self.Ui.textBrowser_log.append(
-            "[*]                     Version " + self.version
-        )
-        self.Ui.textBrowser_log.append(
-            "[*]======================================================"
-        )
+        self.logger.info("[*]======================== AVDC ========================")
+        self.logger.info(f"[*]                     Version {self.version}")
+        self.logger.info("[*]======================================================")
 
     def lcdNumber_timeout_change(self):
         timeout = self.Ui.horizontalSlider_2.value()
@@ -261,7 +337,7 @@ class AVDC_Main_UI(QMainWindow):
         self.progressBarValue.emit(int(0))
         try:
             self.count_claw += 1
-            self.log_info(f"开始第 {self.count_claw} 次刮削")
+            self.logger.info(f"[*]开始第 {self.count_claw} 次刮削")
             t = threading.Thread(target=self.AVDC_Main)
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
@@ -1099,21 +1175,13 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================语句添加到日志框
     def add_text_main(self, text):
+        """统一的日志输出接口 - 输出到界面、文件和控制台"""
         try:
-            time.sleep(0.1)
-            if self.Ui.radioButton_9.isChecked():
-                self.log_txt.write((str(text) + "\n").encode("utf8"))
-            self.Ui.textBrowser_log.append(text)
-            self.Ui.textBrowser_log.moveCursor(QTextCursor.End)
-            # 记录到新的日志系统
+            # 使用统一的日志系统
             if hasattr(self, 'logger'):
-                self.log_info(text)
+                self.logger.info(str(text))
         except Exception as error_info:
-            self.Ui.textBrowser_log.append(
-                "[-]Error in add_text_main" + str(error_info)
-            )
-            if hasattr(self, 'logger'):
-                self.log_error(error_info, "add_text_main")
+            print(f"[-]Error in add_text_main: {str(error_info)}")
 
     # ========================================================================移动到失败文件夹
     def moveFailedFolder(self, filepath, failed_folder):
