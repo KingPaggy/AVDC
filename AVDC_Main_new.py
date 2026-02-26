@@ -253,6 +253,7 @@ class AVDC_Main_UI(QMainWindow):
 
             self.logger.info("[*]======================== AVDC ========================")
             self.logger.info(f"[*]日志系统初始化完成")
+            self.logger.info(f"[*]工作目录: {os.getcwd()}")
             self.logger.info(f"[*]日志文件: {log_filename}")
             self.logger.info(f"[*]文件日志: {'启用' if file_log_enabled else '禁用'}")
             self.logger.info(f"[*]Python版本: {sys.version.split()[0]}")
@@ -1806,25 +1807,7 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================检查更新
     def UpdateCheck(self):
-        if self.Ui.radioButton_7.isChecked():
-            self.add_text_main("[!]Update Checking!")
-            html2 = get_html(
-                "https://raw.githubusercontent.com/moyy996/AVDC/master/update_check.json"
-            )
-            if html2 == "ProxyError":
-                return "ProxyError"
-            html = json.loads(str(html2))
-            if float(self.version) < float(html["version"]):
-                self.add_text_main(
-                    "[*]                  * New update " + html["version"] + " *"
-                )
-                self.add_text_main("[*]                     ↓ Download ↓")
-                self.add_text_main("[*] " + html["download"])
-            else:
-                self.add_text_main("[!]No Newer Version Available!")
-            self.add_text_main(
-                "[*]======================================================"
-            )
+        # 更新检查已禁用
         return "True"
 
     # ========================================================================新建失败输出文件夹
