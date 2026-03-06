@@ -8,6 +8,26 @@ from configparser import ConfigParser
 from Getter import avsox, javbus, javdb, mgstage, dmm, jav321, xcity
 
 
+RE_CD = re.compile(r"-CD\d+", re.IGNORECASE)
+RE_DATE = re.compile(r"-\d{4}-\d{1,2}-\d{1,2}|\d{4}-\d{1,2}-\d{1,2}-")
+RE_EUROPEAN = re.compile(r"^\D+\.\d{2}\.\d{2}\.\d{2}")
+RE_EUROPEAN_NUM = re.compile(r"\D+\.\d{2}\.\d{2}\.\d{2}")
+RE_XXX_AV = re.compile(r"XXX-AV-\d{4,}", re.IGNORECASE)
+RE_FC2 = re.compile(r"FC2-\d{5,}", re.IGNORECASE)
+RE_ALPHA_DASH_NUM = re.compile(r"[a-zA-Z]+-\d+")
+RE_WORD_DASH_NUM = re.compile(r"\w+-\d+")
+RE_NUM_ALPHA_DASH = re.compile(r"\d+[a-zA-Z]+-\d+")
+RE_ALPHA_DASH_ALPHA_NUM = re.compile(r"[a-zA-Z]+-[a-zA-Z]\d+")
+RE_NUM_DASH_ALPHA = re.compile(r"\d+-[a-zA-Z]+")
+RE_NUM_DASH = re.compile(r"\d+-\d+")
+RE_NUM_UNDER = re.compile(r"\d+_\d+")
+RE_DMM_STYLE = re.compile(r"\D{2,}00\d{3,}")
+RE_ALL_NUM = re.compile(r"\d+")
+RE_ALL_ALPHA = re.compile(r"\D+")
+RE_ESCAPE_SPLIT = re.compile(r"[,，]")
+RE_HIDDEN_FILE = re.compile(r"^\..+")
+
+
 # ========================================================================获取config
 def get_config():
     config_file = ""
@@ -60,7 +80,7 @@ def escapePath(path, Config):  # Remove escape literals
 # ========================================================================获取视频列表
 def movie_lists(escape_folder, movie_type, movie_path):
     if escape_folder != "":
-        escape_folder = re.split("[,，]", escape_folder)
+        escape_folder = RE_ESCAPE_SPLIT.split(escape_folder)
     total = []
     file_type = movie_type.split("|")
     file_root = movie_path.replace("\\", "/")
@@ -76,7 +96,7 @@ def movie_lists(escape_folder, movie_type, movie_path):
         for f in files:
             file_type_current = os.path.splitext(f)[1]
             file_name = os.path.splitext(f)[0]
-            if re.search(r"^\..+", file_name):
+            if RE_HIDDEN_FILE.search(file_name):
                 continue
             if file_type_current in file_type:
                 path = root + "/" + f
@@ -90,56 +110,57 @@ def movie_lists(escape_folder, movie_type, movie_path):
 def getNumber(filepath, escape_string):
     filepath = filepath.replace("-C.", ".").replace("-c.", ".")
     filename = os.path.splitext(filepath.split("/")[-1])[0]
-    escape_string_list = re.split("[,，]", escape_string)
+    escape_string_list = RE_ESCAPE_SPLIT.split(escape_string)
     for string in escape_string_list:
         if string in filename:
             filename = filename.replace(string, "")
-    part = ""
-    if re.search(r"-CD\d+", filename):
-        part = re.findall(r"-CD\d+", filename)[0]
-    if re.search(r"-cd\d+", filename):
-        part = re.findall(r"-cd\d+", filename)[0]
+    part = RE_CD.findall(filename)
+    if part:
+        part = part[0]
+    else:
+        part = ""
     filename = filename.replace(part, "")
-    filename = str(re.sub(r"-\d{4}-\d{1,2}-\d{1,2}", "", filename))  # 去除文件名中时间
-    filename = str(re.sub(r"\d{4}-\d{1,2}-\d{1,2}-", "", filename))  # 去除文件名中时间
-    if re.search(
-        r"^\D+\.\d{2}\.\d{2}\.\d{2}", filename
-    ):  # 提取欧美番号 sexart.11.11.11
-        try:
-            file_number = re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", filename).group()
-            return file_number
-        except Exception:
-            return os.path.splitext(filepath.split("/")[-1])[0]
-    elif re.search(r"XXX-AV-\d{4,}", filename.upper()):  # 提取xxx-av-11111
-        file_number = re.search(r"XXX-AV-\d{4,}", filename.upper()).group()
-        return file_number
-    elif "-" in filename or "_" in filename:  # 普通提取番号 主要处理包含减号-和_的番号
+    filename = RE_DATE.sub("", filename)
+    if RE_EUROPEAN.search(filename):
+        match = RE_EUROPEAN_NUM.search(filename)
+        if match:
+            return match.group()
+        return os.path.splitext(filepath.split("/")[-1])[0]
+    elif RE_XXX_AV.search(filename.upper()):
+        return RE_XXX_AV.search(filename.upper()).group()
+    elif "-" in filename or "_" in filename:
         if "FC2" or "fc2" in filename:
             filename = filename.upper().replace("PPV", "").replace("--", "-")
-        if re.search(r"FC2-\d{5,}", filename):  # 提取类似fc2-111111番号
-            file_number = re.search(r"FC2-\d{5,}", filename).group()
-        elif re.search(r"[a-zA-Z]+-\d+", filename):  # 提取类似mkbd-120番号
-            file_number = re.search(r"\w+-\d+", filename).group()
-        elif re.search(r"\d+[a-zA-Z]+-\d+", filename):  # 提取类似259luxu-1111番号
-            file_number = re.search(r"\d+[a-zA-Z]+-\d+", filename).group()
-        elif re.search(r"[a-zA-Z]+-[a-zA-Z]\d+", filename):  # 提取类似mkbd-s120番号
-            file_number = re.search(r"[a-zA-Z]+-[a-zA-Z]\d+", filename).group()
-        elif re.search(r"\d+-[a-zA-Z]+", filename):  # 提取类似 111111-MMMM 番号
-            file_number = re.search(r"\d+-[a-zA-Z]+", filename).group()
-        elif re.search(r"\d+-\d+", filename):  # 提取类似 111111-000 番号
-            file_number = re.search(r"\d+-\d+", filename).group()
-        elif re.search(r"\d+_\d+", filename):  # 提取类似 111111_000 番号
-            file_number = re.search(r"\d+_\d+", filename).group()
-        else:
-            file_number = filename
-        return file_number
-    else:  # 提取不含减号-的番号，FANZA CID 保留ssni00644，将MIDE139改成MIDE-139
+        fc2_match = RE_FC2.search(filename)
+        if fc2_match:
+            return fc2_match.group()
+        match = RE_NUM_ALPHA_DASH.search(filename)
+        if match:
+            return match.group()
+        match = RE_ALPHA_DASH_NUM.search(filename)
+        if match:
+            return match.group()
+        match = RE_ALPHA_DASH_ALPHA_NUM.search(filename)
+        if match:
+            return match.group()
+        match = RE_NUM_DASH_ALPHA.search(filename)
+        if match:
+            return match.group()
+        match = RE_NUM_DASH.search(filename)
+        if match:
+            return match.group()
+        match = RE_NUM_UNDER.search(filename)
+        if match:
+            return match.group()
+        return filename
+    else:
         try:
             file_number = os.path.splitext(filename.split("/")[-1])[0]
-            find_num = re.findall(r"\d+", file_number)[0]
-            find_char = re.findall(r"\D+", file_number)[0]
-            if len(find_num) <= 4 and len(find_char) > 1:
-                file_number = find_char + "-" + find_num
+            find_num = RE_ALL_NUM.findall(file_number)
+            find_char = RE_ALL_ALPHA.findall(file_number)
+            if find_num and find_char:
+                if len(find_num[0]) <= 4 and len(find_char[0]) > 1:
+                    file_number = find_char[0] + "-" + find_num[0]
             return file_number
         except Exception:
             return os.path.splitext(filepath.split("/")[-1])[0]
