@@ -12,9 +12,7 @@ from PyQt5.QtCore import pyqtSignal, QT_VERSION_STR
 import sys
 import time
 import os.path
-import requests
 import shutil
-import base64
 import re
 from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
@@ -22,14 +20,14 @@ import os
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
 from core.config_io import save_config
-from core.file_utils import movie_lists, escapePath, getNumber, check_pic
+from core.file_utils import movie_lists, escapePath, getNumber
 from core.metadata import get_info
 from core.scrape_pipeline import getDataFromJSON
 from application.batch_service import BatchCallbacks, BatchWorkflowService
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from application.file_system_service import FileSystemService
 from application.remote_service import RemoteService
-from Function.getHtml import get_html, get_proxies, get_config
+from Function.getHtml import get_html
 
 
 # ======================================================================== 自定义日志处理器
@@ -1166,48 +1164,16 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================下载剧照
     def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
-        if len(json_data["extrafanart"]) == 0:
-            json_data["extrafanart"] = ""
-        if self.Ui.radioButton_13.isChecked() and str(json_data["extrafanart"]) != "":
-            self.add_text_main("[+]ExtraFanart Downloading!")
-            extrafanart_folder = self.Ui.lineEdit_10.text()
-            if extrafanart_folder == "":
-                extrafanart_folder = "extrafanart"
-            extrafanart_path = path + "/" + extrafanart_folder
-            extrafanart_list = json_data["extrafanart"]
-            if not os.path.exists(extrafanart_path):
-                os.makedirs(extrafanart_path)
-            extrafanart_count = 0
-            for extrafanart_url in extrafanart_list:
-                extrafanart_count += 1
-                if not os.path.exists(
-                    extrafanart_path + "/fanart" + str(extrafanart_count) + ".jpg"
-                ):
-                    i = 1
-                    while i <= int(Config["proxy"]["retry"]):
-                        self.DownloadFileWithFilename(
-                            extrafanart_url,
-                            "fanart" + str(extrafanart_count) + ".jpg",
-                            extrafanart_path,
-                            Config,
-                            filepath,
-                            failed_folder,
-                        )
-                        if not check_pic(
-                            extrafanart_path
-                            + "/fanart"
-                            + str(extrafanart_count)
-                            + ".jpg"
-                        ):
-                            print(
-                                "[!]Image Download Failed! Trying again. "
-                                + str(i)
-                                + "/"
-                                + Config["proxy"]["retry"]
-                            )
-                            i = i + 1
-                        else:
-                            break
+        self.remote_service.extrafanart_download(
+            json_data,
+            path,
+            Config,
+            filepath,
+            failed_folder,
+            self.Ui.lineEdit_10.text(),
+            self.add_text_main,
+            self.moveFailedFolder,
+        )
 
     # ========================================================================打印NFO
     def PrintFiles(
@@ -1338,19 +1304,6 @@ class AVDC_Main_UI(QMainWindow):
         ]
         img_pic.paste(img_subt, (pos[count]["x"], pos[count]["y"]), mask=a)
         img_pic.save(pic_path, quality=95)
-
-    # ========================================================================下载剧照
-    def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
-        self.remote_service.extrafanart_download(
-            json_data,
-            path,
-            Config,
-            filepath,
-            failed_folder,
-            self.Ui.lineEdit_10.text(),
-            self.add_text_main,
-            self.moveFailedFolder,
-        )
 
     # ========================================================================获取分集序号
     def get_part(self, filepath, failed_folder):
