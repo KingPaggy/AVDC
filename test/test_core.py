@@ -798,6 +798,25 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         self.assertEqual(result["website"], "timeout")
         self.assertEqual(result["release"], "2024/01/01")
 
+    def test_all_sites_timeout_returns_timeout_result(self):
+        """所有站点返回 timeout 时短路返回"""
+        call_order = []
+        responses = {
+            "javbus.main": {**self._movie_payload(title="ok"), "website": "timeout"},
+            "jav321.main": {**self._movie_payload(title="ok"), "website": "timeout"},
+            "xcity.main": {**self._movie_payload(title="ok"), "website": "timeout"},
+            "javdb.main": {**self._movie_payload(title="ok"), "website": "timeout"},
+            "avsox.main": {**self._movie_payload(title="ok"), "website": "timeout"},
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+
+        # Should try all sites and return last result
+        self.assertEqual(result["website"], "timeout")
+        self.assertEqual(result["title"], "ok")
+
     def test_mode6_empty_title_short_circuits_postprocessing(self):
         call_order = []
         responses = {

@@ -38,7 +38,7 @@
       "issue": "所有站点返回 timeout 时短路返回",
       "location": "test/test_core.py - ScrapePipelineDispatchTests",
       "description": "测试 chain 中所有站点都返回 website=timeout 时的行为",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 6,
