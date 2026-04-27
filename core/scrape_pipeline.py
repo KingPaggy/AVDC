@@ -2,50 +2,68 @@
 # -*- coding: utf-8 -*-
 import json
 import re
-
-from Getter import avsox, javbus, javdb, mgstage, dmm, jav321, xcity
 from core.file_utils import getDataState, is_uncensored
+
+_SCRAPER_MODULES = None
+
+
+def get_scraper_modules():
+    global _SCRAPER_MODULES
+    if _SCRAPER_MODULES is None:
+        from Getter import avsox, javbus, javdb, mgstage, dmm, jav321, xcity
+
+        _SCRAPER_MODULES = {
+            "avsox": avsox,
+            "javbus": javbus,
+            "javdb": javdb,
+            "mgstage": mgstage,
+            "dmm": dmm,
+            "jav321": jav321,
+            "xcity": xcity,
+        }
+    return _SCRAPER_MODULES
 
 
 def getDataFromJSON(file_number, config, mode, appoint_url):
+    scrapers = get_scraper_modules()
     isuncensored = is_uncensored(file_number)
     json_data = {}
     if mode == 1:
         if isuncensored:
-            json_data = json.loads(javbus.main_uncensored(file_number, appoint_url))
+            json_data = json.loads(scrapers["javbus"].main_uncensored(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(javdb.main(file_number, appoint_url, True))
+                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url, True))
             if getDataState(json_data) == 0 and "HEYZO" in file_number.upper():
-                json_data = json.loads(jav321.main(file_number, appoint_url, True))
+                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url, True))
             if getDataState(json_data) == 0:
-                json_data = json.loads(avsox.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
         elif re.match(r"\d+[a-zA-Z]+-\d+", file_number) or "SIRO" in file_number.upper():
-            json_data = json.loads(mgstage.main(file_number, appoint_url))
+            json_data = json.loads(scrapers["mgstage"].main(file_number, appoint_url))
             file_number = re.search(r"[a-zA-Z]+-\d+", file_number).group()
             if getDataState(json_data) == 0:
-                json_data = json.loads(jav321.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(javdb.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(javbus.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
         elif "FC2" in file_number.upper():
-            json_data = json.loads(javdb.main(file_number, appoint_url))
+            json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
         elif re.match(r"\D{2,}00\d{3,}", file_number) and "-" not in file_number and "_" not in file_number:
-            json_data = json.loads(dmm.main(file_number, appoint_url))
+            json_data = json.loads(scrapers["dmm"].main(file_number, appoint_url))
         elif re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(javdb.main_us(file_number, appoint_url))
+            json_data = json.loads(scrapers["javdb"].main_us(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(javbus.main_us(file_number, appoint_url))
+                json_data = json.loads(scrapers["javbus"].main_us(file_number, appoint_url))
         else:
-            json_data = json.loads(javbus.main(file_number, appoint_url))
+            json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(jav321.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(xcity.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["xcity"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(javdb.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
             if getDataState(json_data) == 0:
-                json_data = json.loads(avsox.main(file_number, appoint_url))
+                json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
     elif re.match(r"\D{2,}00\d{3,}", file_number) and mode != 7:
         json_data = {
             "title": "",
@@ -53,27 +71,27 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
             "website": "",
         }
     elif mode == 2:
-        json_data = json.loads(mgstage.main(file_number, appoint_url))
+        json_data = json.loads(scrapers["mgstage"].main(file_number, appoint_url))
     elif mode == 3:
         if isuncensored:
-            json_data = json.loads(javbus.main_uncensored(file_number, appoint_url))
+            json_data = json.loads(scrapers["javbus"].main_uncensored(file_number, appoint_url))
         elif re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(javbus.main_us(file_number, appoint_url))
+            json_data = json.loads(scrapers["javbus"].main_us(file_number, appoint_url))
         else:
-            json_data = json.loads(javbus.main(file_number, appoint_url))
+            json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
     elif mode == 4:
-        json_data = json.loads(jav321.main(file_number, isuncensored, appoint_url))
+        json_data = json.loads(scrapers["jav321"].main(file_number, isuncensored, appoint_url))
     elif mode == 5:
         if re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(javdb.main_us(file_number, appoint_url))
+            json_data = json.loads(scrapers["javdb"].main_us(file_number, appoint_url))
         else:
-            json_data = json.loads(javdb.main(file_number, appoint_url, isuncensored))
+            json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url, isuncensored))
     elif mode == 6:
-        json_data = json.loads(avsox.main(file_number, appoint_url))
+        json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
     elif mode == 7:
-        json_data = json.loads(xcity.main(file_number, appoint_url))
+        json_data = json.loads(scrapers["xcity"].main(file_number, appoint_url))
     elif mode == 8:
-        json_data = json.loads(dmm.main(file_number, appoint_url))
+        json_data = json.loads(scrapers["dmm"].main(file_number, appoint_url))
 
     if json_data["website"] == "timeout":
         return json_data
@@ -127,4 +145,3 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
     json_data["naming_file"] = naming_file
     json_data["folder_name"] = folder_name
     return json_data
-

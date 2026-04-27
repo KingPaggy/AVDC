@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
+import json
 import tempfile
 import unittest
 from configparser import ConfigParser
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from core.config_io import get_config, get_config_file, save_config
 from core.file_utils import escapePath, getNumber, getDataState, is_uncensored, movie_lists
 from core.metadata import get_info
+import core.scrape_pipeline as scrape_pipeline
 
 
 class CoreFileUtilsTests(unittest.TestCase):
@@ -152,6 +156,172 @@ class CoreMetadataTests(unittest.TestCase):
         self.assertEqual(result[1], "unknown")
         self.assertEqual(result[2], "unknown")
         self.assertEqual(result[14], "unknown")
+
+
+class ScrapePipelineDispatchTests(unittest.TestCase):
+    def setUp(self):
+        self.config = ConfigParser()
+        self.config.read_dict(
+            {
+                "Name_Rule": {
+                    "naming_media": "number",
+                    "naming_file": "title",
+                    "folder_name": "title",
+                }
+            }
+        )
+
+    def _movie_payload(self, title="Movie"):
+        return {
+            "title": title,
+            "actor": "[]",
+            "website": "site",
+            "number": "ABP-123",
+            "release": "2024/01/01",
+            "studio": "Studio",
+            "publisher": "Publisher",
+            "year": "2024",
+            "outline": "Outline",
+            "runtime": "120",
+            "director": "Director",
+            "actor_photo": {},
+            "tag": "[]",
+            "cover": "cover.jpg",
+            "series": "Series",
+            "cover_small": "thumb.jpg",
+        }
+
+    def _fake_scrapers(self, responses, call_order):
+        def fake_factory(name):
+            def fake(*args):
+                call_order.append((name, args))
+                payload = responses.get(name, self._movie_payload())
+                return json.dumps(payload)
+
+            return fake
+
+        return {
+            "javbus": SimpleNamespace(
+                main=fake_factory("javbus.main"),
+                main_uncensored=fake_factory("javbus.main_uncensored"),
+                main_us=fake_factory("javbus.main_us"),
+            ),
+            "javdb": SimpleNamespace(
+                main=fake_factory("javdb.main"),
+                main_uncensored=fake_factory("javdb.main_uncensored"),
+                main_us=fake_factory("javdb.main_us"),
+            ),
+            "jav321": SimpleNamespace(
+                main=fake_factory("jav321.main"),
+                main_uncensored=fake_factory("jav321.main_uncensored"),
+                main_us=fake_factory("jav321.main_us"),
+            ),
+            "avsox": SimpleNamespace(
+                main=fake_factory("avsox.main"),
+                main_uncensored=fake_factory("avsox.main_uncensored"),
+                main_us=fake_factory("avsox.main_us"),
+            ),
+            "mgstage": SimpleNamespace(
+                main=fake_factory("mgstage.main"),
+                main_uncensored=fake_factory("mgstage.main_uncensored"),
+                main_us=fake_factory("mgstage.main_us"),
+            ),
+            "dmm": SimpleNamespace(
+                main=fake_factory("dmm.main"),
+                main_uncensored=fake_factory("dmm.main_uncensored"),
+                main_us=fake_factory("dmm.main_us"),
+            ),
+            "xcity": SimpleNamespace(
+                main=fake_factory("xcity.main"),
+                main_uncensored=fake_factory("xcity.main_uncensored"),
+                main_us=fake_factory("xcity.main_us"),
+            ),
+        }
+
+    def test_mode1_uncensored_tries_expected_chain(self):
+        call_order = []
+        responses = {
+            "javbus.main_uncensored": self._movie_payload(title=""),
+            "javdb.main": self._movie_payload(title=""),
+            "jav321.main": self._movie_payload(title=""),
+            "avsox.main": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
+            patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 1, "")
+
+        self.assertEqual(
+            [name for name, _ in call_order],
+            ["javbus.main_uncensored", "javdb.main", "jav321.main", "avsox.main"],
+        )
+        self.assertEqual(result["title"], "ok")
+
+    def test_mode1_mgstage_chain_uses_normalized_number(self):
+        call_order = []
+        responses = {
+            "mgstage.main": self._movie_payload(title=""),
+            "jav321.main": self._movie_payload(title=""),
+            "javdb.main": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("259LUXU-1111", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["mgstage.main", "jav321.main", "javdb.main"])
+        self.assertEqual(call_order[1][1][0], "LUXU-1111")
+        self.assertEqual(result["title"], "ok")
+
+    def test_mode1_fc2_short_circuits_to_javdb(self):
+        call_order = []
+        responses = {"javdb.main": self._movie_payload(title="ok")}
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("FC2-PPV-123456", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["javdb.main"])
+        self.assertEqual(result["title"], "ok")
+
+    def test_mode1_european_uses_us_chain(self):
+        call_order = []
+        responses = {
+            "javdb.main_us": self._movie_payload(title=""),
+            "javbus.main_us": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["javdb.main_us", "javbus.main_us"])
+        self.assertEqual(result["title"], "ok")
+
+    def test_mode4_passes_uncensored_flag_to_jav321(self):
+        call_order = []
+        responses = {"jav321.main": self._movie_payload(title="ok")}
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 4, "url")
+
+        self.assertEqual([name for name, _ in call_order], ["jav321.main"])
+        self.assertEqual(call_order[0][1], ("HEYZO-1234", True, "url"))
+        self.assertEqual(result["title"], "ok")
+
+    def test_mode8_routes_to_dmm(self):
+        call_order = []
+        responses = {"dmm.main": self._movie_payload(title="ok")}
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("MIDD-001", self.config, 8, "")
+
+        self.assertEqual([name for name, _ in call_order], ["dmm.main"])
+        self.assertEqual(result["title"], "ok")
 
 
 if __name__ == "__main__":
