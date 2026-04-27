@@ -228,11 +228,14 @@ class FileSystemService:
                 move_failed(filepath, failed_folder)
 
     def fix_size(self, path: str, naming_rule: str, log: Callable[[str], None]) -> None:
+        """Resize poster to 2:3 aspect ratio if needed. Skips if already correct."""
         try:
             poster_path = path + "/" + naming_rule + "-poster.jpg"
-            pic = Image.open(poster_path)
-            (width, height) = pic.size
-            if not 2 / 3 - 0.05 <= width / height <= 2 / 3 + 0.05:
+            with Image.open(poster_path) as pic:
+                width, height = pic.size
+                # Already close to 2:3 ratio, skip
+                if 2 / 3 - 0.05 <= width / height <= 2 / 3 + 0.05:
+                    return
                 fixed_pic = pic.resize((int(width), int(3 / 2 * width)))
                 fixed_pic = fixed_pic.filter(ImageFilter.GaussianBlur(radius=50))
                 fixed_pic.paste(pic, (0, int((3 / 2 * width - height) / 2)))

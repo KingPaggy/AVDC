@@ -43,7 +43,7 @@
       "issue": "日志打印混乱",
       "location": "全项目",
       "description": "print() 和 logger 混用，格式不统一。core/networking.py 中 print 调试信息应改为标准日志输出",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 6,

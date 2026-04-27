@@ -4,10 +4,9 @@ Contains reusable image operations: AI-based poster cropping, center cropping,
 and watermark compositing. All functions are pure — no UI dependencies.
 """
 import os
+import functools
 from PIL import Image
 from core.errors import ImageError
-import os
-from PIL import Image
 
 # Watermark mark image paths
 MARK_PATHS = {
@@ -89,14 +88,13 @@ def cut_poster_center(thumb_path: str, poster_path: str) -> bool:
     Returns True on success, False on failure.
     """
     try:
-        img = Image.open(thumb_path)
-        w, h = img.size
-        img2 = img.crop((w / 1.9, 0, w, h))
-        img2.save(poster_path)
-        img.close()
+        with Image.open(thumb_path) as img:
+            w, h = img.size
+            img2 = img.crop((w / 1.9, 0, w, h))
+            img2.save(poster_path)
         return True
-    except Exception as e:
-        raise ImageError(f"Center crop failed for {thumb_path}: {e}") from e
+    except Exception:
+        return False
 
 
 def cut_poster(thumb_path: str, poster_path: str, imagecut: int = 0) -> bool:
@@ -177,7 +175,7 @@ def _apply_single_mark(
     mark_path: str,
 ) -> None:
     """Composite a single watermark onto the image at the given corner position."""
-    img_subt = Image.open(mark_path)
+    img_subt = _load_mark_image(mark_path)
     scroll_high = int(img_pic.height / size)
     scroll_wide = int(scroll_high * img_subt.width / img_subt.height)
     img_subt = img_subt.resize((scroll_wide, scroll_high), Image.LANCZOS)
@@ -193,3 +191,9 @@ def _apply_single_mark(
 
     img_pic.paste(img_subt, (pos[pos_index]["x"], pos[pos_index]["y"]), mask=a)
     img_pic.save(pic_path, quality=95)
+
+
+@functools.lru_cache(maxsize=4)
+def _load_mark_image(mark_path: str) -> Image.Image:
+    """Load and cache watermark PNG images."""
+    return Image.open(mark_path).copy()
