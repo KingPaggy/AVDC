@@ -375,6 +375,8 @@ class CoreMetadataTests(unittest.TestCase):
 
 class ScrapePipelineDispatchTests(unittest.TestCase):
     def setUp(self):
+        from core.scraper_adapter import clear_cache
+        clear_cache()
         self.config = ConfigParser()
         self.config.read_dict(
             {
@@ -808,6 +810,8 @@ class RealNumberDispatchTests(unittest.TestCase):
     """Verify that real-world video numbers are dispatched to the correct scrapers."""
 
     def setUp(self):
+        from core.scraper_adapter import clear_cache
+        clear_cache()
         self.config = ConfigParser()
         self.config.read_dict(
             {

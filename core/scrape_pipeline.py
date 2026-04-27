@@ -4,6 +4,7 @@ import json
 import re
 from core.file_utils import getDataState, is_uncensored
 from core.errors import ScrapingError
+from core.scraper_adapter import clear_cache, cache_key, get_cached, set_cache
 from core.scraper_dispatcher import ScraperDispatcher
 
 _SCRAPER_MODULES = None
@@ -27,14 +28,12 @@ def get_scraper_modules():
 
 
 def _call_scraper(method_path, scrapers, number, appoint_url, isuncensored=False):
-    """Call a scraper method by its dotted path string."""
+    """Call a scraper method by its dotted path string. Returns raw JSON string."""
     module_name, method_name = method_path.rsplit(".", 1)
     module = scrapers[module_name]
     method = getattr(module, method_name)
-    # jav321.main: main(number, isuncensored, appoint_url)
     if method_name == "main" and module_name == "jav321" and isuncensored:
         return method(number, isuncensored, appoint_url)
-    # javdb.main: main(number, appoint_url, isuncensored)
     if method_name == "main" and module_name == "javdb":
         return method(number, appoint_url, isuncensored)
     return method(number, appoint_url)
@@ -49,9 +48,27 @@ def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
     working_number = number
     last_result = {}
     for i, (method_path, _priority) in enumerate(chain):
+        # Check cache first
+        key = cache_key(method_path, working_number)
+        cached = get_cached(key, "")
+        if cached is not None:
+            try:
+                json_data = json.loads(cached)
+                last_result = json_data
+                if getDataState(json_data) == 1:
+                    return json_data, working_number
+            except json.JSONDecodeError:
+                pass
+            continue
+
         try:
             result = _call_scraper(method_path, scrapers, working_number, appoint_url, isuncensored)
+            if not isinstance(result, str):
+                continue
             json_data = json.loads(result)
+            # Only cache successful results
+            if getDataState(json_data) == 1:
+                set_cache(key, result)
             last_result = json_data
             if getDataState(json_data) == 1:
                 return json_data, working_number
@@ -60,8 +77,9 @@ def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
                 m = re.search(r"[a-zA-Z]+-\d+", working_number)
                 if m:
                     working_number = m.group()
+        except (json.JSONDecodeError, ScrapingError):
+            pass
         except Exception as e:
-            # Log but don't fail — fallback to next scraper in chain
             print(f"[!]Scraper {method_path} error: {e}")
             pass
     return last_result, working_number
@@ -91,10 +109,7 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
     number = json_data["number"]
     actor_list = str(json_data["actor"]).strip("[ ]").replace("'", "").split(",")
     release = json_data["release"]
-    try:
-        cover_small = json_data.get("cover_small", "")
-    except Exception:
-        cover_small = ""
+    cover_small = json_data.get("cover_small", "")
     tag = str(json_data["tag"]).strip("[ ]").replace("'", "").replace(" ", "").split(",")
     actor = str(actor_list).strip("[ ]").replace("'", "").replace(" ", "")
     if actor == "":

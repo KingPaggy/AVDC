@@ -16,7 +16,7 @@
       "issue": "错误处理不规范",
       "location": "core/scrape_pipeline.py, Getter/*, application/*",
       "description": "各处 try/except 吞异常（bare except），无统一错误类型或错误码。应定义 ScrapingError 等自定义异常",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 3,
