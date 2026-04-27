@@ -6,7 +6,7 @@
       "issue": "Function/getHtml.py 未移入 core",
       "location": "Function/getHtml.py",
       "description": "HTTP 请求工具仍留在 Function/，被 Getter/ 和 remote_service.py 使用。应移至 core/networking.py",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 2,
