@@ -12,7 +12,6 @@ from PyQt5.QtCore import pyqtSignal, QT_VERSION_STR
 import sys
 import time
 import os.path
-import shutil
 import re
 import os
 from Ui.AVDC_new import Ui_MainWindow
@@ -839,33 +838,7 @@ class AVDC_Main_UI(QMainWindow):
         movie_type = self.Ui.lineEdit_6.text()
         movie_list = movie_lists(escape_dir, movie_type, movie_path)
         des_path = movie_path + "/Movie_moved"
-        if not os.path.exists(des_path):
-            self.add_text_main("[+]Created folder Movie_moved!")
-            os.makedirs(des_path)
-        self.add_text_main("[+]Move Movies Start!")
-        for movie in movie_list:
-            if des_path in movie:
-                continue
-            sour = movie
-            des = des_path + "/" + sour.split("/")[-1]
-            try:
-                shutil.move(sour, des)
-                self.add_text_main(
-                    "   [+]Move " + sour.split("/")[-1] + " to Movie_moved Success!"
-                )
-                path_old = sour.replace(sour.split("/")[-1], "")
-                filename = sour.split("/")[-1].split(".")[0]
-                for sub in sub_type:
-                    if os.path.exists(path_old + "/" + filename + sub):  # 字幕移动
-                        shutil.move(
-                            path_old + "/" + filename + sub,
-                            des_path + "/" + filename + sub,
-                        )
-                        self.add_text_main("   [+]Sub moved! " + filename + sub)
-            except Exception as error_info:
-                self.add_text_main("[-]Error in move_file_thread: " + str(error_info))
-        self.add_text_main("[+]Move Movies All Finished!!!")
-        self.add_text_main("[*]======================================================")
+        self.fs_service.move_movie_files(movie_list, des_path, sub_type, self.add_text_main)
 
     # ========================================================================小工具-emby女优头像
     def pushButton_add_actor_pic_clicked(self):  # 添加头像按钮响应

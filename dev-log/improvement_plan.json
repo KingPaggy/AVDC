@@ -14,7 +14,7 @@
       "issue": "AVDC_Main_new.py 直接用 ConfigParser 读配置",
       "location": "AVDC_Main_new.py:407 (Load_Config), 1292 (Core_Main), 1348 (AVDC_Main)",
       "description": "3 处绕过 core.config_io.get_config() 直接用 ConfigParser 读 config.ini，应统一走 core.config_io",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 3,

@@ -240,3 +240,34 @@ class FileSystemService:
         except Exception as error_info:
             log("[-]Error in fix_size: " + str(error_info))
 
+    def move_movie_files(
+        self,
+        movie_list: list[str],
+        dest_path: str,
+        subtitle_types: list[str],
+        log: Callable[[str], None],
+    ) -> None:
+        """Move video files and their subtitles to a target directory."""
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+            log("[+]Created folder Movie_moved!")
+        log("[+]Move Movies Start!")
+        for movie in movie_list:
+            if dest_path in movie:
+                continue
+            try:
+                filename = movie.split("/")[-1]
+                shutil.move(movie, dest_path + "/" + filename)
+                log("   [+]Move " + filename + " to Movie_moved Success!")
+                # Move subtitle files alongside
+                base_name = filename.split(".")[0]
+                path_old = movie.replace(filename, "")
+                for sub in subtitle_types:
+                    sub_src = path_old + "/" + base_name + sub
+                    if os.path.exists(sub_src):
+                        shutil.move(sub_src, dest_path + "/" + base_name + sub)
+                        log("   [+]Sub moved! " + base_name + sub)
+            except Exception as error_info:
+                log("[-]Error in move_movie_files: " + str(error_info))
+        log("[+]Move Movies All Finished!!!")
+
