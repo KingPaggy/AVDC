@@ -183,42 +183,60 @@ class FileSystemService:
             website,
             series,
         ) = get_info(json_data)
-        name_media = (
-            json_data["naming_media"]
-            .replace("title", title)
-            .replace("studio", studio)
-            .replace("year", year)
-            .replace("runtime", runtime)
-            .replace("director", director)
-            .replace("actor", actor)
-            .replace("release", release)
-            .replace("number", number)
-            .replace("series", series)
-            .replace("publisher", publisher)
-        )
+
+        def _esc(text: str) -> str:
+            """Escape text for safe XML content."""
+            return (
+                str(text)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&apos;")
+            )
+
         try:
             if not os.path.exists(path):
                 os.makedirs(path)
             if os.path.exists(path + "/" + name_file + ".nfo"):
                 log("[+]Nfo Existed!       " + name_file + ".nfo")
                 return
+
+            # Build actor tags
+            actor_tags = ""
+            if actor and actor != "unknown":
+                for a in str(actor).replace(" ", "").split(","):
+                    if a:
+                        actor_tags += f"    <actor>\n      <name>{_esc(a)}</name>\n    </actor>\n"
+
+            # Build genre tags
+            tag_tags = ""
+            if tag and isinstance(tag, list) and tag != ["unknown"]:
+                for t in tag:
+                    if t and t != "unknown":
+                        tag_tags += f"    <genre>{_esc(t)}</genre>\n"
+
             with open(path + "/" + name_file + ".nfo", "wt", encoding="UTF-8") as code:
                 print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", file=code)
                 print("<movie>", file=code)
-                print("  <title>" + title + "</title>", file=code)
-                print("  <originaltitle>" + title + "</originaltitle>", file=code)
-                print("  <sorttitle>" + title + "</sorttitle>", file=code)
-                print("  <set>" + series + "</set>", file=code)
-                print("  <studio>" + studio + "</studio>", file=code)
-                print("  <publisher>" + publisher + "</publisher>", file=code)
-                print("  <director>" + director + "</director>", file=code)
-                print("  <premiered>" + release + "</premiered>", file=code)
-                print("  <release>" + release + "</release>", file=code)
-                print("  <plot>" + outline + "</plot>", file=code)
-                print("  <runtime>" + str(runtime) + "</runtime>", file=code)
-                print("  <number>" + number + "</number>", file=code)
-                print("  <cover>" + cover + "</cover>", file=code)
-                print("  <website>" + website + "</website>", file=code)
+                print(f"  <title>{_esc(title)}</title>", file=code)
+                print(f"  <originaltitle>{_esc(title)}</originaltitle>", file=code)
+                print(f"  <sorttitle>{_esc(title)}</sorttitle>", file=code)
+                print(f"  <set>{_esc(series)}</set>", file=code)
+                print(f"  <studio>{_esc(studio)}</studio>", file=code)
+                print(f"  <publisher>{_esc(publisher)}</publisher>", file=code)
+                print(f"  <director>{_esc(director)}</director>", file=code)
+                print(f"  <premiered>{_esc(release)}</premiered>", file=code)
+                print(f"  <release>{_esc(release)}</release>", file=code)
+                print(f"  <plot>{_esc(outline)}</plot>", file=code)
+                print(f"  <runtime>{runtime}</runtime>", file=code)
+                print(f"  <number>{_esc(number)}</number>", file=code)
+                print(f"  <cover>{_esc(cover)}</cover>", file=code)
+                print(f"  <website>{_esc(website)}</website>", file=code)
+                if actor_tags:
+                    print(actor_tags.rstrip(), file=code)
+                if tag_tags:
+                    print(tag_tags.rstrip(), file=code)
                 print("</movie>", file=code)
                 log("[+]Nfo Wrote!         " + name_file + ".nfo")
         except Exception as error_info:

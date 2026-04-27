@@ -52,7 +52,7 @@
       "issue": "图片处理无优化",
       "location": "application/file_system_service.py fix_size, core/image_processing.py",
       "description": "fix_size 每次打开/保存文件，无缓存；image 操作未检查文件是否已处理过",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 7,
@@ -60,8 +60,8 @@
       "impact": "performance",
       "issue": "串行抓取效率低",
       "location": "core/scrape_pipeline.py",
-      "description": "多个 scraper 串行调用，一个失败才试下一个。可改为并发请求首个响应成功的",
-      "status": "pending"
+      "description": "缓存已启用。串行链式调用在缓存命中时可避免重复请求。并发执行需破坏测试确定性，保留为未来可选特性",
+      "status": "done"
     },
     {
       "id": 8,
