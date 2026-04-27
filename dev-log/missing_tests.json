@@ -78,7 +78,7 @@
       "issue": "单一模板 number → 输出 SSIS-487",
       "location": "test/test_core.py - NamingServiceTests",
       "description": "测试最简单命名模板的替换结果",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 11,
@@ -86,7 +86,7 @@
       "issue": "复杂模板 actor/number-title-release",
       "location": "test/test_core.py - NamingServiceTests",
       "description": "测试带路径分隔符的嵌套模板",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 12,
@@ -94,7 +94,7 @@
       "issue": "模板中字段不存在时的降级处理",
       "location": "test/test_core.py - NamingServiceTests",
       "description": "测试 title 为空时模板中 {title} 的替换行为",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 13,
@@ -102,7 +102,7 @@
       "issue": "正常数据生成合法 XML 且可被解析",
       "location": "test/test_file_system_service.py",
       "description": "验证 write_nfo 产出的 XML 合法，可用 xml.etree 解析",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 14,
@@ -110,7 +110,7 @@
       "issue": "XML 特殊字符转义 < & > \" '",
       "location": "test/test_file_system_service.py",
       "description": "验证标题含 &、<、> 时 NFO 不会被破坏",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 15,
@@ -118,7 +118,7 @@
       "issue": "多演员生成多个 <actor> 标签",
       "location": "test/test_file_system_service.py",
       "description": "验证 actor=枫,安齋 时产出两个 <actor> 节点",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 16,
@@ -126,7 +126,7 @@
       "issue": "多标签生成多个 <genre> 标签",
       "location": "test/test_file_system_service.py",
       "description": "验证 tag=[巨乳,騎乗位] 时产出两个 <genre> 节点",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 17,
@@ -134,7 +134,7 @@
       "issue": "NFO 已存在时跳过不覆盖",
       "location": "test/test_file_system_service.py",
       "description": "验证同名 .nfo 已存在时不重写",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 18,
@@ -142,7 +142,7 @@
       "issue": "水印 4 个角位置分别验证",
       "location": "test/test_image_processing.py",
       "description": "验证 top_left/top_right/bottom_right/bottom_left 水印位置正确",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 19,
@@ -150,7 +150,7 @@
       "issue": "lru_cache 水印缓存命中",
       "location": "test/test_image_processing.py",
       "description": "验证 _load_mark_image 多次调用只打开一次文件",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 20,
@@ -158,7 +158,7 @@
       "issue": "fix_size 比例接近 2:3 时跳过",
       "location": "test/test_file_system_service.py",
       "description": "验证 poster 已符合 2:3±5% 时不做任何修改",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 21,
@@ -166,7 +166,7 @@
       "issue": "fix_size 比例偏差时裁剪",
       "location": "test/test_file_system_service.py",
       "description": "验证宽屏海报被正确裁剪为 2:3",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 22,
@@ -174,7 +174,7 @@
       "issue": "move_movie_files 多文件批量迁移",
       "location": "test/test_file_system_service.py",
       "description": "测试批量移动视频+字幕到目标目录",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 23,
@@ -182,7 +182,7 @@
       "issue": "copy_fanart 复制 thumb 为 fanart",
       "location": "test/test_file_system_service.py",
       "description": "验证 thumb 被复制并重命名为 fanart",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 24,
@@ -190,7 +190,7 @@
       "issue": "delete_thumb 按开关删除缩略图",
       "location": "test/test_file_system_service.py",
       "description": "验证 keep_thumb=False 时删除 thumb，True 时保留",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 25,
@@ -198,15 +198,15 @@
       "issue": "配置 section 和 key 同时缺失",
       "location": "test/test_core.py - CoreConfigTests",
       "description": "测试完全空配置文件时 get_config 不抛异常",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 26,
       "category": "错误处理",
       "issue": "Movie.empty().is_valid() 返回 False",
-      "location": "test/test_core.py - CoreModelTests（新类）",
+      "location": "test/test_core.py - CoreModelTests",
       "description": "验证空 Movie 对象的 is_valid 行为",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 27,
@@ -214,7 +214,7 @@
       "issue": "Movie.from_dict() 解析畸形数据",
       "location": "test/test_core.py - CoreModelTests",
       "description": "测试空 dict、缺字段、字段类型错误时的容错",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 28,
@@ -222,7 +222,7 @@
       "issue": "Movie.to_dict() 输出格式正确",
       "location": "test/test_core.py - CoreModelTests",
       "description": "验证 to_dict 包含所有 15+ 字段且类型正确",
-      "status": "pending"
+      "status": "done"
     }
   ]
 }

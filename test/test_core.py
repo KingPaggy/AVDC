@@ -12,6 +12,8 @@ from unittest.mock import patch
 from core.config_io import get_config, get_config_file, save_config, get_default_config, get_proxy_config
 from core.file_utils import escapePath, getNumber, getDataState, is_uncensored, movie_lists, check_pic
 from core.metadata import get_info
+from core.naming_service import resolve_name
+from core.models import Movie
 import core.scrape_pipeline as scrape_pipeline
 
 
@@ -450,6 +452,106 @@ class CoreMetadataTests(unittest.TestCase):
         self.assertEqual(result[12], "cover.jpg")
         self.assertEqual(result[13], "javbus")
         self.assertEqual(result[14], "Series")
+
+
+class NamingServiceTests(unittest.TestCase):
+    def _make_data(self, **overrides):
+        data = {
+            "title": "Sample Movie",
+            "studio": "Studio",
+            "publisher": "Publisher",
+            "year": "2024",
+            "outline": "Outline",
+            "runtime": "120",
+            "director": "Director",
+            "actor_photo": {},
+            "actor": "Actor A,Actor B",
+            "release": "2024-01-01",
+            "tag": ["tag1"],
+            "number": "SSIS-487",
+            "cover": "cover.jpg",
+            "website": "javbus",
+            "series": "Series",
+        }
+        data.update(overrides)
+        return data
+
+    def test_resolve_name_single_placeholder(self):
+        data = self._make_data(naming_file="number")
+        self.assertEqual(resolve_name("number", data), "SSIS-487")
+
+    def test_resolve_name_complex_template(self):
+        data = self._make_data(naming_file="actor/number-title-release")
+        result = resolve_name("actor/number-title-release", data)
+        self.assertIn("Actor", result)
+        self.assertIn("SSIS-487", result)
+        self.assertIn("Sample Movie", result)
+        self.assertIn("2024-01-01", result)
+
+    def test_resolve_name_missing_field(self):
+        data = self._make_data(title="", naming_file="number-title")
+        result = resolve_name("number-title", data)
+        # title is "unknown" due to normalization
+        self.assertIn("unknown", result)
+
+
+class CoreModelTests(unittest.TestCase):
+    def test_movie_empty_is_invalid(self):
+        movie = Movie.empty()
+        self.assertFalse(movie.is_valid())
+        self.assertEqual(movie.title, "")
+        self.assertEqual(movie.number, "")
+        self.assertEqual(movie.actor, [])
+
+    def test_movie_is_valid_with_title(self):
+        movie = Movie(title="Sample", number="SSIS-487")
+        self.assertTrue(movie.is_valid())
+
+    def test_movie_is_invalid_with_none_title(self):
+        movie = Movie(title="None")
+        self.assertFalse(movie.is_valid())
+
+    def test_movie_from_dict_empty(self):
+        movie = Movie.from_dict({})
+        self.assertFalse(movie.is_valid())
+
+    def test_movie_from_dict_malformed_data(self):
+        # Missing most fields, wrong types
+        movie = Movie.from_dict({"title": "Test", "actor": "NotAList"})
+        self.assertTrue(movie.is_valid())
+        # actor should be parsed as string and split
+        self.assertIn("NotAList", str(movie.actor))
+
+    def test_movie_from_dict_full_data(self):
+        data = {
+            "title": "Movie", "number": "SSIS-487",
+            "actor": "['Actor A', 'Actor B']",
+            "studio": "Studio", "publisher": "Pub",
+            "director": "Dir", "release": "2024-01-01",
+            "year": "2024", "runtime": "120",
+            "score": "4.5", "outline": "Plot",
+            "cover": "url", "cover_small": "small",
+            "extrafanart": [], "tag": "['tag1', 'tag2']",
+            "series": "Series", "actor_photo": {},
+            "website": "javbus", "source": "javbus.py",
+            "imagecut": 1,
+        }
+        movie = Movie.from_dict(data)
+        self.assertTrue(movie.is_valid())
+        self.assertEqual(movie.number, "SSIS-487")
+        self.assertEqual(movie.runtime, 120)
+        self.assertEqual(len(movie.tag), 2)
+
+    def test_movie_to_dict_contains_all_fields(self):
+        movie = Movie(title="Test", number="SSIS-123", actor=["A", "B"], studio="Studio")
+        d = movie.to_dict()
+        required_keys = {
+            "title", "number", "actor", "studio", "publisher",
+            "director", "release", "year", "runtime", "score",
+            "outline", "cover", "cover_small", "extrafanart",
+            "tag", "series", "actor_photo", "website", "source", "imagecut",
+        }
+        self.assertTrue(required_keys.issubset(set(d.keys())))
 
 
 class ScrapePipelineDispatchTests(unittest.TestCase):
