@@ -26,6 +26,7 @@ from core.file_utils import movie_lists, escapePath, getNumber, check_pic
 from core.metadata import get_info
 from core.scrape_pipeline import getDataFromJSON
 from application.batch_service import BatchCallbacks, BatchWorkflowService
+from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from Function.getHtml import get_html, get_proxies, get_config
 
 
@@ -95,6 +96,7 @@ class AVDC_Main_UI(QMainWindow):
         self.show_version()
         self.show()
         self.batch_service = BatchWorkflowService()
+        self.file_service = FileProcessingService()
 
     def Init_Ui(self):
         # 替换 listView_result 为 QTreeWidget
@@ -1852,132 +1854,59 @@ class AVDC_Main_UI(QMainWindow):
                         pass
 
     def Core_Main(self, filepath, number, mode, count, appoint_url=""):
-        # =======================================================================初始化所需变量
-        leak = 0
-        uncensored = 0
-        cn_sub = 0
-        c_word = ""
-        multi_part = 0
-        part = ""
-        program_mode = 0
         config_file = "config.ini"
         Config = ConfigParser()
         Config.read(config_file, encoding="UTF-8")
-        if self.Ui.radioButton.isChecked():
-            program_mode = 1
-        elif self.Ui.radioButton_2.isChecked():
-            program_mode = 2
         movie_path = self.Ui.lineEdit_7.text()
         if movie_path == "":
             movie_path = os.getcwd().replace("\\", "/")
-        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()  # 失败输出目录
-        success_folder = movie_path + "/" + self.Ui.lineEdit_8.text()  # 成功输出目录
-        # =======================================================================获取json_data
-        json_data = self.get_json_data(mode, number, Config, appoint_url)
-        # =======================================================================调试模式
-        if self.Ui.radioButton_5.isChecked():
-            self.debug_mode(json_data)
-        # =======================================================================是否找到影片信息
-        if json_data["website"] == "timeout":
-            self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
-            return "error"
-        elif json_data["title"] == "":
-            self.add_text_main("[-]Movie Data not found!")
-            node = QTreeWidgetItem(self.item_fail)
-            node.setText(
-                0,
-                str(self.count_claw)
-                + "-"
-                + str(count)
-                + "."
-                + os.path.splitext(filepath.split("/")[-1])[0],
-            )
-            self.item_fail.addChild(node)
-            self.moveFailedFolder(filepath, failed_folder)
-            return "not found"
-        elif "http" not in json_data["cover"]:
-            raise Exception("Cover Url is None!")
-        elif json_data["imagecut"] == 3 and "http" not in json_data["cover_small"]:
-            raise Exception("Cover_small Url is None!")
-        # =======================================================================判断-C,-CD后缀,无码,流出
-        if "-CD" in filepath or "-cd" in filepath:
-            multi_part = 1
-            part = self.get_part(filepath, failed_folder)
-        if (
-            "-c." in filepath
-            or "-C." in filepath
-            or "中文" in filepath
-            or "字幕" in filepath
-        ):
-            cn_sub = 1
-            c_word = "-C"  # 中文字幕影片后缀
-        if json_data["imagecut"] == 3:  # imagecut=3为无码
-            uncensored = 1
-        if "流出" in os.path.split(filepath)[1]:
-            leak = 1
-        # =======================================================================创建输出文件夹
-        path = self.creatFolder(success_folder, json_data, Config)
-        self.add_text_main("[+]Folder : " + path)
-        self.add_text_main("[+]From   : " + json_data["website"])
-        # =======================================================================文件命名规则
-        number = json_data["number"]
-        naming_rule = str(self.get_naming_rule(json_data)).replace("--", "-").strip("-")
-        if leak == 1:
-            naming_rule += "-流出"
-        if multi_part == 1:
-            naming_rule += part
-        if cn_sub == 1:
-            naming_rule += c_word
-        # =======================================================================封面路径
-        thumb_path = path + "/" + naming_rule + "-thumb.jpg"
-        poster_path = path + "/" + naming_rule + "-poster.jpg"
-        # =======================================================================无码封面获取方式
-        if json_data["imagecut"] == 3 and self.Ui.radioButton_27.isChecked():
-            json_data["imagecut"] = 0
-        # =======================================================================刮削模式
-        if program_mode == 1:
-            # imagecut 0 判断人脸位置裁剪缩略图为封面，1 裁剪右半面，3 下载小封面
-            self.thumbDownload(
-                json_data, path, naming_rule, Config, filepath, failed_folder
-            )
-            if self.Ui.checkBox_2.isChecked():
-                if (
-                    self.smallCoverDownload(
-                        path, naming_rule, json_data, Config, filepath, failed_folder
-                    )
-                    == "small_cover_error"
-                ):  # 下载小封面
-                    json_data["imagecut"] = 0
-                self.cutImage(json_data["imagecut"], path, naming_rule)  # 裁剪图
-                self.fix_size(path, naming_rule)
-            if self.Ui.checkBox_3.isChecked():
-                self.copyRenameJpgToFanart(path, naming_rule)
-            self.deletethumb(path, naming_rule)
-            if self.pasteFileToFolder(
-                filepath, path, naming_rule, failed_folder
-            ):  # 移动文件,True 为有外挂字幕
-                cn_sub = 1
-            if self.Ui.checkBox.isChecked():
-                self.PrintFiles(
-                    path, naming_rule, cn_sub, leak, json_data, filepath, failed_folder
-                )  # 打印文件
-            if self.Ui.radioButton_13.isChecked():
-                self.extrafanartDownload(
-                    json_data, path, Config, filepath, failed_folder
-                )
-            self.add_mark(poster_path, thumb_path, cn_sub, leak, uncensored, Config)
-        # =======================================================================整理模式
-        elif program_mode == 2:
-            self.pasteFileToFolder(
-                filepath, path, naming_rule, failed_folder
-            )  # 移动文件
-        # =======================================================================json添加封面项
-        json_data["thumb_path"] = thumb_path
-        json_data["poster_path"] = poster_path
-        json_data["number"] = number
-        self.add_label_info(json_data)
-        self.json_array[str(self.count_claw) + "-" + str(count)] = json_data
-        return part + c_word
+        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()
+        success_folder = movie_path + "/" + self.Ui.lineEdit_8.text()
+        deps = FileProcessDependencies(
+            log=self.add_text_main,
+            debug=self.debug_mode,
+            get_json_data=self.get_json_data,
+            create_folder=self.creatFolder,
+            get_part=self.get_part,
+            get_naming_rule=self.get_naming_rule,
+            move_failed_folder=self.moveFailedFolder,
+            thumb_download=self.thumbDownload,
+            small_cover_download=self.smallCoverDownload,
+            cut_image=self.cutImage,
+            fix_size=self.fix_size,
+            copy_fanart=self.copyRenameJpgToFanart,
+            delete_thumb=self.deletethumb,
+            paste_file=self.pasteFileToFolder,
+            print_files=self.PrintFiles,
+            extrafanart_download=self.extrafanartDownload,
+            add_mark=self.add_mark,
+            add_label_info=self.add_label_info,
+            register_result=self.register_result,
+            is_debug_enabled=lambda: self.Ui.radioButton_5.isChecked(),
+            is_program_mode_move=lambda: self.Ui.radioButton.isChecked(),
+            is_show_small_cover=lambda: self.Ui.checkBox_2.isChecked(),
+            is_copy_fanart_enabled=lambda: self.Ui.checkBox_3.isChecked(),
+            is_print_enabled=lambda: self.Ui.checkBox.isChecked(),
+            is_extrafanart_enabled=lambda: self.Ui.radioButton_13.isChecked(),
+            is_restore_imagecut_enabled=lambda: self.Ui.radioButton_27.isChecked(),
+        )
+        result = self.file_service.process(
+            filepath=filepath,
+            number=number,
+            mode=mode,
+            count_claw=self.count_claw,
+            count=count,
+            config=Config,
+            movie_path=movie_path,
+            failed_folder=failed_folder,
+            success_folder=success_folder,
+            appoint_url=appoint_url,
+            deps=deps,
+        )
+        return result
+
+    def register_result(self, count_claw, count, json_data):
+        self.json_array[str(count_claw) + "-" + str(count)] = json_data
 
     def AVDC_Main(self):
         os.chdir(os.getcwd())
