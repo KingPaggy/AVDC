@@ -119,16 +119,16 @@ def getNumber(filepath, escape_string):
             return os.path.splitext(filepath.split("/")[-1])[0]
 
 
-def is_uncensored(number):
+def is_uncensored(number, config=None):
     if (
         re.match(r"^\d{4,}", number)
         or re.match(r"n\d{4}", number)
         or "HEYZO" in number.upper()
     ):
         return True
-    from core.config_io import get_config
-
-    config = get_config()
+    if config is None:
+        from core.config_io import get_config
+        config = get_config()
     prefix_list = str(config["uncensored"]["uncensored_prefix"]).split("|")
     for pre in prefix_list:
         if pre.upper() in number.upper():

@@ -30,7 +30,7 @@
       "issue": "百度 AI 密钥硬编码",
       "location": "core/image_processing.py:25-27",
       "description": "BAIDU_APP_ID/KEY/SECRET_KEY 硬编码，应改为从环境变量读取",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 5,
