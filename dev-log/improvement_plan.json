@@ -14,7 +14,7 @@
       "issue": "Function/Function.py 已死代码",
       "location": "Function/Function.py",
       "description": "Function.py 是旧版兼容性 shim，re-export core.* 函数但已无外部引用，可删除",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 3,
@@ -22,7 +22,7 @@
       "issue": "core/file_utils.py 名称不准确",
       "location": "core/file_utils.py",
       "description": "含 movie_lists、getNumber 等非 metadata 函数，名称不够准确，但与 file_utils 功能匹配度尚可，暂保留",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 4,

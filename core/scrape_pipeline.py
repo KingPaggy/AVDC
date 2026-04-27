@@ -3,6 +3,7 @@
 import json
 import re
 from core.file_utils import getDataState, is_uncensored
+from core.scraper_dispatcher import ScraperDispatcher
 
 _SCRAPER_MODULES = None
 
@@ -24,78 +25,63 @@ def get_scraper_modules():
     return _SCRAPER_MODULES
 
 
+def _call_scraper(method_path, scrapers, number, appoint_url, isuncensored=False):
+    """Call a scraper method by its dotted path string."""
+    module_name, method_name = method_path.rsplit(".", 1)
+    module = scrapers[module_name]
+    method = getattr(module, method_name)
+    # jav321.main: main(number, isuncensored, appoint_url)
+    if method_name == "main" and module_name == "jav321" and isuncensored:
+        return method(number, isuncensored, appoint_url)
+    # javdb.main: main(number, appoint_url, isuncensored)
+    if method_name == "main" and module_name == "javdb":
+        return method(number, appoint_url, isuncensored)
+    return method(number, appoint_url)
+
+
+def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
+    """Execute scraper chain, returning (json_data, working_number).
+
+    Returns the last attempted result even if unsuccessful, to preserve
+    the short-circuit behavior for empty-title and timeout cases.
+    """
+    working_number = number
+    last_result = {}
+    for i, (method_path, _priority) in enumerate(chain):
+        try:
+            result = _call_scraper(method_path, scrapers, working_number, appoint_url, isuncensored)
+            json_data = json.loads(result)
+            last_result = json_data
+            if getDataState(json_data) == 1:
+                return json_data, working_number
+            # mgstage normalizes number after first call for subsequent scrapers
+            if method_path.startswith("mgstage.") and i == 0:
+                m = re.search(r"[a-zA-Z]+-\d+", working_number)
+                if m:
+                    working_number = m.group()
+        except Exception:
+            pass
+    return last_result, working_number
+
+
 def getDataFromJSON(file_number, config, mode, appoint_url):
     scrapers = get_scraper_modules()
     isuncensored = is_uncensored(file_number)
     json_data = {}
-    if mode == 1:
-        if isuncensored:
-            json_data = json.loads(scrapers["javbus"].main_uncensored(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url, True))
-            if getDataState(json_data) == 0 and "HEYZO" in file_number.upper():
-                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url, True))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
-        elif re.match(r"\d+[a-zA-Z]+-\d+", file_number) or "SIRO" in file_number.upper():
-            json_data = json.loads(scrapers["mgstage"].main(file_number, appoint_url))
-            file_number = re.search(r"[a-zA-Z]+-\d+", file_number).group()
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
-        elif "FC2" in file_number.upper():
-            json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
-        elif re.match(r"\D{2,}00\d{3,}", file_number) and "-" not in file_number and "_" not in file_number:
-            json_data = json.loads(scrapers["dmm"].main(file_number, appoint_url))
-        elif re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(scrapers["javdb"].main_us(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["javbus"].main_us(file_number, appoint_url))
-        else:
-            json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["jav321"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["xcity"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url))
-            if getDataState(json_data) == 0:
-                json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
-    elif re.match(r"\D{2,}00\d{3,}", file_number) and mode != 7:
-        json_data = {
-            "title": "",
-            "actor": "",
-            "website": "",
-        }
-    elif mode == 2:
-        json_data = json.loads(scrapers["mgstage"].main(file_number, appoint_url))
-    elif mode == 3:
-        if isuncensored:
-            json_data = json.loads(scrapers["javbus"].main_uncensored(file_number, appoint_url))
-        elif re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(scrapers["javbus"].main_us(file_number, appoint_url))
-        else:
-            json_data = json.loads(scrapers["javbus"].main(file_number, appoint_url))
-    elif mode == 4:
-        json_data = json.loads(scrapers["jav321"].main(file_number, isuncensored, appoint_url))
-    elif mode == 5:
-        if re.search(r"\D+\.\d{2}\.\d{2}\.\d{2}", file_number):
-            json_data = json.loads(scrapers["javdb"].main_us(file_number, appoint_url))
-        else:
-            json_data = json.loads(scrapers["javdb"].main(file_number, appoint_url, isuncensored))
-    elif mode == 6:
-        json_data = json.loads(scrapers["avsox"].main(file_number, appoint_url))
-    elif mode == 7:
-        json_data = json.loads(scrapers["xcity"].main(file_number, appoint_url))
-    elif mode == 8:
-        json_data = json.loads(scrapers["dmm"].main(file_number, appoint_url))
 
-    if json_data["website"] == "timeout":
+    # Delegate chain selection to ScraperDispatcher
+    chain = ScraperDispatcher.get_scraper_chain(file_number, mode)
+
+    if not chain and ScraperDispatcher.is_dmm_style(file_number) and mode not in (1, 7):
+        json_data = {"title": "", "actor": "", "website": ""}
+    elif not chain:
+        json_data = {"title": "", "actor": "", "website": ""}
+    else:
+        json_data, _ = _execute_chain(scrapers, chain, file_number, appoint_url, isuncensored)
+
+    if json_data.get("website") == "timeout":
         return json_data
-    elif json_data["title"] == "":
+    if not json_data or json_data.get("title") == "":
         return json_data
 
     title = json_data["title"]
