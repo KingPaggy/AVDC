@@ -6,7 +6,7 @@
       "issue": "清理死导入",
       "location": "AVDC_Main_new.py:30",
       "description": "删除 from Function.getHtml import get_html，该导入从未被调用",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 2,

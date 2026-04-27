@@ -15,9 +15,8 @@ import os.path
 import shutil
 import re
 import os
-from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
-from core.config_io import save_config
+from core.config_io import save_config, get_config
 from core.file_utils import movie_lists, escapePath, getNumber
 from core.scrape_pipeline import getDataFromJSON
 from core.image_processing import add_watermark, cut_poster, cut_poster_ai
@@ -401,9 +400,7 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================加载config
     def Load_Config(self):
-        config_file = "config.ini"
-        config = ConfigParser()
-        config.read(config_file, encoding="UTF-8")
+        config = get_config()
         # ========================================================================common
         if int(config["common"]["main_mode"]) == 1:
             self.Ui.radioButton.setChecked(True)
@@ -1286,9 +1283,7 @@ class AVDC_Main_UI(QMainWindow):
         self.fs_service.cleanup_empty_dirs(path, self.add_text_main)
 
     def Core_Main(self, filepath, number, mode, count, appoint_url=""):
-        config_file = "config.ini"
-        Config = ConfigParser()
-        Config.read(config_file, encoding="UTF-8")
+        config = get_config()
         movie_path = self.Ui.lineEdit_7.text()
         if movie_path == "":
             movie_path = os.getcwd().replace("\\", "/")
@@ -1328,7 +1323,7 @@ class AVDC_Main_UI(QMainWindow):
             mode=mode,
             count_claw=self.count_claw,
             count=count,
-            config=Config,
+            config=config,
             movie_path=movie_path,
             failed_folder=failed_folder,
             success_folder=success_folder,
@@ -1342,9 +1337,7 @@ class AVDC_Main_UI(QMainWindow):
 
     def AVDC_Main(self):
         os.chdir(os.getcwd())
-        config_file = "config.ini"
-        config = ConfigParser()
-        config.read(config_file, encoding="UTF-8")
+        config = get_config()
         movie_path = self.Ui.lineEdit_7.text()
         if movie_path == "":
             movie_path = os.getcwd().replace("\\", "/")
