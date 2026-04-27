@@ -4,6 +4,7 @@ import unittest
 from configparser import ConfigParser
 
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
+from core.process_result import ProcessResult, ProcessStatus
 
 
 class FileProcessingServiceTests(unittest.TestCase):
@@ -152,7 +153,10 @@ class FileProcessingServiceTests(unittest.TestCase):
             deps=deps,
         )
 
-        self.assertEqual(result, "")
+        # Now returns ProcessResult instead of string
+        self.assertIsInstance(result, ProcessResult)
+        self.assertTrue(result.success)
+        self.assertEqual(result.number, "ABP-123")
         self.assertIn(("get_json_data", 1, "ABP-123", ""), events)
         self.assertIn(("register_result", 2, 1, "ABP-123"), events)
         self.assertIn(("paste_file", "/input/ABP-123.mp4"), events)
@@ -198,7 +202,10 @@ class FileProcessingServiceTests(unittest.TestCase):
             deps=deps,
         )
 
-        self.assertEqual(result, "not found")
+        # Now returns ProcessResult
+        self.assertIsInstance(result, ProcessResult)
+        self.assertFalse(result.success)
+        self.assertEqual(result.status, ProcessStatus.FAILED_NOT_FOUND)
         self.assertIn(("move_failed_folder", "/input/ABP-123.mp4", "/input/failed"), events)
 
 
