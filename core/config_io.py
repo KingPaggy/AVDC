@@ -30,6 +30,7 @@ _DEFAULTS = {
         "soft_link": "0",
         "show_poster": "1",
         "website": "all",
+        "max_concurrent": "1",
     },
     "proxy": {
         "type": "no",
@@ -129,6 +130,7 @@ def get_default_config() -> dict:
         "update_check": 1,
         "save_log": 1,
         "website": "all",
+        "max_concurrent": 1,
         "failed_output_folder": "failed",
         "success_output_folder": "JAV_output",
         "proxy": "",
@@ -176,6 +178,7 @@ def save_config(json_config):
         print("soft_link = " + str(json_config["soft_link"]), file=code)
         print("show_poster = " + str(json_config["show_poster"]), file=code)
         print("website = " + json_config["website"], file=code)
+        print("max_concurrent = " + str(json_config.get("max_concurrent", 1)), file=code)
         print(
             "# all or mgstage or fc2club or javbus or jav321 or javdb or avsox or xcity or dmm",
             file=code,

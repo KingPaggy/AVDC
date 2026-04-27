@@ -365,6 +365,7 @@ class CoreConfigTests(unittest.TestCase):
         expected_keys = {
             "show_poster", "main_mode", "soft_link", "switch_debug",
             "failed_file_move", "update_check", "save_log", "website",
+            "max_concurrent",
             "failed_output_folder", "success_output_folder", "proxy",
             "timeout", "retry", "folder_name", "naming_media", "naming_file",
             "literals", "folders", "string", "emby_url", "api_key",
@@ -1216,6 +1217,46 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
 
         names = [name for name, _ in call_order]
         self.assertEqual(names, ["mgstage.main", "jav321.main"])
+
+    def test_concurrent_mode_launches_multiple_scrapers(self):
+        """max_concurrent=3 时同时发起 3 个抓取请求"""
+        from core.scraper_adapter import clear_cache
+        clear_cache()
+        import time
+        call_order = []
+
+        def slow_factory(name):
+            def fake(*args):
+                call_order.append(name)
+                payload = {"title": "", "actor": "[]", "website": "site", "number": "TEST", "release": "2024/01/01"}
+                if name == "avsox.main":
+                    payload["title"] = "ok"
+                return json.dumps(payload)
+            return fake
+
+        fake_scrapers = {
+            "javbus": SimpleNamespace(main=slow_factory("javbus.main")),
+            "jav321": SimpleNamespace(main=slow_factory("jav321.main")),
+            "xcity": SimpleNamespace(main=slow_factory("xcity.main")),
+            "javdb": SimpleNamespace(main=slow_factory("javdb.main")),
+            "avsox": SimpleNamespace(main=slow_factory("avsox.main")),
+        }
+
+        # Create a config with max_concurrent=3
+        cfg = ConfigParser()
+        cfg.read_dict({
+            "common": {"max_concurrent": "3"},
+            "Name_Rule": {"naming_media": "number", "naming_file": "title", "folder_name": "title"},
+        })
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            result = scrape_pipeline.getDataFromJSON("SSIS-123", cfg, 1, "")
+
+        # With max_concurrent=3, first 3 should start concurrently
+        # avsox is 4th in chain, should return "ok"
+        self.assertEqual(result["title"], "ok")
+        self.assertIn("avsox.main", call_order)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import re
+import concurrent.futures
 from core.file_utils import getDataState, is_uncensored
 from core.errors import ScrapingError
 from core.models import Movie
@@ -64,55 +65,124 @@ def _to_movie(json_data: dict) -> Movie:
     return movie
 
 
-def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
-    """Execute scraper chain, returning (Movie, working_number).
+def _try_single_scraper(method_path, scrapers, working_number, appoint_url, isuncensored):
+    """Try one scraper. Returns (json_data, working_number) or (None, working_number)."""
+    key = cache_key(method_path, working_number)
+    cached = get_cached(key, "")
+    if cached is not None:
+        try:
+            json_data = json.loads(cached)
+            return json_data, working_number
+        except json.JSONDecodeError:
+            pass
 
-    Returns the last attempted result even if unsuccessful, to preserve
-    the short-circuit behavior for empty-title and timeout cases.
+    try:
+        result = _call_scraper(method_path, scrapers, working_number, appoint_url, isuncensored)
+        if not isinstance(result, str):
+            return None, working_number
+        json_data = json.loads(result)
+        if getDataState(json_data) == 1:
+            set_cache(key, result)
+        return json_data, working_number
+    except (json.JSONDecodeError, ScrapingError):
+        pass
+    except Exception:
+        pass
+    return None, working_number
+
+
+def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False, max_concurrent=1):
+    """Execute scraper chain, returning first successful result.
+
+    When max_concurrent == 1 (default): sequential execution.
+    When max_concurrent > 1: launch up to max_concurrent scrapers in parallel,
+    return the first successful result. Remaining scrapers are cancelled.
+
+    Results are cached to avoid repeated network requests for the same
+    (scraper, number) pair within the TTL window.
     """
+    if max_concurrent <= 1:
+        return _execute_sequential(scrapers, chain, number, appoint_url, isuncensored)
+    return _execute_concurrent(scrapers, chain, number, appoint_url, isuncensored, max_concurrent)
+
+
+def _execute_sequential(scrapers, chain, number, appoint_url, isuncensored):
+    """Execute scraper chain sequentially, returning first successful result."""
     working_number = number
     last_result = {}
-    for i, (method_path, _priority) in enumerate(chain):
-        # Check cache first
-        key = cache_key(method_path, working_number)
-        cached = get_cached(key, "")
-        if cached is not None:
-            try:
-                json_data = json.loads(cached)
-                last_result = json_data
-                if getDataState(json_data) == 1:
-                    return _to_movie(json_data), working_number
-            except json.JSONDecodeError:
-                pass
-            continue
 
-        try:
-            result = _call_scraper(method_path, scrapers, working_number, appoint_url, isuncensored)
-            if not isinstance(result, str):
-                continue
-            json_data = json.loads(result)
-            # Only cache successful results
-            if getDataState(json_data) == 1:
-                set_cache(key, result)
+    for i, (method_path, _priority) in enumerate(chain):
+        json_data, wn = _try_single_scraper(method_path, scrapers, working_number, appoint_url, isuncensored)
+        if json_data and getDataState(json_data) == 1:
+            return _to_movie(json_data), wn
+        if json_data:
             last_result = json_data
-            if getDataState(json_data) == 1:
-                return _to_movie(json_data), working_number
-            # mgstage normalizes number after first call for subsequent scrapers
+            # mgstage normalizes number after first call
             if method_path.startswith("mgstage.") and i == 0:
                 m = re.search(r"[a-zA-Z]+-\d+", working_number)
                 if m:
                     working_number = m.group()
-        except (json.JSONDecodeError, ScrapingError):
-            pass
-        except Exception:
-            # Log but don't fail — fallback to next scraper in chain
-            pass
+
+    return _to_movie(last_result), working_number
+
+
+def _execute_concurrent(scrapers, chain, number, appoint_url, isuncensored, max_workers):
+    """Execute scraper chain concurrently, returning first successful result."""
+    working_number = number
+    last_result = {}
+    batch_start = 0
+
+    while batch_start < len(chain):
+        batch_end = min(batch_start + max_workers, len(chain))
+        batch = list(enumerate(chain[batch_start:batch_end], start=batch_start))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(batch)) as executor:
+            future_to_idx = {}
+            for i, (method_path, _priority) in batch:
+                fut = executor.submit(
+                    _try_single_scraper,
+                    method_path, scrapers, working_number, appoint_url, isuncensored,
+                )
+                future_to_idx[fut] = i
+
+            # Collect results in completion order
+            batch_results = {}
+            for fut in concurrent.futures.as_completed(future_to_idx):
+                idx = future_to_idx[fut]
+                try:
+                    json_data, wn = fut.result()
+                    batch_results[idx] = (json_data, wn)
+                except Exception:
+                    batch_results[idx] = (None, working_number)
+
+        # Check results in chain order (lower index = higher priority)
+        for i in range(batch_start, batch_end):
+            json_data, wn = batch_results.get(i, (None, working_number))
+            if json_data and getDataState(json_data) == 1:
+                return _to_movie(json_data), wn
+            if json_data:
+                last_result = json_data
+                # mgstage normalizes number after first call
+                if chain[i][0].startswith("mgstage.") and i == 0:
+                    m = re.search(r"[a-zA-Z]+-\d+", working_number)
+                    if m:
+                        working_number = m.group()
+
+        batch_start = batch_end
+
     return _to_movie(last_result), working_number
 
 
 def getDataFromJSON(file_number, config, mode, appoint_url):
     scrapers = get_scraper_modules()
     isuncensored = is_uncensored(file_number)
+
+    # Read concurrent scraper limit from config (default: 1 = sequential)
+    try:
+        max_concurrent = int(config.get("common", "max_concurrent", fallback="1"))
+    except (ValueError, TypeError):
+        max_concurrent = 1
+    max_concurrent = max(1, min(max_concurrent, 10))  # clamp 1-10
 
     # Delegate chain selection to ScraperDispatcher
     chain = ScraperDispatcher.get_scraper_chain(file_number, mode)
@@ -122,7 +192,7 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
     elif not chain:
         return {"title": "", "actor": "", "website": ""}
     else:
-        movie, _ = _execute_chain(scrapers, chain, file_number, appoint_url, isuncensored)
+        movie, _ = _execute_chain(scrapers, chain, file_number, appoint_url, isuncensored, max_concurrent)
 
     if movie.website == "timeout":
         return movie.to_dict()
