@@ -2,6 +2,7 @@ import json
 import functools
 from typing import Optional, Callable
 from core.models import Movie
+from core.errors import ScrapingError
 
 
 class ScraperAdapter(Callable):
@@ -26,8 +27,7 @@ class ScraperAdapter(Callable):
 
             return Movie.from_dict(data)
         except Exception as e:
-            print(f"Error in {self.name} adapter: {e}")
-            return Movie.empty()
+            raise ScrapingError(self.name, number, f"Adapter error: {e}") from e
 
     def scrape(
         self, number: str, appoint_url: str = "", is_uncensored: bool = False

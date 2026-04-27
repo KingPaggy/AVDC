@@ -2,6 +2,7 @@ import re
 from typing import Optional
 from core.models import Movie
 from core.scraper_adapter import ScraperAdapter, cache_key, get_cached
+from core.errors import ScrapingError
 
 
 class ScraperDispatcher:

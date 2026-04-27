@@ -5,6 +5,9 @@ and watermark compositing. All functions are pure — no UI dependencies.
 """
 import os
 from PIL import Image
+from core.errors import ImageError
+import os
+from PIL import Image
 
 # Watermark mark image paths
 MARK_PATHS = {
@@ -92,8 +95,8 @@ def cut_poster_center(thumb_path: str, poster_path: str) -> bool:
         img2.save(poster_path)
         img.close()
         return True
-    except Exception:
-        return False
+    except Exception as e:
+        raise ImageError(f"Center crop failed for {thumb_path}: {e}") from e
 
 
 def cut_poster(thumb_path: str, poster_path: str, imagecut: int = 0) -> bool:

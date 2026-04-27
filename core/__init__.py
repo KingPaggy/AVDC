@@ -38,6 +38,11 @@ from core.image_processing import add_watermark, cut_poster, cut_poster_ai
 # Networking
 from core.networking import get_html, get_html_javdb, post_html, get_proxies
 
+# Errors
+from core.errors import (
+    AVDCError, ConfigError, ScrapingError, NetworkError, ImageError, FileError,
+)
+
 # Scraper pipeline
 from core.scrape_pipeline import getDataFromJSON
 

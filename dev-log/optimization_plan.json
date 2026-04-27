@@ -7,7 +7,7 @@
       "issue": "配置验证缺失",
       "location": "core/config_io.py, 各处 config[section][key] 直接访问",
       "description": "config.ini 缺少 section 或 key 时直接抛 KeyError，无默认值兜底。应为每个配置项提供安全默认值",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 2,

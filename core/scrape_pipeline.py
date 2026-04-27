@@ -3,6 +3,7 @@
 import json
 import re
 from core.file_utils import getDataState, is_uncensored
+from core.errors import ScrapingError
 from core.scraper_dispatcher import ScraperDispatcher
 
 _SCRAPER_MODULES = None
@@ -59,7 +60,9 @@ def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
                 m = re.search(r"[a-zA-Z]+-\d+", working_number)
                 if m:
                     working_number = m.group()
-        except Exception:
+        except Exception as e:
+            # Log but don't fail — fallback to next scraper in chain
+            print(f"[!]Scraper {method_path} error: {e}")
             pass
     return last_result, working_number
 
@@ -89,7 +92,7 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
     actor_list = str(json_data["actor"]).strip("[ ]").replace("'", "").split(",")
     release = json_data["release"]
     try:
-        cover_small = json_data["cover_small"]
+        cover_small = json_data.get("cover_small", "")
     except Exception:
         cover_small = ""
     tag = str(json_data["tag"]).strip("[ ]").replace("'", "").replace(" ", "").split(",")
