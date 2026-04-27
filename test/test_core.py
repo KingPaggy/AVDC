@@ -27,6 +27,8 @@ class CoreFileUtilsTests(unittest.TestCase):
             "ABC123.mp4": "ABC-123",
             "SIVR-123-CD1.mp4": "SIVR-123",
             "ABP_123.mp4": "ABP_123",
+            "111111-1111.mp4": "111111-1111",
+            "n1234.mp4": "n1234",
         }
 
         for filename, expected in cases.items():
@@ -41,6 +43,9 @@ class CoreFileUtilsTests(unittest.TestCase):
             "sampleABP-123.mp4": "ABP-123",
             "sexart.19.11.03-CD1.mp4": "sexart.19.11.03",
             "abc123.mp4": "abc-123",
+            "SSIS-487-CD2-C.mp4": "SSIS-487",
+            "SSIS-487-CD1-c.mp4": "SSIS-487",
+            "1080p-ABP-123-CD2.mp4": "ABP-123",
         }
 
         for filename, expected in cases.items():
@@ -112,6 +117,17 @@ class CoreFileUtilsTests(unittest.TestCase):
     def test_get_number_escape_removes_all(self):
         result = getNumber("sample-ABP-123.mp4", "sample-ABP-123")
         self.assertEqual(result, "")
+
+    def test_get_number_escape_filters_common_prefixes(self):
+        cases = {
+            ("1080p-ABP-123.mp4", "1080p"): "ABP-123",
+            ("720p-ABP-123.mp4", "720p"): "ABP-123",
+            ("sample-SSIS-487.mp4", "sample"): "SSIS-487",
+            ("ABP-123-CD2-C.mp4", ""): "ABP-123",
+        }
+        for filename, escape_string in cases:
+            with self.subTest(filename=filename):
+                self.assertEqual(getNumber(filename, escape_string), cases[(filename, escape_string)])
 
     def test_get_number_dmm_style_no_separator(self):
         self.assertEqual(getNumber("abcd00123.mp4", ""), "abcd00123")
