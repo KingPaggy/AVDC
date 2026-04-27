@@ -16,6 +16,95 @@ def get_config():
 
     config = ConfigParser()
     config.read(get_config_file(), encoding="UTF-8")
+    # Ensure all expected sections exist with defaults
+    _apply_defaults(config)
+    return config
+
+
+_DEFAULTS = {
+    "common": {
+        "main_mode": "1",
+        "failed_output_folder": "failed",
+        "success_output_folder": "JAV_output",
+        "failed_file_move": "1",
+        "soft_link": "0",
+        "show_poster": "1",
+        "website": "all",
+    },
+    "proxy": {
+        "type": "no",
+        "proxy": "",
+        "timeout": "7",
+        "retry": "3",
+    },
+    "Name_Rule": {
+        "folder_name": "actor/number-title-release",
+        "naming_media": "number-title",
+        "naming_file": "number",
+    },
+    "update": {
+        "update_check": "1",
+    },
+    "log": {
+        "save_log": "1",
+    },
+    "media": {
+        "media_type": ".mp4|.avi|.rmvb|.wmv|.mov|.mkv",
+        "sub_type": ".srt|.ass|.ssa",
+        "media_path": ".",
+    },
+    "escape": {
+        "literals": r"\()",
+        "folders": "failed,JAV_output",
+        "string": "",
+    },
+    "debug_mode": {
+        "switch": "0",
+    },
+    "emby": {
+        "emby_url": "localhost:8096",
+        "api_key": "",
+    },
+    "mark": {
+        "poster_mark": "1",
+        "thumb_mark": "1",
+        "mark_size": "3",
+        "mark_type": "SUB,LEAK,UNCENSORED",
+        "mark_pos": "top_left",
+    },
+    "uncensored": {
+        "uncensored_prefix": "S2M|BT|LAF|SMD",
+        "uncensored_poster": "0",
+    },
+    "file_download": {
+        "nfo": "1",
+        "poster": "1",
+        "fanart": "1",
+        "thumb": "1",
+    },
+    "extrafanart": {
+        "extrafanart_download": "0",
+        "extrafanart_folder": "extrafanart",
+    },
+}
+
+
+def _apply_defaults(config):
+    """Fill missing sections/keys with defaults without overwriting existing values."""
+    for section, defaults in _DEFAULTS.items():
+        if not config.has_section(section):
+            config.add_section(section)
+        for key, value in defaults.items():
+            if not config.has_option(section, key):
+                config.set(section, key, value)
+
+
+def get_config():
+    from configparser import ConfigParser
+
+    config = ConfigParser()
+    config.read(get_config_file(), encoding="UTF-8")
+    _apply_defaults(config)
     return config
 
 

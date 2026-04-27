@@ -1,0 +1,94 @@
+{
+  "core_optimizations": [
+    {
+      "id": 1,
+      "priority": "high",
+      "impact": "safety",
+      "issue": "配置验证缺失",
+      "location": "core/config_io.py, 各处 config[section][key] 直接访问",
+      "description": "config.ini 缺少 section 或 key 时直接抛 KeyError，无默认值兜底。应为每个配置项提供安全默认值",
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "priority": "high",
+      "impact": "reliability",
+      "issue": "错误处理不规范",
+      "location": "core/scrape_pipeline.py, Getter/*, application/*",
+      "description": "各处 try/except 吞异常（bare except），无统一错误类型或错误码。应定义 ScrapingError 等自定义异常",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "priority": "high",
+      "impact": "performance",
+      "issue": "请求缓存未启用",
+      "location": "core/scraper_adapter.py get_cached/clear_cache",
+      "description": "scraper_adapter.py 已有缓存基础设施但未在实际抓取中调用。应接入 scrape_pipeline",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "priority": "medium",
+      "impact": "data quality",
+      "issue": "类型契约不统一",
+      "location": "core/scrape_pipeline.py, Getter/*",
+      "description": "scrapers 返回原始 JSON dict，Movie dataclass 已定义但未在 pipeline 中使用。应统一返回 Movie 类型",
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "priority": "medium",
+      "impact": "maintainability",
+      "issue": "日志打印混乱",
+      "location": "全项目",
+      "description": "print() 和 logger 混用，格式不统一。core/networking.py 中 print 调试信息应改为标准日志输出",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "priority": "medium",
+      "impact": "performance",
+      "issue": "图片处理无优化",
+      "location": "application/file_system_service.py fix_size, core/image_processing.py",
+      "description": "fix_size 每次打开/保存文件，无缓存；image 操作未检查文件是否已处理过",
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "priority": "medium",
+      "impact": "performance",
+      "issue": "串行抓取效率低",
+      "location": "core/scrape_pipeline.py",
+      "description": "多个 scraper 串行调用，一个失败才试下一个。可改为并发请求首个响应成功的",
+      "status": "pending"
+    },
+    {
+      "id": 8,
+      "priority": "low",
+      "impact": "cleanliness",
+      "issue": "NFO 生成方式低效",
+      "location": "application/file_system_service.py write_nfo",
+      "description": "XML 字符串拼接，无格式化，未使用 lxml/xml 库",
+      "status": "pending"
+    },
+    {
+      "id": 9,
+      "priority": "low",
+      "impact": "architecture",
+      "issue": "Getter 模块无统一基类",
+      "location": "Getter/*.py",
+      "description": "各站 scraper 无统一接口，重复 HTML 解析逻辑。应继承 ScraperBase 实现统一 scrape() 方法",
+      "status": "pending"
+    },
+    {
+      "id": 10,
+      "priority": "low",
+      "impact": "extensibility",
+      "issue": "抓取器不可插件化",
+      "location": "core/scrape_pipeline.py get_scraper_modules",
+      "description": "新增站点需手动修改 pipeline 硬编码导入，应支持自动发现和注册",
+      "status": "pending"
+    }
+  ]
+}
