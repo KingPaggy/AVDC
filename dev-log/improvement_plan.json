@@ -1,0 +1,68 @@
+{
+  "core_ui_separation_improvements": [
+    {
+      "id": 1,
+      "priority": "high",
+      "issue": "清理死导入",
+      "location": "AVDC_Main_new.py:30",
+      "description": "删除 from Function.getHtml import get_html，该导入从未被调用",
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "priority": "high",
+      "issue": "AVDC_Main_new.py 直接用 ConfigParser 读配置",
+      "location": "AVDC_Main_new.py:407 (Load_Config), 1292 (Core_Main), 1348 (AVDC_Main)",
+      "description": "3 处绕过 core.config_io.get_config() 直接用 ConfigParser 读 config.ini，应统一走 core.config_io",
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "priority": "high",
+      "issue": "shutil.move 直接在 UI 层调用",
+      "location": "AVDC_Main_new.py:857, 865-868 (move_file_thread)",
+      "description": "move_file_thread 中的 shutil.move 应委托 FileSystemService",
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "priority": "high",
+      "issue": "百度 AI 密钥硬编码",
+      "location": "core/image_processing.py:25-27",
+      "description": "BAIDU_APP_ID/KEY/SECRET_KEY 硬编码，应改为从环境变量读取",
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "priority": "medium",
+      "issue": "is_uncensored 反向依赖 config_io",
+      "location": "core/metadata.py:129",
+      "description": "is_uncensored() 内部调用 core.config_io.get_config()，应改为接受 config 参数",
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "priority": "medium",
+      "issue": "默认配置字典在 UI 层",
+      "location": "AVDC_Main_new.py:362-400 (init_config_clicked)",
+      "description": "40 行硬编码默认配置应移至 core/config_io.py 作为 get_default_config()",
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "priority": "medium",
+      "issue": "move_file_thread 业务逻辑在 UI 层",
+      "location": "AVDC_Main_new.py:840-873",
+      "description": "文件迁移工作流应移至 application/file_processing_service 或新 service",
+      "status": "pending"
+    },
+    {
+      "id": 8,
+      "priority": "low",
+      "issue": "core/__init__.py 未导出公共 API",
+      "location": "core/__init__.py",
+      "description": "应 re-export 关键函数如 getNumber, is_uncensored, get_config 等方便导入",
+      "status": "pending"
+    }
+  ]
+}

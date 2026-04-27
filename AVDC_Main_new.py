@@ -19,7 +19,6 @@ from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
 from core.config_io import save_config
 from core.file_utils import movie_lists, escapePath, getNumber
-from core.metadata import get_info
 from core.scrape_pipeline import getDataFromJSON
 from core.image_processing import add_watermark, cut_poster, cut_poster_ai
 from core.naming_service import resolve_name
@@ -27,7 +26,6 @@ from application.batch_service import BatchCallbacks, BatchWorkflowService
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from application.file_system_service import FileSystemService
 from application.remote_service import RemoteService
-from Function.getHtml import get_html
 
 
 # ======================================================================== 自定义日志处理器
