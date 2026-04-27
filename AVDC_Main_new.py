@@ -21,15 +21,10 @@ from PIL import Image, ImageFilter
 import os
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
-from Function.Function import (
-    save_config,
-    movie_lists,
-    get_info,
-    getDataFromJSON,
-    escapePath,
-    getNumber,
-    check_pic,
-)
+from core.config_io import save_config
+from core.file_utils import movie_lists, escapePath, getNumber, check_pic
+from core.metadata import get_info
+from core.scrape_pipeline import getDataFromJSON
 from Function.getHtml import get_html, get_proxies, get_config
 
 
