@@ -46,7 +46,7 @@
       "issue": "默认配置字典在 UI 层",
       "location": "AVDC_Main_new.py:362-400 (init_config_clicked)",
       "description": "40 行硬编码默认配置应移至 core/config_io.py 作为 get_default_config()",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 7,
@@ -54,7 +54,7 @@
       "issue": "move_file_thread 业务逻辑在 UI 层",
       "location": "AVDC_Main_new.py:840-873",
       "description": "文件迁移工作流应移至 application/file_processing_service 或新 service",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 8,
