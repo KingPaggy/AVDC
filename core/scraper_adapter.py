@@ -1,7 +1,7 @@
 import json
 import functools
 from typing import Optional, Callable
-from Function.models import Movie
+from core.models import Movie
 
 
 class ScraperAdapter(Callable):

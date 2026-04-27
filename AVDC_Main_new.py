@@ -14,8 +14,6 @@ import time
 import os.path
 import shutil
 import re
-from aip import AipBodyAnalysis
-from PIL import Image, ImageFilter
 import os
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
@@ -23,6 +21,8 @@ from core.config_io import save_config
 from core.file_utils import movie_lists, escapePath, getNumber
 from core.metadata import get_info
 from core.scrape_pipeline import getDataFromJSON
+from core.image_processing import add_watermark, cut_poster, cut_poster_ai
+from core.naming_service import resolve_name
 from application.batch_service import BatchCallbacks, BatchWorkflowService
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from application.file_system_service import FileSystemService
@@ -812,59 +812,21 @@ class AVDC_Main_UI(QMainWindow):
             self.add_text_main("[-]Error in image_cut: " + str(error_info))
             return
 
-        """ 你的 APPID AK SK """
-        APP_ID = "17013175"
-        API_KEY = "IQs1mkG4FerdtmNh6qKDI4fW"
-        SECRET_KEY = "dLr9GTqqutqP9nWKKRaEinVDhxYlPbnD"
+        result = cut_poster_ai(file_path, png_path)
+        if result is None:
+            self.add_text_main("[-]Error in image_cut: AI service unavailable")
+            return
 
-        client = AipBodyAnalysis(APP_ID, API_KEY, SECRET_KEY)
-
-        """ 获取图片分辨率 """
-        im = Image.open(file_path)  # 返回一个Image对象
-        width, height = im.size
-
-        """ 读取图片 """
-        with open(file_path, "rb") as fp:
-            image = fp.read()
-        ex, ey, ew, eh = 0, 0, 0, 0
-        """ 获取裁剪区域 """
-        if height / width <= 1.5:  # 长宽比大于1.5，太宽
-            """ 调用人体检测与属性识别 """
-            result = client.bodyAnalysis(image)
-            ewidth = int(height / 1.5)
-            ex = int(result["person_info"][0]["body_parts"]["nose"]["x"])
-            if width - ex < ewidth / 2:
-                ex = width - ewidth
-            else:
-                ex -= int(ewidth / 2)
-            if ex < 0:
-                ex = 0
-            ey = 0
-            eh = height
-            if ewidth > width:
-                ew = width
-            else:
-                ew = ewidth
-        elif height / width > 1.5:  # 长宽比小于1.5，太窄
-            ex = 0
-            ey = 0
-            ew = int(width)
-            eh = ew * 1.5
-        fp = open(file_path, "rb")
-        img = Image.open(fp)
-        img_new_png = img.crop((ex, ey, ew + ex, eh + ey))
-        fp.close()
-        img_new_png.save(png_path)
         self.add_text_main(
             "[+]Poster Cut         " + png_name + " from " + file_name + "!"
         )
         if mode == 2:
             pix = QPixmap(file_path)
             self.Ui.label_thumbnail.setScaledContents(True)
-            self.Ui.label_thumbnail.setPixmap(pix)  # 添加图标
+            self.Ui.label_thumbnail.setPixmap(pix)
             pix = QPixmap(png_path)
             self.Ui.label_cover.setScaledContents(True)
-            self.Ui.label_cover.setPixmap(pix)  # 添加图标
+            self.Ui.label_cover.setPixmap(pix)
 
     # ========================================================================小工具-视频移动
     def move_file(self):
@@ -1045,50 +1007,7 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================自定义文件名
     def get_naming_rule(self, json_data):
-        (
-            title,
-            studio,
-            publisher,
-            year,
-            outline,
-            runtime,
-            director,
-            actor_photo,
-            actor,
-            release,
-            tag,
-            number,
-            cover,
-            website,
-            series,
-        ) = get_info(json_data)
-        if len(actor.split(",")) >= 10:  # 演员过多取前五个
-            actor = (
-                actor.split(",")[0]
-                + ","
-                + actor.split(",")[1]
-                + ","
-                + actor.split(",")[2]
-                + "等演员"
-            )
-        name_file = (
-            json_data["naming_file"]
-            .replace("title", title)
-            .replace("studio", studio)
-            .replace("year", year)
-            .replace("runtime", runtime)
-            .replace("director", director)
-            .replace("actor", actor)
-            .replace("release", release)
-            .replace("number", number)
-            .replace("series", series)
-            .replace("publisher", publisher)
-        )
-        name_file = name_file.replace("//", "/").replace("--", "-").strip("-")
-        if len(name_file) > 100:  # 文件名过长 取标题前70个字符
-            self.add_text_main("[-]Error in Length of Path! Cut title!")
-            name_file = name_file.replace(title, title[0:70])
-        return name_file
+        return resolve_name(json_data["naming_file"], json_data)
 
     # ========================================================================语句添加到日志框
     def add_text_main(self, text):
@@ -1215,21 +1134,16 @@ class AVDC_Main_UI(QMainWindow):
         if imagecut != 3:
             thumb_name = naming_rule + "-thumb.jpg"
             poster_name = naming_rule + "-poster.jpg"
-            if os.path.exists(path + "/" + poster_name):
+            thumb_path = path + "/" + thumb_name
+            poster_path = path + "/" + poster_name
+            if os.path.exists(poster_path):
                 self.add_text_main("[+]Poster Existed!    " + poster_name)
                 return
-            if imagecut == 0:
-                self.image_cut(path, thumb_name)
+            success = cut_poster(thumb_path, poster_path, imagecut)
+            if success:
+                self.add_text_main("[+]Poster Cut!        " + poster_name)
             else:
-                try:
-                    img = Image.open(path + "/" + thumb_name)
-                    w = img.width
-                    h = img.height
-                    img2 = img.crop((w / 1.9, 0, w, h))
-                    img2.save(path + "/" + poster_name)
-                    self.add_text_main("[+]Poster Cut!        " + poster_name)
-                except Exception:
-                    self.add_text_main("[-]Thumb cut failed!")
+                self.add_text_main("[-]Thumb cut failed!")
 
     def fix_size(self, path, naming_rule):
         self.fs_service.fix_size(path, naming_rule, self.add_text_main)
@@ -1249,7 +1163,10 @@ class AVDC_Main_UI(QMainWindow):
             and self.Ui.checkBox_4.isChecked()
             and os.path.exists(thumb_path)
         ):
-            self.add_mark_thread(thumb_path, cn_sub, leak, uncensored)
+            mark_pos = config["mark"]["mark_pos"]
+            mark_size = int(config["mark"]["mark_size"])
+            marks = {"cn_sub": cn_sub == 1, "leak": leak == 1, "uncensored": uncensored == 1}
+            add_watermark(thumb_path, mark_size, mark_pos, marks)
             self.add_text_main("[+]Thumb Add Mark:    " + mark_type.strip(","))
         if (
             self.Ui.radioButton_15.isChecked()
@@ -1257,53 +1174,11 @@ class AVDC_Main_UI(QMainWindow):
             and self.Ui.checkBox_2.isChecked()
             and os.path.exists(poster_path)
         ):
-            self.add_mark_thread(poster_path, cn_sub, leak, uncensored)
+            mark_pos = config["mark"]["mark_pos"]
+            mark_size = int(config["mark"]["mark_size"])
+            marks = {"cn_sub": cn_sub == 1, "leak": leak == 1, "uncensored": uncensored == 1}
+            add_watermark(poster_path, mark_size, mark_pos, marks)
             self.add_text_main("[+]Poster Add Mark:   " + mark_type.strip(","))
-
-    def add_mark_thread(self, pic_path, cn_sub, leak, uncensored):
-        size = 14 - int(self.Ui.horizontalSlider.value())  # 获取自定义大小的值
-        img_pic = Image.open(pic_path)
-        count = 0  # 获取自定义位置，取余配合pos达到顺时针添加的效果
-        if self.Ui.radioButton_21.isChecked():
-            count = 0
-        elif self.Ui.radioButton_24.isChecked():
-            count = 1
-        elif self.Ui.radioButton_22.isChecked():
-            count = 2
-        elif self.Ui.radioButton_23.isChecked():
-            count = 3
-        if self.Ui.checkBox_5.isChecked() and cn_sub == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 1)  # 添加
-            count = (count + 1) % 4
-        if self.Ui.checkBox_6.isChecked() and leak == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 2)
-            count = (count + 1) % 4
-        if self.Ui.checkBox_7.isChecked() and uncensored == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 3)
-        img_pic.close()
-
-    def add_to_pic(self, pic_path, img_pic, size, count, mode):
-        mark_pic_path = ""
-        if mode == 1:
-            mark_pic_path = "Img/SUB.png"
-        elif mode == 2:
-            mark_pic_path = "Img/LEAK.png"
-        elif mode == 3:
-            mark_pic_path = "Img/UNCENSORED.png"
-        img_subt = Image.open(mark_pic_path)
-        scroll_high = int(img_pic.height / size)
-        scroll_wide = int(scroll_high * img_subt.width / img_subt.height)
-        img_subt = img_subt.resize((scroll_wide, scroll_high), Image.ANTIALIAS)
-        r, g, b, a = img_subt.split()  # 获取颜色通道，保持png的透明性
-        # 封面四个角的位置
-        pos = [
-            {"x": 0, "y": 0},
-            {"x": img_pic.width - scroll_wide, "y": 0},
-            {"x": img_pic.width - scroll_wide, "y": img_pic.height - scroll_high},
-            {"x": 0, "y": img_pic.height - scroll_high},
-        ]
-        img_pic.paste(img_subt, (pos[count]["x"], pos[count]["y"]), mask=a)
-        img_pic.save(pic_path, quality=95)
 
     # ========================================================================获取分集序号
     def get_part(self, filepath, failed_folder):

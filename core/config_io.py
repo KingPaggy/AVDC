@@ -19,6 +19,16 @@ def get_config():
     return config
 
 
+def get_proxy_config():
+    """Return (proxy_type, proxy, timeout, retry_count) from the proxy section."""
+    config = get_config()
+    proxy_type = str(config["proxy"]["type"])
+    proxy = str(config["proxy"]["proxy"])
+    timeout = int(config["proxy"]["timeout"])
+    retry_count = int(config["proxy"]["retry"])
+    return proxy_type, proxy, timeout, retry_count
+
+
 def save_config(json_config):
     config_file = get_config_file()
     with open(config_file, "wt", encoding="UTF-8") as code:

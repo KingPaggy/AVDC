@@ -12,7 +12,8 @@ import requests
 from PIL import Image
 
 from core.file_utils import check_pic
-from Function.getHtml import get_config, get_proxies
+from core.config_io import get_proxy_config
+from Function.getHtml import get_proxies
 
 
 @dataclass
@@ -39,7 +40,7 @@ class RemoteService:
         proxy = ""
         timeout = 0
         try:
-            proxy_type, proxy, timeout, retry_count = get_config()
+            proxy_type, proxy, timeout, retry_count = get_proxy_config()
         except Exception as error_info:
             print("[-]Error in DownloadFileWithFilename! " + str(error_info))
             log("[-]Error in DownloadFileWithFilename! Proxy config error! Please check the config.")

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-from configparser import ConfigParser
 from PIL import Image
 
 
@@ -83,7 +82,7 @@ def getNumber(filepath, escape_string):
     elif RE_XXX_AV.search(filename.upper()):
         return RE_XXX_AV.search(filename.upper()).group()
     elif "-" in filename or "_" in filename:
-        if "FC2" or "fc2" in filename:
+        if "FC2" in filename.upper():
             filename = filename.upper().replace("PPV", "").replace("--", "-")
         fc2_match = RE_FC2.search(filename)
         if fc2_match:
@@ -127,6 +126,8 @@ def is_uncensored(number):
         or "HEYZO" in number.upper()
     ):
         return True
+    from core.config_io import get_config
+
     config = get_config()
     prefix_list = str(config["uncensored"]["uncensored_prefix"]).split("|")
     for pre in prefix_list:
@@ -144,17 +145,6 @@ def getDataState(json_data):
         return 0
     else:
         return 1
-
-
-def get_config():
-    config_file = ""
-    if os.path.exists("../config.ini"):
-        config_file = "../config.ini"
-    elif os.path.exists("config.ini"):
-        config_file = "config.ini"
-    config = ConfigParser()
-    config.read(config_file, encoding="UTF-8")
-    return config
 
 
 def check_pic(path_pic):

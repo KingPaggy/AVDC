@@ -212,7 +212,7 @@ class CoreFileUtilsTests(unittest.TestCase):
         config = ConfigParser()
         config.read_dict({"uncensored": {"uncensored_prefix": "ZZZ"}})
 
-        with patch("core.file_utils.get_config", return_value=config):
+        with patch("core.config_io.get_config", return_value=config):
             self.assertTrue(is_uncensored("HEYZO-1234"))
             self.assertTrue(is_uncensored("123456-7890"))
             self.assertTrue(is_uncensored("n1234"))
@@ -796,6 +796,222 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         self.assertEqual([name for name, _ in call_order], ["avsox.main"])
         self.assertEqual(result["title"], "")
         self.assertEqual(result["release"], "2024/01/01")
+
+
+# ========================================================================
+# Real-number scraping integration tests
+# Uses real video numbers from each supported category, mocks network layer.
+# Run as part of the regular test suite to verify dispatch routing stays correct.
+# ========================================================================
+
+class RealNumberDispatchTests(unittest.TestCase):
+    """Verify that real-world video numbers are dispatched to the correct scrapers."""
+
+    def setUp(self):
+        self.config = ConfigParser()
+        self.config.read_dict(
+            {
+                "Name_Rule": {
+                    "naming_media": "number",
+                    "naming_file": "title",
+                    "folder_name": "title",
+                }
+            }
+        )
+
+    def _movie_payload(self, title="Movie"):
+        return {
+            "title": title,
+            "actor": "[]",
+            "website": "site",
+            "number": "TEST-123",
+            "release": "2024/01/01",
+            "studio": "Studio",
+            "publisher": "Publisher",
+            "year": "2024",
+            "outline": "Outline",
+            "runtime": "120",
+            "director": "Director",
+            "actor_photo": {},
+            "tag": "[]",
+            "cover": "cover.jpg",
+            "series": "Series",
+            "cover_small": "thumb.jpg",
+        }
+
+    def _fake_scrapers(self, responses, call_order):
+        def fake_factory(name):
+            def fake(*args):
+                call_order.append((name, args))
+                payload = responses.get(name, self._movie_payload())
+                return json.dumps(payload)
+            return fake
+        return {
+            "javbus": SimpleNamespace(
+                main=fake_factory("javbus.main"),
+                main_uncensored=fake_factory("javbus.main_uncensored"),
+                main_us=fake_factory("javbus.main_us"),
+            ),
+            "javdb": SimpleNamespace(
+                main=fake_factory("javdb.main"),
+                main_uncensored=fake_factory("javdb.main_uncensored"),
+                main_us=fake_factory("javdb.main_us"),
+            ),
+            "jav321": SimpleNamespace(
+                main=fake_factory("jav321.main"),
+                main_uncensored=fake_factory("jav321.main_uncensored"),
+                main_us=fake_factory("jav321.main_us"),
+            ),
+            "avsox": SimpleNamespace(
+                main=fake_factory("avsox.main"),
+                main_uncensored=fake_factory("avsox.main_uncensored"),
+                main_us=fake_factory("avsox.main_us"),
+            ),
+            "mgstage": SimpleNamespace(
+                main=fake_factory("mgstage.main"),
+                main_uncensored=fake_factory("mgstage.main_uncensored"),
+                main_us=fake_factory("mgstage.main_us"),
+            ),
+            "dmm": SimpleNamespace(
+                main=fake_factory("dmm.main"),
+                main_uncensored=fake_factory("dmm.main_uncensored"),
+                main_us=fake_factory("dmm.main_us"),
+            ),
+            "xcity": SimpleNamespace(
+                main=fake_factory("xcity.main"),
+                main_uncensored=fake_factory("xcity.main_uncensored"),
+                main_us=fake_factory("xcity.main_us"),
+            ),
+        }
+
+
+class RealNumberExtractTests(RealNumberDispatchTests):
+    """Test getNumber() with real video file names."""
+
+    def test_ssni_standard_censored(self):
+        self.assertEqual(getNumber("SSNI-487.mp4", ""), "SSNI-487")
+
+    def test_abp_standard_censored(self):
+        self.assertEqual(getNumber("ABP-647-C.mp4", ""), "ABP-647")
+
+    def test_ssis_with_disc_suffix(self):
+        self.assertEqual(getNumber("SSIS-487-CD1.mp4", ""), "SSIS-487")
+
+    def test_heyzo_uncensored(self):
+        self.assertEqual(getNumber("HEYZO-3032.mp4", ""), "HEYZO-3032")
+
+    def test_fc2_with_ppv(self):
+        self.assertEqual(getNumber("FC2-PPV-3052557.mp4", ""), "FC2-3052557")
+
+    def test_fc2_without_ppv(self):
+        self.assertEqual(getNumber("FC2-1234567.mp4", ""), "FC2-1234567")
+
+    def test_european_format(self):
+        self.assertEqual(getNumber("sexart.19.11.03.mp4", ""), "sexart.19.11.03")
+
+    def test_mgstyle_mixed_number(self):
+        self.assertEqual(getNumber("259LUXU-504.mp4", ""), "259LUXU-504")
+
+    def test_dmm_style_no_separator(self):
+        self.assertEqual(getNumber("h_001abcd12345.mp4", ""), "h_001abcd12345")
+
+    def test_number_with_date_and_disc(self):
+        self.assertEqual(getNumber("SSIS-123-2024-03-15-CD2.mp4", ""), "SSIS-123")
+
+
+class RealNumberUncensoredTests(RealNumberDispatchTests):
+    """Test is_uncensored() with real number patterns."""
+
+    def test_ssni_not_uncensored(self):
+        self.assertFalse(is_uncensored("SSNI-487"))
+
+    def test_heyzo_is_uncensored(self):
+        self.assertTrue(is_uncensored("HEYZO-3032"))
+
+    def test_all_digit_pattern_is_uncensored(self):
+        self.assertTrue(is_uncensored("111111-001"))
+
+    def test_fc2_not_uncensored(self):
+        self.assertFalse(is_uncensored("FC2-3052557"))
+
+    def test_european_not_uncensored(self):
+        self.assertFalse(is_uncensored("sexart.19.11.03"))
+
+    def test_n_prefix_is_uncensored(self):
+        self.assertTrue(is_uncensored("n1234"))
+
+
+class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
+    """Test that real numbers are dispatched to the correct scraper chain."""
+
+    def test_ssni_uses_standard_chain(self):
+        """SSIS-487 → javbus → jav321 → xcity → javdb → avsox"""
+        call_order = []
+        responses = {"javbus.main": self._movie_payload(title="ok")}
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            scrape_pipeline.getDataFromJSON("SSIS-487", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["javbus.main"])
+
+    def test_heyzo_uses_uncensored_chain(self):
+        """HEYZO-3032 → javbus.uncensored → javdb → jav321 → avsox"""
+        call_order = []
+        responses = {
+            "javbus.main_uncensored": self._movie_payload(title=""),
+            "javdb.main": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
+            patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            scrape_pipeline.getDataFromJSON("HEYZO-3032", self.config, 1, "")
+
+        names = [name for name, _ in call_order]
+        self.assertEqual(names, ["javbus.main_uncensored", "javdb.main"])
+
+    def test_fc2_uses_javdb_only(self):
+        """FC2-3052557 → javdb"""
+        call_order = []
+        responses = {"javdb.main": self._movie_payload(title="ok")}
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            scrape_pipeline.getDataFromJSON("FC2-3052557", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["javdb.main"])
+
+    def test_european_uses_us_chain(self):
+        """sexart.19.11.03 → javdb.us → javbus.us"""
+        call_order = []
+        responses = {
+            "javdb.main_us": self._movie_payload(title=""),
+            "javbus.main_us": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 1, "")
+
+        self.assertEqual([name for name, _ in call_order], ["javdb.main_us", "javbus.main_us"])
+
+    def test_mgstyle_uses_mgstage_chain(self):
+        """259LUXU-504 → mgstage → jav321 → javdb → javbus"""
+        call_order = []
+        responses = {
+            "mgstage.main": self._movie_payload(title=""),
+            "jav321.main": self._movie_payload(title="ok"),
+        }
+        fake_scrapers = self._fake_scrapers(responses, call_order)
+        with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
+            patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
+            patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
+            scrape_pipeline.getDataFromJSON("259LUXU-504", self.config, 1, "")
+
+        names = [name for name, _ in call_order]
+        self.assertEqual(names, ["mgstage.main", "jav321.main"])
 
 
 if __name__ == "__main__":

@@ -1,23 +1,7 @@
 import requests
 import os
-from configparser import ConfigParser
 import cloudscraper
-
-
-# ========================================================================获取config
-def get_config():
-    config_file = ""
-    if os.path.exists("../config.ini"):
-        config_file = "../config.ini"
-    elif os.path.exists("config.ini"):
-        config_file = "config.ini"
-    config = ConfigParser()
-    config.read(config_file, encoding="UTF-8")
-    proxy_type = str(config["proxy"]["type"])
-    proxy = str(config["proxy"]["proxy"])
-    timeout = int(config["proxy"]["timeout"])
-    retry_count = int(config["proxy"]["retry"])
-    return proxy_type, proxy, timeout, retry_count
+from core.config_io import get_proxy_config
 
 
 # ========================================================================获取proxies
@@ -49,7 +33,7 @@ def get_html(url, cookies=None):
     proxy = ""
     timeout = 0
     try:
-        proxy_type, proxy, timeout, retry_count = get_config()
+        proxy_type, proxy, timeout, retry_count = get_proxy_config()
     except Exception as error_info:
         print("Error in get_html :" + str(error_info))
         print("[-]Proxy config error! Please check the config.")
@@ -85,7 +69,7 @@ def post_html(url: str, query: dict):
     proxy = ""
     timeout = 0
     try:
-        proxy_type, proxy, timeout, retry_count = get_config()
+        proxy_type, proxy, timeout, retry_count = get_proxy_config()
     except Exception as error_info:
         print("Error in post_html :" + str(error_info))
         print("[-]Proxy config error! Please check the config.")

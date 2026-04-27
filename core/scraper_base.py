@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from Function.models import Movie
+from core.models import Movie
 
 
 class ScraperBase(ABC):
