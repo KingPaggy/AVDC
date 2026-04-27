@@ -8,7 +8,7 @@ def get_config_file() -> str:
         return "../config.ini"
     if os.path.exists("config.ini"):
         return "config.ini"
-    return ""
+    return "config.ini"
 
 
 def get_config():
@@ -106,4 +106,3 @@ def save_config(json_config):
         print(
             "extrafanart_folder = " + str(json_config["extrafanart_folder"]), file=code
         )
-
