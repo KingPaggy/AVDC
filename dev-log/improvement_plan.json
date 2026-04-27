@@ -22,7 +22,7 @@
       "issue": "shutil.move 直接在 UI 层调用",
       "location": "AVDC_Main_new.py:857, 865-868 (move_file_thread)",
       "description": "move_file_thread 中的 shutil.move 应委托 FileSystemService",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 4,

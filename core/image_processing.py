@@ -21,10 +21,11 @@ MARK_POSITIONS = [
     {"x": 0, "y": 0},
 ]
 
-# Baidu AI credentials — should move to config or env vars in future
-BAIDU_APP_ID = "17013175"
-BAIDU_API_KEY = "IQs1mkG4FerdtmNh6qKDI4fW"
-BAIDU_SECRET_KEY = "dLr9GTqqutqP9nWKKRaEinVDhxYlPbnD"
+# Baidu AI credentials — read from environment variables
+# Set BAIDU_APP_ID, BAIDU_API_KEY, BAIDU_SECRET_KEY in your environment
+BAIDU_APP_ID = os.environ.get("BAIDU_APP_ID", "")
+BAIDU_API_KEY = os.environ.get("BAIDU_API_KEY", "")
+BAIDU_SECRET_KEY = os.environ.get("BAIDU_SECRET_KEY", "")
 
 
 def cut_poster_ai(thumb_path: str, poster_path: str) -> str | None:
@@ -32,6 +33,9 @@ def cut_poster_ai(thumb_path: str, poster_path: str) -> str | None:
 
     Returns poster_path on success, None on failure.
     """
+    if not BAIDU_APP_ID or not BAIDU_API_KEY or not BAIDU_SECRET_KEY:
+        return None
+
     try:
         from aip import AipBodyAnalysis
     except ImportError:
