@@ -38,7 +38,7 @@
       "issue": "is_uncensored 反向依赖 config_io",
       "location": "core/metadata.py:129",
       "description": "is_uncensored() 内部调用 core.config_io.get_config()，应改为接受 config 参数",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 6,

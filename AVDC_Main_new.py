@@ -15,7 +15,7 @@ import os.path
 import re
 import os
 from Ui.AVDC_new import Ui_MainWindow
-from core.config_io import save_config, get_config
+from core.config_io import save_config, get_config, get_default_config
 from core.file_utils import movie_lists, escapePath, getNumber
 from core.scrape_pipeline import getDataFromJSON
 from core.image_processing import add_watermark, cut_poster, cut_poster_ai
@@ -355,45 +355,7 @@ class AVDC_Main_UI(QMainWindow):
             )
 
     def init_config_clicked(self):
-        json_config = {
-            "show_poster": 1,
-            "main_mode": 1,
-            "soft_link": 0,
-            "switch_debug": 1,
-            "failed_file_move": 1,
-            "update_check": 1,
-            "save_log": 1,
-            "website": "all",
-            "failed_output_folder": "failed",
-            "success_output_folder": "JAV_output",
-            "proxy": "",
-            "timeout": 7,
-            "retry": 3,
-            "folder_name": "actor/number-title-release",
-            "naming_media": "number-title",
-            "naming_file": "number",
-            "literals": r"\()",
-            "folders": "failed,JAV_output",
-            "string": "1080p,720p,22-sht.me,-HD",
-            "emby_url": "localhost:8096",
-            "api_key": "",
-            "media_path": "E:/TEMP",
-            "media_type": ".mp4|.avi|.rmvb|.wmv|.mov|.mkv|.flv|.ts|.webm|.MP4|.AVI|.RMVB|.WMV|.MOV|.MKV|.FLV|.TS|.WEBM",
-            "sub_type": ".smi|.srt|.idx|.sub|.sup|.psb|.ssa|.ass|.txt|.usf|.xss|.ssf|.rt|.lrc|.sbv|.vtt|.ttml",
-            "poster_mark": 1,
-            "thumb_mark": 1,
-            "mark_size": 3,
-            "mark_type": "SUB,LEAK,UNCENSORED",
-            "mark_pos": "top_left",
-            "uncensored_poster": 0,
-            "uncensored_prefix": "S2M|BT|LAF|SMD",
-            "nfo_download": 1,
-            "poster_download": 1,
-            "fanart_download": 1,
-            "thumb_download": 1,
-            "extrafanart_download": 0,
-            "extrafanart_folder": "extrafanart",
-        }
+        json_config = get_default_config()
         save_config(json_config)
         self.Load_Config()
 
