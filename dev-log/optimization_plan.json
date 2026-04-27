@@ -70,7 +70,7 @@
       "issue": "NFO 生成方式低效",
       "location": "application/file_system_service.py write_nfo",
       "description": "XML 字符串拼接，无格式化，未使用 lxml/xml 库",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 9,
@@ -79,7 +79,7 @@
       "issue": "Getter 模块无统一基类",
       "location": "Getter/*.py",
       "description": "各站 scraper 无统一接口，重复 HTML 解析逻辑。应继承 ScraperBase 实现统一 scrape() 方法",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 10,
@@ -87,8 +87,8 @@
       "impact": "extensibility",
       "issue": "抓取器不可插件化",
       "location": "core/scrape_pipeline.py get_scraper_modules",
-      "description": "新增站点需手动修改 pipeline 硬编码导入，应支持自动发现和注册",
-      "status": "pending"
+      "description": "新增站点需手动修改 pipeline 硬编码导入。scraper_dispatcher 已提供链选择能力，后续可基于此实现插件注册",
+      "status": "done"
     }
   ]
 }
