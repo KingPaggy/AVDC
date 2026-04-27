@@ -34,7 +34,7 @@
       "issue": "类型契约不统一",
       "location": "core/scrape_pipeline.py, Getter/*",
       "description": "scrapers 返回原始 JSON dict，Movie dataclass 已定义但未在 pipeline 中使用。应统一返回 Movie 类型",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 5,

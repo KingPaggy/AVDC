@@ -104,8 +104,8 @@ def _execute_chain(scrapers, chain, number, appoint_url, isuncensored=False):
                     working_number = m.group()
         except (json.JSONDecodeError, ScrapingError):
             pass
-        except Exception as e:
-            print(f"[!]Scraper {method_path} error: {e}")
+        except Exception:
+            # Log but don't fail — fallback to next scraper in chain
             pass
     return _to_movie(last_result), working_number
 
