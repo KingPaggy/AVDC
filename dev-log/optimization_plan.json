@@ -25,7 +25,7 @@
       "issue": "请求缓存未启用",
       "location": "core/scraper_adapter.py get_cached/clear_cache",
       "description": "scraper_adapter.py 已有缓存基础设施但未在实际抓取中调用。应接入 scrape_pipeline",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 4,
