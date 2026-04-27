@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from core.config_io import get_config, get_config_file, save_config
+from core.config_io import get_config, get_config_file, save_config, get_default_config, get_proxy_config
 from core.file_utils import escapePath, getNumber, getDataState, is_uncensored, movie_lists, check_pic
 from core.metadata import get_info
 import core.scrape_pipeline as scrape_pipeline
@@ -322,6 +322,69 @@ class CoreConfigTests(unittest.TestCase):
             try:
                 os.chdir(tmpdir)
                 self.assertEqual(get_config_file(), "config.ini")
+            finally:
+                os.chdir(cwd)
+
+    def test_get_config_fills_missing_sections_with_defaults(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                Path("config.ini").write_text("[common]\nmain_mode = 2\n", encoding="utf-8")
+                config = get_config()
+                # Missing sections should be filled with defaults
+                self.assertTrue(config.has_section("proxy"))
+                self.assertTrue(config.has_section("Name_Rule"))
+                self.assertTrue(config.has_section("mark"))
+                self.assertTrue(config.has_section("uncensored"))
+                # Existing value should be preserved
+                self.assertEqual(config.get("common", "main_mode"), "2")
+            finally:
+                os.chdir(cwd)
+
+    def test_get_config_fills_missing_keys_with_defaults(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                Path("config.ini").write_text("[proxy]\ntype = http\n", encoding="utf-8")
+                config = get_config()
+                # Missing keys should be filled with defaults
+                self.assertEqual(config.get("proxy", "proxy"), "")
+                self.assertEqual(config.get("proxy", "timeout"), "7")
+                self.assertEqual(config.get("proxy", "retry"), "3")
+                # Existing value should be preserved
+                self.assertEqual(config.get("proxy", "type"), "http")
+            finally:
+                os.chdir(cwd)
+
+    def test_get_default_config_has_all_expected_keys(self):
+        defaults = get_default_config()
+        expected_keys = {
+            "show_poster", "main_mode", "soft_link", "switch_debug",
+            "failed_file_move", "update_check", "save_log", "website",
+            "failed_output_folder", "success_output_folder", "proxy",
+            "timeout", "retry", "folder_name", "naming_media", "naming_file",
+            "literals", "folders", "string", "emby_url", "api_key",
+            "media_path", "media_type", "sub_type", "poster_mark",
+            "thumb_mark", "mark_size", "mark_type", "mark_pos",
+            "uncensored_poster", "uncensored_prefix", "nfo_download",
+            "poster_download", "fanart_download", "thumb_download",
+            "extrafanart_download", "extrafanart_folder",
+        }
+        self.assertEqual(set(defaults.keys()), expected_keys)
+
+    def test_get_proxy_config_returns_defaults_when_missing(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                Path("config.ini").write_text("[common]\nmain_mode = 1\n", encoding="utf-8")
+                proxy_type, proxy, timeout, retry_count = get_proxy_config()
+                self.assertEqual(proxy_type, "no")
+                self.assertEqual(proxy, "")
+                self.assertEqual(timeout, 7)
+                self.assertEqual(retry_count, 3)
             finally:
                 os.chdir(cwd)
 

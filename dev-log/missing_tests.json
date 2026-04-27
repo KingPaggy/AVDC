@@ -46,7 +46,7 @@
       "issue": "get_config() 缺失 section 自动补默认值",
       "location": "test/test_core.py - CoreConfigTests",
       "description": "测试 config.ini 缺少 section 时 _apply_defaults 自动填充",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 7,
@@ -54,7 +54,7 @@
       "issue": "get_config() 缺失 key 自动补默认值",
       "location": "test/test_core.py - CoreConfigTests",
       "description": "测试 section 存在但 key 缺失时自动填充",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 8,
@@ -62,7 +62,7 @@
       "issue": "get_default_config() 返回完整性",
       "location": "test/test_core.py - CoreConfigTests",
       "description": "验证所有 40+ 默认 key 都存在且类型正确",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 9,
@@ -70,7 +70,7 @@
       "issue": "get_proxy_config() 返回默认值",
       "location": "test/test_core.py - CoreConfigTests",
       "description": "测试 proxy section 缺失时的默认返回值",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": 10,
