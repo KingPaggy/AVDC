@@ -25,6 +25,7 @@ from core.config_io import save_config
 from core.file_utils import movie_lists, escapePath, getNumber, check_pic
 from core.metadata import get_info
 from core.scrape_pipeline import getDataFromJSON
+from application.batch_service import BatchCallbacks, BatchWorkflowService
 from Function.getHtml import get_html, get_proxies, get_config
 
 
@@ -93,6 +94,7 @@ class AVDC_Main_UI(QMainWindow):
         self.Load_Config()
         self.show_version()
         self.show()
+        self.batch_service = BatchWorkflowService()
 
     def Init_Ui(self):
         # 替换 listView_result 为 QTreeWidget
@@ -1689,6 +1691,23 @@ class AVDC_Main_UI(QMainWindow):
         self.Ui.progressBar_avdc.setProperty("value", value)
         self.Ui.label_percent.setText(str(value) + "%")
 
+    def add_success_item(self, count_claw, count, movie_number, suffix):
+        node = QTreeWidgetItem(self.item_succ)
+        node.setText(0, str(count_claw) + "-" + str(count) + "." + movie_number + suffix)
+        self.item_succ.addChild(node)
+
+    def add_exception_item(self, count_claw, count, filepath, error_info):
+        node = QTreeWidgetItem(self.item_fail)
+        node.setText(
+            0,
+            str(count_claw)
+            + "-"
+            + str(count)
+            + "."
+            + os.path.splitext(filepath.split("/")[-1])[0],
+        )
+        self.item_fail.addChild(node)
+
     # ========================================================================输出调试信息
     def debug_mode(self, json_data):
         try:
@@ -1961,7 +1980,6 @@ class AVDC_Main_UI(QMainWindow):
         return part + c_word
 
     def AVDC_Main(self):
-        # =======================================================================初始化所需变量
         os.chdir(os.getcwd())
         config_file = "config.ini"
         config = ConfigParser()
@@ -1969,103 +1987,42 @@ class AVDC_Main_UI(QMainWindow):
         movie_path = self.Ui.lineEdit_7.text()
         if movie_path == "":
             movie_path = os.getcwd().replace("\\", "/")
-        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()  # 失败输出目录
-        escape_folder = self.Ui.lineEdit_5.text()  # 多级目录刮削需要排除的目录
+        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()
+        escape_folder = self.Ui.lineEdit_5.text()
         mode = self.Ui.comboBox_2.currentIndex() + 1
         movie_type = self.Ui.lineEdit_6.text()
         escape_string = self.Ui.lineEdit_12.text()
-        # =======================================================================检测更新,判断网络情况,新建failed目录,获取影片列表
+
         if self.UpdateCheck() == "ProxyError":
             self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
             self.Ui.pushButton_start_cap.setEnabled(True)
-            self.add_text_main(
-                "[*]======================================================"
-            )
+            self.add_text_main("[*]======================================================")
             return
-        if self.Ui.radioButton_11.isChecked():
-            self.CreatFailedFolder(failed_folder)  # 新建failed文件夹
-        movie_list = movie_lists(
-            escape_folder, movie_type, movie_path
-        )  # 获取所有需要刮削的影片列表
-        count = 0
-        count_all = str(len(movie_list))
-        self.add_text_main("[+]Find " + count_all + " movies")
-        if count_all == 0:
-            self.progressBarValue.emit(int(100))
-        if config["common"]["soft_link"] == "1":
-            self.add_text_main("[!] --- Soft link mode is ENABLE! ----")
-        # =======================================================================遍历电影列表 交给core处理
-        for movie in movie_list:  # 遍历电影列表 交给core处理
-            count += 1
-            percentage = str(count / int(count_all) * 100)[:4] + "%"
-            value = int(count / int(count_all) * 100)
-            self.add_text_main(
-                "[!] - "
-                + str(self.count_claw)
-                + " - "
-                + percentage
-                + " - ["
-                + str(count)
-                + "/"
-                + count_all
-                + "] -"
-            )
-            try:
-                movie_number = getNumber(movie, escape_string)
-                self.add_text_main(
-                    "[!]Making Data for   ["
-                    + movie
-                    + "], the number is ["
-                    + movie_number
-                    + "]"
-                )
-                result = self.Core_Main(movie, movie_number, mode, count)
-                if result != "not found" and movie_number != "" and result != "error":
-                    node = QTreeWidgetItem(self.item_succ)
-                    node.setText(
-                        0,
-                        str(self.count_claw)
-                        + "-"
-                        + str(count)
-                        + "."
-                        + movie_number
-                        + result,
-                    )
-                    self.item_succ.addChild(node)
-                elif result == "error":
-                    break
-                self.add_text_main(
-                    "[*]======================================================"
-                )
-            except Exception as error_info:
-                node = QTreeWidgetItem(self.item_fail)
-                node.setText(
-                    0,
-                    str(self.count_claw)
-                    + "-"
-                    + str(count)
-                    + "."
-                    + os.path.splitext(movie.split("/")[-1])[0],
-                )
-                self.item_fail.addChild(node)
-                self.add_text_main("[-]Error in AVDC_Main: " + str(error_info))
-                if self.Ui.radioButton_11.isChecked() and not os.path.exists(
-                    failed_folder + "/" + os.path.split(movie)[1]
-                ):
-                    if config["common"]["soft_link"] == "0":
-                        try:
-                            shutil.move(movie, failed_folder + "/")
-                            self.add_text_main("[-]Move " + movie + " to failed folder")
-                        except shutil.Error as error_info:
-                            self.add_text_main(
-                                "[-]Error in AVDC_Main: " + str(error_info)
-                            )
-                self.add_text_main(
-                    "[*]======================================================"
-                )
-            self.progressBarValue.emit(int(value))
-            # self.Ui.label_percent.setText(percentage_text) # handled by set_processbar
 
+        if self.Ui.radioButton_11.isChecked():
+            self.CreatFailedFolder(failed_folder)
+
+        callbacks = BatchCallbacks(
+            log=self.add_text_main,
+            separator=lambda: self.add_text_main("[*]======================================================"),
+            set_progress=self.progressBarValue.emit,
+            on_success=self.add_success_item,
+            on_exception=self.add_exception_item,
+            move_failed=self.moveFailedFolder,
+        )
+        self.batch_service.run(
+            count_claw=self.count_claw,
+            movie_path=movie_path,
+            escape_folder=escape_folder,
+            movie_type=movie_type,
+            escape_string=escape_string,
+            mode=mode,
+            failed_folder=failed_folder,
+            failed_move_enabled=self.Ui.radioButton_11.isChecked(),
+            soft_link_enabled=config["common"]["soft_link"] == "1",
+            process_movie=self.Core_Main,
+            callbacks=callbacks,
+        )
         self.Ui.pushButton_start_cap.setEnabled(True)
         self.CEF(movie_path)
         self.add_text_main("[+]All finished!!!")
