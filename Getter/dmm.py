@@ -3,7 +3,7 @@
 import re
 from lxml import etree
 import json
-from Function.getHtml import get_html
+from core.networking import get_html
 from urllib.parse import urlencode
 
 

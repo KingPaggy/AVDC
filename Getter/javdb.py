@@ -2,8 +2,8 @@ import re
 from bs4 import BeautifulSoup, SoupStrainer
 from lxml import etree
 import json
-from Function.getHtml import get_html_javdb
-from Function.getHtml import post_html
+from core.networking import get_html_javdb
+from core.networking import post_html
 
 
 def getTitle(htmlcode):

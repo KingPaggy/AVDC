@@ -13,7 +13,7 @@ from PIL import Image
 
 from core.file_utils import check_pic
 from core.config_io import get_proxy_config
-from Function.getHtml import get_proxies
+from core.networking import get_proxies
 
 
 @dataclass

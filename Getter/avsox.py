@@ -2,7 +2,7 @@ import json
 import re
 from bs4 import BeautifulSoup
 from lxml import etree
-from Function.getHtml import get_html
+from core.networking import get_html
 
 
 def getActorPhoto(htmlcode):  # //*[@id="star_qdt"]/li/a/img

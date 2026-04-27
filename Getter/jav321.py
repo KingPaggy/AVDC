@@ -1,7 +1,7 @@
 import re
 from lxml import etree
 import json
-from Function.getHtml import post_html
+from core.networking import post_html
 
 
 def getActorPhoto(actor):
