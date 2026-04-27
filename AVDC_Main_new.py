@@ -20,6 +20,9 @@ from core.file_utils import movie_lists, escapePath, getNumber
 from core.scrape_pipeline import getDataFromJSON
 from core.image_processing import add_watermark, cut_poster, cut_poster_ai
 from core.naming_service import resolve_name
+from core.event_bus import EventBus
+from core.events import EventType
+from core.settings_provider import SettingsProvider
 from application.batch_service import BatchCallbacks, BatchWorkflowService
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from application.file_system_service import FileSystemService
@@ -66,6 +69,67 @@ class ToggleableFileHandler(logging.FileHandler):
             self.stream = self._open()
 
 
+class UISettingsProvider(SettingsProvider):
+    """Maps PyQt5 widget states to business configuration."""
+
+    def __init__(self, ui):
+        self.ui = ui
+
+    def is_debug_enabled(self) -> bool:
+        return self.ui.radioButton_5.isChecked()
+
+    def is_program_mode_move(self) -> bool:
+        return self.ui.radioButton.isChecked()
+
+    def should_download_thumb(self) -> bool:
+        return self.ui.checkBox_4.isChecked()
+
+    def should_download_poster(self) -> bool:
+        return self.ui.checkBox_2.isChecked()
+
+    def should_download_fanart(self) -> bool:
+        return self.ui.checkBox_3.isChecked()
+
+    def should_download_nfo(self) -> bool:
+        return self.ui.checkBox.isChecked()
+
+    def should_copy_fanart(self) -> bool:
+        return self.ui.checkBox_3.isChecked()
+
+    def should_restore_imagecut(self) -> bool:
+        return self.ui.radioButton_27.isChecked()
+
+    def is_extrafanart_enabled(self) -> bool:
+        return self.ui.radioButton_13.isChecked()
+
+    def is_print_enabled(self) -> bool:
+        return self.ui.checkBox.isChecked()
+
+    def get_mark_config(self) -> dict:
+        types = []
+        if self.ui.checkBox_5.isChecked():
+            types.append("SUB")
+        if self.ui.checkBox_6.isChecked():
+            types.append("LEAK")
+        if self.ui.checkBox_7.isChecked():
+            types.append("UNCENSORED")
+        if self.ui.radioButton_21.isChecked():
+            pos = "top_left"
+        elif self.ui.radioButton_23.isChecked():
+            pos = "bottom_left"
+        elif self.ui.radioButton_24.isChecked():
+            pos = "top_right"
+        else:
+            pos = "bottom_right"
+        return {
+            "poster_mark": self.ui.radioButton_15.isChecked(),
+            "thumb_mark": self.ui.radioButton_17.isChecked(),
+            "mark_size": self.ui.horizontalSlider.value(),
+            "mark_type": ",".join(types),
+            "mark_pos": pos,
+        }
+
+
 class AVDC_Main_UI(QMainWindow):
     progressBarValue = pyqtSignal(int)  # 进度条信号量
 
@@ -86,6 +150,11 @@ class AVDC_Main_UI(QMainWindow):
         # 初始化日志系统（需在 Init_Ui 之前完成）
         self.setup_logger()
 
+        # Initialize event bus and settings provider
+        self.bus = EventBus()
+        self.settings = UISettingsProvider(self.Ui)
+        self._setup_event_handlers()
+
         self.Init_Ui()
         self.Init()
         self.Load_Config()
@@ -95,6 +164,31 @@ class AVDC_Main_UI(QMainWindow):
         self.file_service = FileProcessingService()
         self.fs_service = FileSystemService()
         self.remote_service = RemoteService()
+
+    def _setup_event_handlers(self):
+        """Register event bus handlers to update the UI."""
+        bus = self.bus
+
+        # Logging
+        bus.on(EventType.LOG_INFO, lambda e: self.add_text_main(e.message))
+        bus.on(EventType.LOG_ERROR, lambda e: self.add_text_main(e.message))
+        bus.on(EventType.LOG_SEPARATOR, lambda e: self.add_text_main("[*]======================================================"))
+
+        # Progress
+        bus.on(EventType.PROGRESS, lambda e: self.progressBarValue.emit(e.value))
+
+        # Success/failure
+        bus.on(EventType.SCRAPE_SUCCESS, lambda e: self.add_success_item(
+            e.count_claw, e.count, e.number, e.suffix
+        ))
+        bus.on(EventType.SCRAPE_FAILED, lambda e: self.add_exception_item(
+            e.count_claw, e.count, e.filepath, e.error
+        ))
+
+        # File operations
+        bus.on(EventType.FILE_MOVED, lambda e: self.add_text_main(
+            f"   [+]Move {e.src} to {e.dst} Success!"
+        ))
 
     def Init_Ui(self):
         # 替换 listView_result 为 QTreeWidget
@@ -1224,34 +1318,8 @@ class AVDC_Main_UI(QMainWindow):
             movie_path = os.getcwd().replace("\\", "/")
         failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()
         success_folder = movie_path + "/" + self.Ui.lineEdit_8.text()
-        deps = FileProcessDependencies(
-            log=self.add_text_main,
-            debug=self.debug_mode,
-            get_json_data=self.get_json_data,
-            create_folder=self.creatFolder,
-            get_part=self.get_part,
-            get_naming_rule=self.get_naming_rule,
-            move_failed_folder=self.moveFailedFolder,
-            thumb_download=self.thumbDownload,
-            small_cover_download=self.smallCoverDownload,
-            cut_image=self.cutImage,
-            fix_size=self.fix_size,
-            copy_fanart=self.copyRenameJpgToFanart,
-            delete_thumb=self.deletethumb,
-            paste_file=self.pasteFileToFolder,
-            print_files=self.PrintFiles,
-            extrafanart_download=self.extrafanartDownload,
-            add_mark=self.add_mark,
-            add_label_info=self.add_label_info,
-            register_result=self.register_result,
-            is_debug_enabled=lambda: self.Ui.radioButton_5.isChecked(),
-            is_program_mode_move=lambda: self.Ui.radioButton.isChecked(),
-            is_show_small_cover=lambda: self.Ui.checkBox_2.isChecked(),
-            is_copy_fanart_enabled=lambda: self.Ui.checkBox_3.isChecked(),
-            is_print_enabled=lambda: self.Ui.checkBox.isChecked(),
-            is_extrafanart_enabled=lambda: self.Ui.radioButton_13.isChecked(),
-            is_restore_imagecut_enabled=lambda: self.Ui.radioButton_27.isChecked(),
-        )
+
+        # Use new event bus + settings provider interfaces
         result = self.file_service.process(
             filepath=filepath,
             number=number,
@@ -1263,8 +1331,22 @@ class AVDC_Main_UI(QMainWindow):
             failed_folder=failed_folder,
             success_folder=success_folder,
             appoint_url=appoint_url,
-            deps=deps,
+            bus=self.bus,
+            settings=self.settings,
         )
+
+        # Store result for UI display
+        if result.success:
+            self.json_array[f"{self.count_claw}-{count}"] = {
+                "number": result.number,
+                "title": result.title,
+                "actor": result.actor,
+                "release": result.release,
+                "studio": result.studio,
+                "poster_path": result.poster_path,
+                "thumb_path": result.thumb_path,
+            }
+
         return result
 
     def register_result(self, count_claw, count, json_data):
