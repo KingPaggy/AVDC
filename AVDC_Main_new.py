@@ -28,6 +28,7 @@ from core.scrape_pipeline import getDataFromJSON
 from application.batch_service import BatchCallbacks, BatchWorkflowService
 from application.file_processing_service import FileProcessDependencies, FileProcessingService
 from application.file_system_service import FileSystemService
+from application.remote_service import RemoteService
 from Function.getHtml import get_html, get_proxies, get_config
 
 
@@ -99,6 +100,7 @@ class AVDC_Main_UI(QMainWindow):
         self.batch_service = BatchWorkflowService()
         self.file_service = FileProcessingService()
         self.fs_service = FileSystemService()
+        self.remote_service = RemoteService()
 
     def Init_Ui(self):
         # 替换 listView_result 为 QTreeWidget
@@ -984,41 +986,16 @@ class AVDC_Main_UI(QMainWindow):
                 "[*]======================================================"
             )
             return
-        count = 1
-        actor_list_temp = ""
-        for actor in actor_list["Items"]:
-            if mode == 3:  # 所有女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            elif mode == 2 and actor["ImageTags"] != {}:  # 有头像的女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            elif mode == 1 and actor["ImageTags"] == {}:  # 没有头像的女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            if (count - 1) % 5 == 0 and actor_list_temp != "":
-                self.add_text_main("[+]" + actor_list_temp)
-                actor_list_temp = ""
+        for line in self.remote_service.show_actor_lines(actor_list, mode):
+            self.add_text_main(line)
         self.add_text_main("[*]======================================================")
 
     def get_emby_actor_list(self):  # 获取emby的演员列表
-        emby_url = self.Ui.lineEdit_EmbyAddr.text()
-        api_key = self.Ui.lineEdit_APIKey.text()
-        emby_url = emby_url.replace("：", ":")
-        url = "http://" + emby_url + "/emby/Persons?api_key=" + api_key
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/60.0.3100.0 Safari/537.36"
-        }
-        actor_list = {}
-        try:
-            getweb = requests.get(str(url), headers=headers, timeout=10)
-            getweb.encoding = "utf-8"
-            actor_list = json.loads(getweb.text)
-        except Exception:
-            self.add_text_main("[-]Error! Check your emby_url or api_key!")
-            actor_list["TotalRecordCount"] = 0
-        return actor_list
+        return self.remote_service.get_emby_actor_list(
+            self.Ui.lineEdit_EmbyAddr.text(),
+            self.Ui.lineEdit_APIKey.text(),
+            self.add_text_main,
+        )
 
     def found_profile_picture(
         self, mode
@@ -1044,89 +1021,29 @@ class AVDC_Main_UI(QMainWindow):
                 "[*]======================================================"
             )
             return
-        count = 1
-        for actor in actor_list["Items"]:
-            flag = 0
-            pic_name = ""
-            if actor["Name"] + ".jpg" in profile_pictures:
-                flag = 1
-                pic_name = actor["Name"] + ".jpg"
-            elif actor["Name"] + ".png" in profile_pictures:
-                flag = 1
-                pic_name = actor["Name"] + ".png"
-            if flag == 0:
-                byname_list = re.split("[,，()（）]", actor["Name"])
-                for byname in byname_list:
-                    if byname + ".jpg" in profile_pictures:
-                        pic_name = byname + ".jpg"
-                        flag = 1
-                        break
-                    elif byname + ".png" in profile_pictures:
-                        pic_name = byname + ".png"
-                        flag = 1
-                        break
-            if flag == 1 and (
-                actor["ImageTags"] == {}
-                or not os.path.exists(path_success + "/" + pic_name)
-            ):
-                if mode == 1:
-                    try:
-                        self.upload_profile_picture(count, actor, path + "/" + pic_name)
-                        shutil.copy(
-                            path + "/" + pic_name, path_success + "/" + pic_name
-                        )
-                    except Exception as error_info:
-                        self.add_text_main(
-                            "[-]Error in found_profile_picture! " + str(error_info)
-                        )
-                else:
-                    self.add_text_main(
-                        "[+]"
-                        + "%4s" % str(count)
-                        + ".Actor name: "
-                        + actor["Name"]
-                        + "  Pic name: "
-                        + pic_name
-                    )
-                count += 1
-        if count == 1:
-            self.add_text_main("[-]NO profile picture can be uploaded!")
+        lines = self.remote_service.find_profile_pictures(
+            mode,
+            actor_list,
+            profile_pictures,
+            path_success,
+            self.Ui.lineEdit_EmbyAddr.text(),
+            self.Ui.lineEdit_APIKey.text(),
+            self.add_text_main,
+            upload_enabled=True,
+        )
+        for line in lines:
+            self.add_text_main(line)
         self.add_text_main("[*]======================================================")
 
     def upload_profile_picture(self, count, actor, pic_path):  # 上传头像
-        emby_url = self.Ui.lineEdit_EmbyAddr.text()
-        api_key = self.Ui.lineEdit_APIKey.text()
-        emby_url = emby_url.replace("：", ":")
-        try:
-            f = open(pic_path, "rb")  # 二进制方式打开图文件
-            b6_pic = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
-            f.close()
-            url = (
-                "http://"
-                + emby_url
-                + "/emby/Items/"
-                + actor["Id"]
-                + "/Images/Primary?api_key="
-                + api_key
-            )
-            if pic_path.endswith("jpg"):
-                header = {
-                    "Content-Type": "image/png",
-                }
-            else:
-                header = {
-                    "Content-Type": "image/jpeg",
-                }
-            requests.post(url=url, data=b6_pic, headers=header)
-            self.add_text_main(
-                "[+]"
-                + "%4s" % str(count)
-                + ".Success upload profile picture for "
-                + actor["Name"]
-                + "!"
-            )
-        except Exception as error_info:
-            self.add_text_main("[-]Error in upload_profile_picture! " + str(error_info))
+        self.remote_service.upload_profile_picture(
+            self.Ui.lineEdit_EmbyAddr.text(),
+            self.Ui.lineEdit_APIKey.text(),
+            count,
+            actor,
+            pic_path,
+            self.add_text_main,
+        )
 
     # ========================================================================自定义文件名
     def get_naming_rule(self, json_data):
@@ -1202,75 +1119,30 @@ class AVDC_Main_UI(QMainWindow):
     def DownloadFileWithFilename(
         self, url, filename, path, Config, filepath, failed_folder
     ):
-        proxy_type = ""
-        retry_count = 0
-        proxy = ""
-        timeout = 0
-        try:
-            proxy_type, proxy, timeout, retry_count = get_config()
-        except Exception as error_info:
-            print("[-]Error in DownloadFileWithFilename! " + str(error_info))
-            self.add_text_main(
-                "[-]Error in DownloadFileWithFilename! Proxy config error! Please check the config."
-            )
-        proxies = get_proxies(proxy_type, proxy)
-        i = 0
-        while i < retry_count:
-            try:
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/68.0.3440.106 Safari/537.36"
-                }
-                print(f"[Debug] Downloading File: {url} with Proxy: {proxies}")
-                result = requests.get(
-                    str(url), headers=headers, timeout=timeout, proxies=proxies
-                )
-                with open(str(path) + "/" + filename, "wb") as code:
-                    code.write(result.content)
-                code.close()
-                return
-            except Exception as error_info:
-                i += 1
-                print("[-]Error in DownloadFileWithFilename! " + str(error_info))
-                print(
-                    "[-]Image Download :   Connect retry "
-                    + str(i)
-                    + "/"
-                    + str(retry_count)
-                )
-        self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
-        self.moveFailedFolder(filepath, failed_folder)
+        self.remote_service.download_file_with_filename(
+            url,
+            filename,
+            path,
+            filepath,
+            failed_folder,
+            self.add_text_main,
+            self.moveFailedFolder,
+        )
 
     # ========================================================================下载缩略图
     def thumbDownload(
         self, json_data, path, naming_rule, Config, filepath, failed_folder
     ):
-        thumb_name = naming_rule + "-thumb.jpg"
-        if os.path.exists(path + "/" + thumb_name):
-            self.add_text_main("[+]Thumb Existed!     " + thumb_name)
-            return
-        i = 1
-        while i <= int(Config["proxy"]["retry"]):
-            self.DownloadFileWithFilename(
-                json_data["cover"], thumb_name, path, Config, filepath, failed_folder
-            )
-            if not check_pic(path + "/" + thumb_name):
-                print(
-                    "[!]Image Download Failed! Trying again. "
-                    + str(i)
-                    + "/"
-                    + Config["proxy"]["retry"]
-                )
-                i = i + 1
-            else:
-                break
-        if check_pic(path + "/" + thumb_name):
-            self.add_text_main("[+]Thumb Downloaded!  " + thumb_name)
-        else:
-            os.remove(path + "/" + thumb_name)
-            raise Exception("The Size of Thumb is Error! Deleted " + thumb_name + "!")
+        self.remote_service.thumb_download(
+            json_data,
+            path,
+            naming_rule,
+            Config,
+            filepath,
+            failed_folder,
+            self.add_text_main,
+            self.moveFailedFolder,
+        )
 
     def deletethumb(self, path, naming_rule):
         self.fs_service.delete_thumb(
@@ -1281,50 +1153,16 @@ class AVDC_Main_UI(QMainWindow):
     def smallCoverDownload(
         self, path, naming_rule, json_data, Config, filepath, failed_folder
     ):
-        if json_data["imagecut"] == 3:
-            if json_data["cover_small"] == "":
-                return "small_cover_error"
-            is_pic_open = 0
-            poster_name = naming_rule + "-poster.jpg"
-            if os.path.exists(path + "/" + poster_name):
-                self.add_text_main("[+]Poster Existed!    " + poster_name)
-                return
-            self.DownloadFileWithFilename(
-                json_data["cover_small"],
-                "cover_small.jpg",
-                path,
-                Config,
-                filepath,
-                failed_folder,
-            )
-            try:
-                if not check_pic(path + "/cover_small.jpg"):
-                    raise Exception(
-                        "The Size of smallcover is Error! Deleted cover_small.jpg!"
-                    )
-                fp = open(path + "/cover_small.jpg", "rb")
-                is_pic_open = 1
-                img = Image.open(fp)
-                w = img.width
-                h = img.height
-                if not (1.4 <= h / w <= 1.6):
-                    self.add_text_main(
-                        "[-]The size of cover_small.jpg is unfit, Try to cut thumb!"
-                    )
-                    fp.close()
-                    os.remove(path + "/cover_small.jpg")
-                    return "small_cover_error"
-                img.save(path + "/" + poster_name)
-                self.add_text_main("[+]Poster Downloaded! " + poster_name)
-                fp.close()
-                os.remove(path + "/cover_small.jpg")
-            except Exception as error_info:
-                self.add_text_main("[-]Error in smallCoverDownload: " + str(error_info))
-                if is_pic_open:
-                    fp.close()
-                os.remove(path + "/cover_small.jpg")
-                self.add_text_main("[+]Try to cut cover!")
-                return "small_cover_error"
+        return self.remote_service.small_cover_download(
+            path,
+            naming_rule,
+            json_data,
+            Config,
+            filepath,
+            failed_folder,
+            self.add_text_main,
+            self.moveFailedFolder,
+        )
 
     # ========================================================================下载剧照
     def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
@@ -1500,6 +1338,19 @@ class AVDC_Main_UI(QMainWindow):
         ]
         img_pic.paste(img_subt, (pos[count]["x"], pos[count]["y"]), mask=a)
         img_pic.save(pic_path, quality=95)
+
+    # ========================================================================下载剧照
+    def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
+        self.remote_service.extrafanart_download(
+            json_data,
+            path,
+            Config,
+            filepath,
+            failed_folder,
+            self.Ui.lineEdit_10.text(),
+            self.add_text_main,
+            self.moveFailedFolder,
+        )
 
     # ========================================================================获取分集序号
     def get_part(self, filepath, failed_folder):
