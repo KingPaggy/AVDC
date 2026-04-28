@@ -32,6 +32,23 @@ from Function.Function import (
 )
 from Function.getHtml import get_html, get_proxies, get_config
 from Function.logger import logger as avdc_logger, get_log_file_path
+from Function.file_ops import (
+    download_file as file_ops_download_file,
+    download_thumb as file_ops_download_thumb,
+    download_small_cover as file_ops_download_small_cover,
+    download_extrafanart as file_ops_download_extrafanart,
+    write_nfo as file_ops_write_nfo,
+    move_to_failed as file_ops_move_to_failed,
+    paste_file_to_folder as file_ops_paste_file_to_folder,
+    copy_as_fanart as file_ops_copy_as_fanart,
+    delete_thumb as file_ops_delete_thumb,
+    get_disc_part as file_ops_get_disc_part,
+    create_output_folder as file_ops_create_output_folder,
+    resolve_naming_rule as file_ops_resolve_naming_rule,
+    ensure_failed_folder as file_ops_ensure_failed_folder,
+    clean_empty_dirs as file_ops_clean_empty_dirs,
+)
+from Function.config_provider import AppConfig
 
 
 # ======================================================================== 日志轮询配置
@@ -1082,50 +1099,55 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================自定义文件名
     def get_naming_rule(self, json_data):
-        (
-            title,
-            studio,
-            publisher,
-            year,
-            outline,
-            runtime,
-            director,
-            actor_photo,
-            actor,
-            release,
-            tag,
-            number,
-            cover,
-            website,
-            series,
-        ) = get_info(json_data)
-        if len(actor.split(",")) >= 10:  # 演员过多取前五个
-            actor = (
-                actor.split(",")[0]
-                + ","
-                + actor.split(",")[1]
-                + ","
-                + actor.split(",")[2]
-                + "等演员"
-            )
-        name_file = (
-            json_data["naming_file"]
-            .replace("title", title)
-            .replace("studio", studio)
-            .replace("year", year)
-            .replace("runtime", runtime)
-            .replace("director", director)
-            .replace("actor", actor)
-            .replace("release", release)
-            .replace("number", number)
-            .replace("series", series)
-            .replace("publisher", publisher)
+        return file_ops_resolve_naming_rule(json_data)
+
+    # ========================================================================从 UI 控件构建 AppConfig（过渡用，后续阶段会替换）
+    def _get_app_config(self) -> AppConfig:
+        """Read current UI state into an AppConfig object."""
+        config = AppConfig(
+            main_mode=1 if self.Ui.radioButton.isChecked() else 2,
+            soft_link=1 if self.Ui.radioButton_3.isChecked() else 0,
+            failed_file_move=1 if self.Ui.radioButton_11.isChecked() else 0,
+            website=self.Ui.comboBox_2.currentText().lower().replace(" ", ""),
+            success_output_folder=self.Ui.lineEdit_8.text(),
+            failed_output_folder=self.Ui.lineEdit_9.text(),
+            proxy_type="http" if self.Ui.radioButton_19.isChecked() else ("socks5" if self.Ui.radioButton_20.isChecked() else "no"),
+            proxy=self.Ui.lineEdit_14.text(),
+            timeout=self.Ui.horizontalSlider_2.value(),
+            retry=self.Ui.horizontalSlider_3.value(),
+            folder_name=self.Ui.lineEdit.text(),
+            naming_media=self.Ui.lineEdit_3.text(),
+            naming_file=self.Ui.lineEdit_2.text(),
+            media_type=self.Ui.lineEdit_6.text(),
+            sub_type=self.Ui.lineEdit_4.text(),
+            media_path=self.Ui.lineEdit_7.text(),
+            literals=self.Ui.lineEdit_13.text(),
+            folders=self.Ui.lineEdit_5.text(),
+            string=self.Ui.lineEdit_12.text(),
+            switch_debug=1 if self.Ui.radioButton_5.isChecked() else 0,
+            emby_url=self.Ui.lineEdit_EmbyAddr.text(),
+            api_key=self.Ui.lineEdit_APIKey.text(),
+            poster_mark=1 if self.Ui.radioButton_15.isChecked() else 0,
+            thumb_mark=1 if self.Ui.radioButton_17.isChecked() else 0,
+            mark_size=self.Ui.horizontalSlider.value(),
+            mark_type=",".join(filter(None, [
+                "SUB" if self.Ui.checkBox_5.isChecked() else "",
+                "LEAK" if self.Ui.checkBox_6.isChecked() else "",
+                "UNCENSORED" if self.Ui.checkBox_7.isChecked() else "",
+            ])),
+            mark_pos="top_left" if self.Ui.radioButton_21.isChecked() else (
+                "bottom_left" if self.Ui.radioButton_23.isChecked() else (
+                    "top_right" if self.Ui.radioButton_24.isChecked() else "bottom_right")),
+            uncensored_poster=1 if self.Ui.radioButton_27.isChecked() else 0,
+            uncensored_prefix=self.Ui.lineEdit_11.text(),
+            nfo_download=1 if self.Ui.checkBox.isChecked() else 0,
+            poster_download=1 if self.Ui.checkBox_2.isChecked() else 0,
+            fanart_download=1 if self.Ui.checkBox_3.isChecked() else 0,
+            thumb_download=1 if self.Ui.checkBox_4.isChecked() else 0,
+            extrafanart_download=1 if self.Ui.radioButton_13.isChecked() else 0,
+            extrafanart_folder=self.Ui.lineEdit_10.text(),
         )
-        name_file = name_file.replace("//", "/").replace("--", "-").strip("-")
-        if len(name_file) > 100:  # 文件名过长 取标题前70个字符
-            self.logger.info("[-]Error in Length of Path! Cut title!")
-            name_file = name_file.replace(title, title[0:70])
-        return name_file
+        return config
 
     # ========================================================================语句添加到日志框（兼容方法，新代码直接用 self.logger.info）
     def add_text_main(self, text):
@@ -1134,388 +1156,54 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================移动到失败文件夹
     def moveFailedFolder(self, filepath, failed_folder):
-        if self.Ui.radioButton_11.isChecked():
-            if self.Ui.radioButton_4.isChecked():
-                try:
-                    shutil.move(filepath, failed_folder + "/")
-                    self.logger.info(
-                        "[-]Move "
-                        + os.path.split(filepath)[1]
-                        + " to Failed output folder Success!"
-                    )
-                except Exception as error_info:
-                    self.logger.info(
-                        "[-]Error in moveFailedFolder! " + str(error_info)
-                    )
+        config = self._get_app_config()
+        file_ops_move_to_failed(filepath, failed_folder, config)
 
     # ========================================================================下载文件
     def DownloadFileWithFilename(
         self, url, filename, path, Config, filepath, failed_folder
     ):
-        proxy_type = ""
-        retry_count = 0
-        proxy = ""
-        timeout = 0
-        try:
-            proxy_type, proxy, timeout, retry_count = get_config()
-        except Exception as error_info:
-            print("[-]Error in DownloadFileWithFilename! " + str(error_info))
-            self.logger.info(
-                "[-]Error in DownloadFileWithFilename! Proxy config error! Please check the config."
-            )
-        proxies = get_proxies(proxy_type, proxy)
-        i = 0
-        while i < retry_count:
-            try:
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/68.0.3440.106 Safari/537.36"
-                }
-                print(f"[Debug] Downloading File: {url} with Proxy: {proxies}")
-                result = requests.get(
-                    str(url), headers=headers, timeout=timeout, proxies=proxies
-                )
-                with open(str(path) + "/" + filename, "wb") as code:
-                    code.write(result.content)
-                code.close()
-                return
-            except Exception as error_info:
-                i += 1
-                print("[-]Error in DownloadFileWithFilename! " + str(error_info))
-                print(
-                    "[-]Image Download :   Connect retry "
-                    + str(i)
-                    + "/"
-                    + str(retry_count)
-                )
-        self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
-        self.moveFailedFolder(filepath, failed_folder)
+        config = self._get_app_config()
+        file_ops_download_file(url, filename, path, config, filepath, failed_folder)
 
     # ========================================================================下载缩略图
     def thumbDownload(
         self, json_data, path, naming_rule, Config, filepath, failed_folder
     ):
-        thumb_name = naming_rule + "-thumb.jpg"
-        if os.path.exists(path + "/" + thumb_name):
-            self.logger.info("[+]Thumb Existed!     " + thumb_name)
-            return
-        i = 1
-        while i <= int(Config["proxy"]["retry"]):
-            self.DownloadFileWithFilename(
-                json_data["cover"], thumb_name, path, Config, filepath, failed_folder
-            )
-            if not check_pic(path + "/" + thumb_name):
-                print(
-                    "[!]Image Download Failed! Trying again. "
-                    + str(i)
-                    + "/"
-                    + Config["proxy"]["retry"]
-                )
-                i = i + 1
-            else:
-                break
-        if check_pic(path + "/" + thumb_name):
-            self.logger.info("[+]Thumb Downloaded!  " + thumb_name)
-        else:
-            os.remove(path + "/" + thumb_name)
-            raise Exception("The Size of Thumb is Error! Deleted " + thumb_name + "!")
+        config = self._get_app_config()
+        file_ops_download_thumb(json_data, path, naming_rule, config, filepath, failed_folder)
 
     def deletethumb(self, path, naming_rule):
-        try:
-            thumb_path = path + "/" + naming_rule + "-thumb.jpg"
-            if (not self.Ui.checkBox_4.isChecked()) and os.path.exists(thumb_path):
-                os.remove(thumb_path)
-                self.logger.info(
-                    "[+]Thumb Delete!      " + naming_rule + "-thumb.jpg"
-                )
-        except Exception as error_info:
-            self.logger.info("[-]Error in deletethumb: " + str(error_info))
+        keep = self.Ui.checkBox_4.isChecked()
+        file_ops_delete_thumb(path, naming_rule, keep)
 
     # ========================================================================无码片下载封面图
     def smallCoverDownload(
         self, path, naming_rule, json_data, Config, filepath, failed_folder
     ):
-        if json_data["imagecut"] == 3:
-            if json_data["cover_small"] == "":
-                return "small_cover_error"
-            is_pic_open = 0
-            poster_name = naming_rule + "-poster.jpg"
-            if os.path.exists(path + "/" + poster_name):
-                self.logger.info("[+]Poster Existed!    " + poster_name)
-                return
-            self.DownloadFileWithFilename(
-                json_data["cover_small"],
-                "cover_small.jpg",
-                path,
-                Config,
-                filepath,
-                failed_folder,
-            )
-            try:
-                if not check_pic(path + "/cover_small.jpg"):
-                    raise Exception(
-                        "The Size of smallcover is Error! Deleted cover_small.jpg!"
-                    )
-                fp = open(path + "/cover_small.jpg", "rb")
-                is_pic_open = 1
-                img = Image.open(fp)
-                w = img.width
-                h = img.height
-                if not (1.4 <= h / w <= 1.6):
-                    self.logger.info(
-                        "[-]The size of cover_small.jpg is unfit, Try to cut thumb!"
-                    )
-                    fp.close()
-                    os.remove(path + "/cover_small.jpg")
-                    return "small_cover_error"
-                img.save(path + "/" + poster_name)
-                self.logger.info("[+]Poster Downloaded! " + poster_name)
-                fp.close()
-                os.remove(path + "/cover_small.jpg")
-            except Exception as error_info:
-                self.logger.info("[-]Error in smallCoverDownload: " + str(error_info))
-                if is_pic_open:
-                    fp.close()
-                os.remove(path + "/cover_small.jpg")
-                self.logger.info("[+]Try to cut cover!")
-                return "small_cover_error"
+        config = self._get_app_config()
+        return file_ops_download_small_cover(path, naming_rule, json_data, config, filepath, failed_folder)
 
     # ========================================================================下载剧照
     def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
-        if len(json_data["extrafanart"]) == 0:
-            json_data["extrafanart"] = ""
-        if self.Ui.radioButton_13.isChecked() and str(json_data["extrafanart"]) != "":
-            self.logger.info("[+]ExtraFanart Downloading!")
-            extrafanart_folder = self.Ui.lineEdit_10.text()
-            if extrafanart_folder == "":
-                extrafanart_folder = "extrafanart"
-            extrafanart_path = path + "/" + extrafanart_folder
-            extrafanart_list = json_data["extrafanart"]
-            if not os.path.exists(extrafanart_path):
-                os.makedirs(extrafanart_path)
-            extrafanart_count = 0
-            for extrafanart_url in extrafanart_list:
-                extrafanart_count += 1
-                if not os.path.exists(
-                    extrafanart_path + "/fanart" + str(extrafanart_count) + ".jpg"
-                ):
-                    i = 1
-                    while i <= int(Config["proxy"]["retry"]):
-                        self.DownloadFileWithFilename(
-                            extrafanart_url,
-                            "fanart" + str(extrafanart_count) + ".jpg",
-                            extrafanart_path,
-                            Config,
-                            filepath,
-                            failed_folder,
-                        )
-                        if not check_pic(
-                            extrafanart_path
-                            + "/fanart"
-                            + str(extrafanart_count)
-                            + ".jpg"
-                        ):
-                            print(
-                                "[!]Image Download Failed! Trying again. "
-                                + str(i)
-                                + "/"
-                                + Config["proxy"]["retry"]
-                            )
-                            i = i + 1
-                        else:
-                            break
+        config = self._get_app_config()
+        file_ops_download_extrafanart(json_data, path, config, filepath, failed_folder)
 
     # ========================================================================打印NFO
     def PrintFiles(
         self, path, name_file, cn_sub, leak, json_data, filepath, failed_folder
     ):
-        (
-            title,
-            studio,
-            publisher,
-            year,
-            outline,
-            runtime,
-            director,
-            actor_photo,
-            actor,
-            release,
-            tag,
-            number,
-            cover,
-            website,
-            series,
-        ) = get_info(json_data)
-        name_media = (
-            json_data["naming_media"]
-            .replace("title", title)
-            .replace("studio", studio)
-            .replace("year", year)
-            .replace("runtime", runtime)
-            .replace("director", director)
-            .replace("actor", actor)
-            .replace("release", release)
-            .replace("number", number)
-            .replace("series", series)
-            .replace("publisher", publisher)
-        )
-        try:
-            if not os.path.exists(path):
-                os.makedirs(path)
-            if os.path.exists(path + "/" + name_file + ".nfo"):
-                self.logger.info("[+]Nfo Existed!       " + name_file + ".nfo")
-                return
-            with open(path + "/" + name_file + ".nfo", "wt", encoding="UTF-8") as code:
-                print('<?xml version="1.0" encoding="UTF-8" ?>', file=code)
-                print("<movie>", file=code)
-                print("  <title>" + name_media + "</title>", file=code)
-                print("  <set>", file=code)
-                print("  </set>", file=code)
-                try:
-                    if (
-                        str(json_data["score"]) != "unknown"
-                        and str(json_data["score"]) != ""
-                        and float(json_data["score"]) != 0.0
-                    ):
-                        print(
-                            "  <rating>" + str(json_data["score"]) + "</rating>",
-                            file=code,
-                        )
-                except Exception as err:
-                    print("Error in json_data score!" + str(err))
-                if studio != "unknown":
-                    print("  <studio>" + studio + "</studio>", file=code)
-                if str(year) != "unknown":
-                    print("  <year>" + year + "</year>", file=code)
-                if outline != "unknown":
-                    print("  <outline>" + outline + "</outline>", file=code)
-                    print("  <plot>" + outline + "</plot>", file=code)
-                if str(runtime) != "unknown":
-                    print(
-                        "  <runtime>" + str(runtime).replace(" ", "") + "</runtime>",
-                        file=code,
-                    )
-                if director != "unknown":
-                    print("  <director>" + director + "</director>", file=code)
-                print("  <poster>" + name_file + "-poster.jpg</poster>", file=code)
-                print("  <thumb>" + name_file + "-thumb.jpg</thumb>", file=code)
-                print("  <fanart>" + name_file + "-fanart.jpg</fanart>", file=code)
-                try:
-                    for key, value in actor_photo.items():
-                        if str(key) != "unknown" and str(key) != "":
-                            print("  <actor>", file=code)
-                            print("   <name>" + key + "</name>", file=code)
-                            if not value == "":  # or actor_photo == []:
-                                print("   <thumb>" + value + "</thumb>", file=code)
-                            print("  </actor>", file=code)
-                except Exception as error_info:
-                    self.logger.info("[-]Error in actor_photo: " + str(error_info))
-                if studio != "unknown":
-                    print("  <maker>" + studio + "</maker>", file=code)
-                if publisher != "unknown":
-                    print("  <maker>" + publisher + "</maker>", file=code)
-                print("  <label>", file=code)
-                print("  </label>", file=code)
-                try:
-                    for i in tag:
-                        if i != "unknown":
-                            print("  <tag>" + i + "</tag>", file=code)
-                except Exception as error_info:
-                    self.logger.info("[-]Error in tag: " + str(error_info))
-                if json_data["imagecut"] == 3:
-                    print("  <tag>無碼</tag>", file=code)
-                if leak == 1:
-                    print("  <tag>流出</tag>", file=code)
-                if cn_sub == 1:
-                    print("  <tag>中文字幕</tag>", file=code)
-                if series != "unknown":
-                    print("  <tag>" + "系列:" + series + "</tag>", file=code)
-                if studio != "unknown":
-                    print("  <tag>" + "製作:" + studio + "</tag>", file=code)
-                if publisher != "unknown":
-                    print("  <tag>" + "發行:" + publisher + "</tag>", file=code)
-                try:
-                    for i in tag:
-                        if i != "unknown":
-                            print("  <genre>" + i + "</genre>", file=code)
-                except Exception as error_info:
-                    self.logger.info("[-]Error in genre: " + str(error_info))
-                if json_data["imagecut"] == 3:
-                    print("  <genre>無碼</genre>", file=code)
-                if leak == 1:
-                    print("  <genre>流出</genre>", file=code)
-                if cn_sub == 1:
-                    print("  <genre>中文字幕</genre>", file=code)
-                if series != "unknown":
-                    print("  <genre>" + "系列:" + series + "</genre>", file=code)
-                if studio != "unknown":
-                    print("  <genre>" + "製作:" + studio + "</genre>", file=code)
-                if publisher != "unknown":
-                    print("  <genre>" + "發行:" + publisher + "</genre>", file=code)
-                print("  <num>" + number + "</num>", file=code)
-                if release != "unknown":
-                    print("  <premiered>" + release + "</premiered>", file=code)
-                    print("  <release>" + release + "</release>", file=code)
-                print("  <cover>" + cover + "</cover>", file=code)
-                print("  <website>" + website + "</website>", file=code)
-                print("</movie>", file=code)
-                self.logger.info("[+]Nfo Wrote!         " + name_file + ".nfo")
-        except Exception as error_info:
-            self.logger.info("[-]Write Failed!")
-            self.logger.info("[-]Error in PrintFiles: " + str(error_info))
-            self.moveFailedFolder(filepath, failed_folder)
+        config = self._get_app_config()
+        file_ops_write_nfo(path, name_file, cn_sub, leak, json_data, filepath, failed_folder, config)
 
     # ========================================================================thumb复制为fanart
     def copyRenameJpgToFanart(self, path, naming_rule):
-        try:
-            if not os.path.exists(path + "/" + naming_rule + "-fanart.jpg"):
-                shutil.copy(
-                    path + "/" + naming_rule + "-thumb.jpg",
-                    path + "/" + naming_rule + "-fanart.jpg",
-                )
-                self.logger.info(
-                    "[+]Fanart Copied!     " + naming_rule + "-fanart.jpg"
-                )
-            else:
-                self.logger.info(
-                    "[+]Fanart Existed!    " + naming_rule + "-fanart.jpg"
-                )
-        except Exception as error_info:
-            self.logger.info("[-]Error in copyRenameJpgToFanart: " + str(error_info))
+        file_ops_copy_as_fanart(path, naming_rule)
 
     # ========================================================================移动视频、字幕
     def pasteFileToFolder(self, filepath, path, naming_rule, failed_folder):
-        type = str(os.path.splitext(filepath)[1])
-        try:
-            if os.path.exists(path + "/" + naming_rule + type):
-                raise FileExistsError
-            if self.Ui.radioButton_3.isChecked():  # 如果使用软链接
-                os.symlink(filepath, path + "/" + naming_rule + type)
-                self.logger.info("[+]Movie Linked!     " + naming_rule + type)
-            else:
-                shutil.move(filepath, path + "/" + naming_rule + type)
-                self.logger.info("[+]Movie Moved!       " + naming_rule + type)
-            path_old = filepath.replace(filepath.split("/")[-1], "")
-            filename = filepath.split("/")[-1].split(".")[0]
-            sub_type = self.Ui.lineEdit_4.text().split("|")
-            for sub in sub_type:
-                if os.path.exists(path_old + "/" + filename + sub):  # 字幕移动
-                    shutil.move(
-                        path_old + "/" + filename + sub, path + "/" + naming_rule + sub
-                    )
-                    self.logger.info("[+]Sub moved!         " + naming_rule + sub)
-                    return True
-        except FileExistsError:
-            self.logger.info("[+]Movie Existed!     " + naming_rule + type)
-            if os.path.split(filepath)[0] != path:
-                self.moveFailedFolder(filepath, failed_folder)
-        except PermissionError:
-            self.logger.info("[-]PermissionError! Please run as Administrator!")
-        except Exception as error_info:
-            self.logger.info("[-]Error in pasteFileToFolder: " + str(error_info))
-        return False
+        config = self._get_app_config()
+        return file_ops_paste_file_to_folder(filepath, path, naming_rule, failed_folder, config)
 
     # ========================================================================有码片裁剪封面
     def cutImage(self, imagecut, path, naming_rule):
@@ -1628,14 +1316,7 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================获取分集序号
     def get_part(self, filepath, failed_folder):
-        try:
-            if re.search(r"-CD\d+", filepath):
-                return re.findall(r"-CD\d+", filepath)[0]
-            if re.search(r"-cd\d+", filepath):
-                return re.findall(r"-cd\d+", filepath)[0]
-        except Exception as error_info:
-            self.logger.info("[-]Error in get_part: " + str(error_info))
-            self.moveFailedFolder(filepath, failed_folder)
+        return file_ops_get_disc_part(filepath)
 
     # ========================================================================更新进度条
     def set_processbar(self, value):
@@ -1660,55 +1341,8 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================创建输出文件夹
     def creatFolder(self, success_folder, json_data, config):
-        (
-            title,
-            studio,
-            publisher,
-            year,
-            outline,
-            runtime,
-            director,
-            actor_photo,
-            actor,
-            release,
-            tag,
-            number,
-            cover,
-            website,
-            series,
-        ) = get_info(json_data)
-        if len(actor.split(",")) >= 10:  # 演员过多取前五个
-            actor = (
-                actor.split(",")[0]
-                + ","
-                + actor.split(",")[1]
-                + ","
-                + actor.split(",")[2]
-                + "等演员"
-            )
-        folder_name = json_data["folder_name"]
-        path = (
-            folder_name.replace("title", title)
-            .replace("studio", studio)
-            .replace("year", year)
-            .replace("runtime", runtime)
-            .replace("director", director)
-            .replace("actor", actor)
-            .replace("release", release)
-            .replace("number", number)
-            .replace("series", series)
-            .replace("publisher", publisher)
-        )  # 生成文件夹名
-        path = path.replace("--", "-").strip("-")
-        if len(path) > 100:  # 文件夹名过长 取标题前70个字符
-            self.logger.info("[-]Error in Length of Path! Cut title!")
-            path = path.replace(title, title[0:70])
-        path = success_folder + "/" + path
-        path = path.replace("--", "-").strip("-")
-        if not os.path.exists(path):
-            path = escapePath(path, config)
-            os.makedirs(path)
-        return path
+        app_config = self._get_app_config()
+        return file_ops_create_output_folder(success_folder, json_data, app_config)
 
     # ========================================================================从指定网站获取json_data
     def get_json_data(self, mode, number, config, appoint_url):
@@ -1760,30 +1394,12 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================新建失败输出文件夹
     def CreatFailedFolder(self, failed_folder):
-        if self.Ui.radioButton_11.isChecked() and not os.path.exists(failed_folder):
-            try:
-                os.makedirs(failed_folder + "/")
-                self.logger.info("[+]Created folder named " + failed_folder + "!")
-            except Exception as error_info:
-                self.logger.info("[-]Error in CreatFailedFolder: " + str(error_info))
+        config = self._get_app_config()
+        file_ops_ensure_failed_folder(failed_folder, config)
 
     # ========================================================================删除空目录
     def CEF(self, path):
-        if os.path.exists(path):
-            for root, dirs, files in os.walk(path):
-                for dir in dirs:
-                    try:
-                        os.removedirs(
-                            root.replace("\\", "/") + "/" + dir
-                        )  # 删除这个空文件夹
-                        self.logger.info(
-                            "[+]Deleting empty folder "
-                            + root.replace("\\", "/")
-                            + "/"
-                            + dir
-                        )
-                    except Exception:
-                        pass
+        file_ops_clean_empty_dirs(path)
 
     def Core_Main(self, filepath, number, mode, count, appoint_url=""):
         # =======================================================================初始化所需变量
