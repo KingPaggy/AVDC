@@ -162,3 +162,72 @@ When modifying scrapers:
 - Check Cloudflare bypass still works (for javdb)
 - Test with both censored and uncensored content
 - Verify image URLs are properly formed
+
+## ⚠️ 开发流程强制要求
+
+以下规则必须在每次代码变更时严格遵守：
+
+### 1. 单次功能提交原则
+
+**每完成一个功能点实现，必须立即提交一次 Git commit。** 禁止将多个无关功能合并到一次提交中。每次提交应包含完整的功能实现和对应的测试。
+
+### 2. 开发日志强制要求
+
+**每次代码提交前，必须更新 `dev-log/CHANGELOG.md` 文件。** 该文件是项目的唯一开发记录来源，必须包含以下两部分：
+
+#### 2.1 本次提交详细说明（每次提交添加在文件顶部）
+
+格式如下：
+
+```markdown
+## [YYYY-MM-DD HH:MM:SS] - {提交摘要标题}
+
+- **提交哈希**: {git commit hash 前 7 位}
+- **涉及文件**:
+  - `path/to/file1.py` — 变更说明
+  - `path/to/file2.py` — 变更说明
+- **详细说明**:
+  - 本次提交解决了什么问题
+  - 新增/修改了哪些功能
+  - 是否有破坏性变更
+  - 测试结果
+```
+
+#### 2.2 项目总结（每次提交追加到文件底部）
+
+以 bullet list 形式存在，每一项的开头必须是时间戳，后接简要功能介绍和相关文件。格式如下：
+
+```markdown
+## 项目总结
+
+- **2026-04-28 14:30** — 添加了事件总线基础设施，新增 `core/events.py`、`core/event_bus.py`，定义 17 种事件类型和线程安全的 EventBus 实现
+- **2026-04-28 15:00** — Service 层适配 EventBus，修改 `application/file_processing_service.py` 接受 `bus=` 和 `settings=` 参数
+```
+
+### 3. 执行顺序
+
+1. 实现功能
+2. 编写/运行测试，确保通过
+3. 更新 `dev-log/CHANGELOG.md`（添加本次提交详细说明 + 更新项目总结）
+4. 提交 Git commit（commit message 应简明扼要描述变更）
+5. 重复步骤 1-4 直到所有功能完成
+
+### 4. CHANGELOG.md 模板
+
+如果文件不存在，使用以下模板创建：
+
+```markdown
+# 开发日志
+
+> 本项目的所有开发记录，包括提交详情和项目总结。
+
+---
+
+<!-- 本次提交详细说明 — 新的提交添加在此处上方 -->
+
+---
+
+## 项目总结
+
+<!-- 项目总结 — bullet list 格式，每次提交追加一项 -->
+```
