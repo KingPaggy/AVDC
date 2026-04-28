@@ -31,46 +31,11 @@ from Function.Function import (
     check_pic,
 )
 from Function.getHtml import get_html, get_proxies, get_config
+from Function.logger import logger as avdc_logger, get_log_file_path
 
 
-# ======================================================================== 自定义日志处理器
-class UIHandler(logging.Handler):
-    """将日志输出到UI界面的处理器"""
-    def __init__(self, text_browser):
-        super().__init__()
-        self.text_browser = text_browser
-
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            # 使用 Qt 的信号机制安全地更新 UI
-            from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
-            QMetaObject.invokeMethod(self.text_browser, "append",
-                                  Qt.QueuedConnection,
-                                  Q_ARG(str, msg))
-        except Exception:
-            self.handleError(record)
-
-
-class ToggleableFileHandler(logging.FileHandler):
-    """支持动态开关的文件处理器"""
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
-        super().__init__(filename, mode, encoding, delay)
-        self.enabled = True
-        self._file_handle = None
-
-    def emit(self, record):
-        if not self.enabled:
-            return
-        return super().emit(record)
-
-    def set_enabled(self, enabled):
-        """启用或禁用文件输出"""
-        if self.enabled == enabled:
-            return
-        self.enabled = enabled
-        if enabled and self.stream is None:
-            self.stream = self._open()
+# ======================================================================== 日志轮询配置
+LOG_POLL_INTERVAL_MS = 200  # QTimer 轮询日志文件的间隔（毫秒）
 
 
 class AVDC_Main_UI(QMainWindow):
@@ -210,70 +175,58 @@ class AVDC_Main_UI(QMainWindow):
             print(f"清理旧日志文件失败: {str(e)}")
 
     def setup_logger(self):
-        """设置统一的日志系统"""
+        """设置日志系统：使用 Function/logger.py 的独立 logger，UI 通过 QTimer 轮询日志文件"""
+        self.logger = avdc_logger
+        self._log_file_path = get_log_file_path()
+        self._log_file_offset = 0
+
+        # 清理旧日志文件，仅保留最新的100个
+        self.cleanup_old_logs(max_keep=100)
+
+        # 启动 QTimer 轮询日志文件，将新内容显示到 UI
+        from PyQt5.QtCore import QTimer
+        self._log_poll_timer = QTimer(self)
+        self._log_poll_timer.timeout.connect(self._poll_log_file)
+        self._log_poll_timer.start(LOG_POLL_INTERVAL_MS)
+
+        self.logger.info("[*]======================== AVDC ========================")
+        self.logger.info("[*]日志系统初始化完成")
+        self.logger.info(f"[*]工作目录: {os.getcwd()}")
+        self.logger.info(f"[*]日志文件: {self._log_file_path}")
+        self.logger.info(f"[*]Python版本: {sys.version.split()[0]}")
+        self.logger.info("[*]======================================================")
+
+    def _poll_log_file(self):
+        """QTimer 回调：读取日志文件新增内容，显示到 UI 的 textBrowser_log"""
         try:
-            # 创建日志目录
-            if not os.path.exists("Log"):
-                os.makedirs("Log")
-
-            # 清理旧日志文件，仅保留最新的100个
-            self.cleanup_old_logs(max_keep=100)
-
-            # 创建 logger
-            self.logger = logging.getLogger('AVDC')
-            self.logger.setLevel(logging.DEBUG)
-            self.logger.handlers.clear()  # 清除可能存在的旧处理器
-
-            # 设置日志格式
-            formatter = logging.Formatter('%(message)s')
-
-            # 1. 控制台处理器
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
-            console_handler.setFormatter(formatter)
-            self.logger.addHandler(console_handler)
-
-            # 2. UI 界面处理器（输出到 textBrowser_log）
-            ui_handler = UIHandler(self.Ui.textBrowser_log)
-            ui_handler.setLevel(logging.INFO)
-            ui_handler.setFormatter(formatter)
-            self.logger.addHandler(ui_handler)
-
-            # 3. 文件处理器（可动态开关）
-            log_filename = f"Log/app_{time.strftime('%Y%m%d_%H%M%S', time.localtime())}.log"
-            self.log_file_handler = ToggleableFileHandler(log_filename, encoding='utf-8')
-            self.log_file_handler.setLevel(logging.DEBUG)
-            self.log_file_handler.setFormatter(formatter)
-
-            # 根据配置启用/禁用文件日志
-            file_log_enabled = self.Ui.radioButton_9.isChecked()
-            self.log_file_handler.set_enabled(file_log_enabled)
-
-            self.logger.addHandler(self.log_file_handler)
-
-            self.logger.info("[*]======================== AVDC ========================")
-            self.logger.info(f"[*]日志系统初始化完成")
-            self.logger.info(f"[*]工作目录: {os.getcwd()}")
-            self.logger.info(f"[*]日志文件: {log_filename}")
-            self.logger.info(f"[*]文件日志: {'启用' if file_log_enabled else '禁用'}")
-            self.logger.info(f"[*]Python版本: {sys.version.split()[0]}")
-            self.logger.info(f"[*]PyQt版本: {QT_VERSION_STR}")
-            self.logger.info("[*]======================================================")
-
-        except Exception as e:
-            print(f"初始化日志系统失败: {str(e)}")
-            # 创建备用 logger
-            self.logger = logging.getLogger('AVDC_Fallback')
-            self.logger.setLevel(logging.ERROR)
-            self.logger.addHandler(logging.StreamHandler())
-            self.logger.error(f"日志系统初始化失败: {str(e)}")
+            log_path = self._log_file_path
+            if not os.path.exists(log_path):
+                return
+            with open(log_path, 'r', encoding='utf-8') as f:
+                f.seek(self._log_file_offset)
+                new_lines = f.readlines()
+                self._log_file_offset = f.tell()
+            if new_lines:
+                for line in new_lines:
+                    # 去掉时间戳前缀，只保留消息部分（格式: YYYY-MM-DD HH:MM:SS - AVDC - LEVEL - msg）
+                    msg = line.strip()
+                    if ' - ' in msg:
+                        # 取最后一段消息
+                        parts = msg.split(' - ', 3)
+                        if len(parts) >= 4:
+                            msg = parts[3]
+                    self.Ui.textBrowser_log.append(msg)
+                # 自动滚动到底部
+                cursor = self.Ui.textBrowser_log.textCursor()
+                cursor.movePosition(cursor.End)
+                self.Ui.textBrowser_log.setTextCursor(cursor)
+        except Exception:
+            pass  # 轮询失败不中断程序
 
     def toggle_file_logging(self, enabled):
-        """切换文件日志开关"""
-        if hasattr(self, 'log_file_handler'):
-            self.log_file_handler.set_enabled(enabled)
-            status = '启用' if enabled else '禁用'
-            self.logger.info(f"[*]文件日志已{status}")
+        """切换文件日志开关（logger 始终写文件，此方法保留兼容性）"""
+        status = '启用' if enabled else '禁用'
+        self.logger.info(f"[*]文件日志已{status}")
 
     def log_error(self, error, context=""):
         """记录错误日志"""
@@ -343,7 +296,7 @@ class AVDC_Main_UI(QMainWindow):
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
             self.log_error(error_info, "pushButton_start_cap_clicked")
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in pushButton_start_cap_clicked: " + str(error_info)
             )
 
@@ -353,7 +306,7 @@ class AVDC_Main_UI(QMainWindow):
             t = threading.Thread(target=self.init_config_clicked)
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in pushButton_save_config_clicked: " + str(error_info)
             )
 
@@ -545,7 +498,7 @@ class AVDC_Main_UI(QMainWindow):
             t = threading.Thread(target=self.save_config_clicked)
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in pushButton_save_config_clicked: " + str(error_info)
             )
 
@@ -725,7 +678,7 @@ class AVDC_Main_UI(QMainWindow):
             "*.WEBM);;All Files(*)",
         )
         self.select_file_path = filepath
-        self.add_text_main("[+]Selected file: " + filepath)
+        self.logger.info("[+]Selected file: " + filepath)
 
     def pushButton_start_single_file_clicked(self):
         if self.select_file_path != "":
@@ -734,12 +687,12 @@ class AVDC_Main_UI(QMainWindow):
                 t = threading.Thread(target=self.select_file_thread)
                 t.start()  # 启动线程,即让线程开始执行
             except Exception as error_info:
-                self.add_text_main(
+                self.logger.info(
                     "[-]Error in pushButton_start_single_file_clicked: "
                     + str(error_info)
                 )
         else:
-            self.add_text_main("[-]Please select a file first!")
+            self.logger.info("[-]Please select a file first!")
 
     def select_file_thread(self):
         file_name = self.select_file_path
@@ -766,7 +719,7 @@ class AVDC_Main_UI(QMainWindow):
                     file_name = file_name.replace(part, "")
                 if "-c." in file_path or "-C." in file_path:
                     file_name = file_name[0:-2]
-            self.add_text_main(
+            self.logger.info(
                 "[!]Making Data for   ["
                 + file_path
                 + "], the number is ["
@@ -775,8 +728,8 @@ class AVDC_Main_UI(QMainWindow):
             )
             self.Core_Main(file_path, file_name, mode, 0, appoint_url)
         except Exception as error_info:
-            self.add_text_main("[-]Error in select_file_thread: " + str(error_info))
-        self.add_text_main("[*]======================================================")
+            self.logger.info("[-]Error in select_file_thread: " + str(error_info))
+        self.logger.info("[*]======================================================")
 
     # ========================================================================小工具-裁剪封面图
     def pushButton_select_thumb_clicked(self):
@@ -790,7 +743,7 @@ class AVDC_Main_UI(QMainWindow):
                 t = threading.Thread(target=self.select_thumb_thread, args=(filePath,))
                 t.start()  # 启动线程,即让线程开始执行
             except Exception as error_info:
-                self.add_text_main(
+                self.logger.info(
                     "[-]Error in pushButton_select_thumb_clicked: " + str(error_info)
                 )
 
@@ -798,7 +751,7 @@ class AVDC_Main_UI(QMainWindow):
         file_name = file_path.split("/")[-1]
         file_path = file_path.replace("/" + file_name, "")
         self.image_cut(file_path, file_name, 2)
-        self.add_text_main("[*]======================================================")
+        self.logger.info("[*]======================================================")
 
     def image_cut(self, path, file_name, mode=1):
         png_name = file_name.replace("-thumb.jpg", "-poster.jpg")
@@ -808,7 +761,7 @@ class AVDC_Main_UI(QMainWindow):
             if os.path.exists(png_path):
                 os.remove(png_path)
         except Exception as error_info:
-            self.add_text_main("[-]Error in image_cut: " + str(error_info))
+            self.logger.info("[-]Error in image_cut: " + str(error_info))
             return
 
         """ 你的 APPID AK SK """
@@ -854,7 +807,7 @@ class AVDC_Main_UI(QMainWindow):
         img_new_png = img.crop((ex, ey, ew + ex, eh + ey))
         fp.close()
         img_new_png.save(png_path)
-        self.add_text_main(
+        self.logger.info(
             "[+]Poster Cut         " + png_name + " from " + file_name + "!"
         )
         if mode == 2:
@@ -872,7 +825,7 @@ class AVDC_Main_UI(QMainWindow):
             t = threading.Thread(target=self.move_file_thread)
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
-            self.add_text_main("[-]Error in move_file: " + str(error_info))
+            self.logger.info("[-]Error in move_file: " + str(error_info))
 
     def move_file_thread(self):
         escape_dir = self.Ui.lineEdit_ExcludeDir.text()
@@ -882,9 +835,9 @@ class AVDC_Main_UI(QMainWindow):
         movie_list = movie_lists(escape_dir, movie_type, movie_path)
         des_path = movie_path + "/Movie_moved"
         if not os.path.exists(des_path):
-            self.add_text_main("[+]Created folder Movie_moved!")
+            self.logger.info("[+]Created folder Movie_moved!")
             os.makedirs(des_path)
-        self.add_text_main("[+]Move Movies Start!")
+        self.logger.info("[+]Move Movies Start!")
         for movie in movie_list:
             if des_path in movie:
                 continue
@@ -892,7 +845,7 @@ class AVDC_Main_UI(QMainWindow):
             des = des_path + "/" + sour.split("/")[-1]
             try:
                 shutil.move(sour, des)
-                self.add_text_main(
+                self.logger.info(
                     "   [+]Move " + sour.split("/")[-1] + " to Movie_moved Success!"
                 )
                 path_old = sour.replace(sour.split("/")[-1], "")
@@ -903,11 +856,11 @@ class AVDC_Main_UI(QMainWindow):
                             path_old + "/" + filename + sub,
                             des_path + "/" + filename + sub,
                         )
-                        self.add_text_main("   [+]Sub moved! " + filename + sub)
+                        self.logger.info("   [+]Sub moved! " + filename + sub)
             except Exception as error_info:
-                self.add_text_main("[-]Error in move_file_thread: " + str(error_info))
-        self.add_text_main("[+]Move Movies All Finished!!!")
-        self.add_text_main("[*]======================================================")
+                self.logger.info("[-]Error in move_file_thread: " + str(error_info))
+        self.logger.info("[+]Move Movies All Finished!!!")
+        self.logger.info("[*]======================================================")
 
     # ========================================================================小工具-emby女优头像
     def pushButton_add_actor_pic_clicked(self):  # 添加头像按钮响应
@@ -915,14 +868,14 @@ class AVDC_Main_UI(QMainWindow):
         emby_url = self.Ui.lineEdit_EmbyAddr.text()
         api_key = self.Ui.lineEdit_APIKey.text()
         if emby_url == "":
-            self.add_text_main("[-]The emby_url is empty!")
-            self.add_text_main(
+            self.logger.info("[-]The emby_url is empty!")
+            self.logger.info(
                 "[*]======================================================"
             )
             return
         elif api_key == "":
-            self.add_text_main("[-]The api_key is empty!")
-            self.add_text_main(
+            self.logger.info("[-]The api_key is empty!")
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -930,7 +883,7 @@ class AVDC_Main_UI(QMainWindow):
             t = threading.Thread(target=self.found_profile_picture, args=(1,))
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in pushButton_add_actor_pic_clicked: " + str(error_info)
             )
 
@@ -939,14 +892,14 @@ class AVDC_Main_UI(QMainWindow):
         emby_url = self.Ui.lineEdit_EmbyAddr.text()
         api_key = self.Ui.lineEdit_APIKey.text()
         if emby_url == "":
-            self.add_text_main("[-]The emby_url is empty!")
-            self.add_text_main(
+            self.logger.info("[-]The emby_url is empty!")
+            self.logger.info(
                 "[*]======================================================"
             )
             return
         elif api_key == "":
-            self.add_text_main("[-]The api_key is empty!")
-            self.add_text_main(
+            self.logger.info("[-]The api_key is empty!")
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -955,7 +908,7 @@ class AVDC_Main_UI(QMainWindow):
                 t = threading.Thread(target=self.found_profile_picture, args=(2,))
                 t.start()  # 启动线程,即让线程开始执行
             except Exception as error_info:
-                self.add_text_main(
+                self.logger.info(
                     "[-]Error in pushButton_show_pic_actor_clicked: " + str(error_info)
                 )
         else:
@@ -966,20 +919,20 @@ class AVDC_Main_UI(QMainWindow):
                 )
                 t.start()  # 启动线程,即让线程开始执行
             except Exception as error_info:
-                self.add_text_main(
+                self.logger.info(
                     "[-]Error in pushButton_show_pic_actor_clicked: " + str(error_info)
                 )
 
     def show_actor(self, mode):  # 按模式显示相应列表
         if mode == 1:  # 没有头像的女优
-            self.add_text_main("[+]没有头像的女优!")
+            self.logger.info("[+]没有头像的女优!")
         elif mode == 2:  # 有头像的女优
-            self.add_text_main("[+]有头像的女优!")
+            self.logger.info("[+]有头像的女优!")
         elif mode == 3:  # 所有女优
-            self.add_text_main("[+]所有女优!")
+            self.logger.info("[+]所有女优!")
         actor_list = self.get_emby_actor_list()
         if actor_list["TotalRecordCount"] == 0:
-            self.add_text_main(
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -996,9 +949,9 @@ class AVDC_Main_UI(QMainWindow):
                 actor_list_temp += str(count) + "." + actor["Name"] + ","
                 count += 1
             if (count - 1) % 5 == 0 and actor_list_temp != "":
-                self.add_text_main("[+]" + actor_list_temp)
+                self.logger.info("[+]" + actor_list_temp)
                 actor_list_temp = ""
-        self.add_text_main("[*]======================================================")
+        self.logger.info("[*]======================================================")
 
     def get_emby_actor_list(self):  # 获取emby的演员列表
         emby_url = self.Ui.lineEdit_EmbyAddr.text()
@@ -1015,7 +968,7 @@ class AVDC_Main_UI(QMainWindow):
             getweb.encoding = "utf-8"
             actor_list = json.loads(getweb.text)
         except Exception:
-            self.add_text_main("[-]Error! Check your emby_url or api_key!")
+            self.logger.info("[-]Error! Check your emby_url or api_key!")
             actor_list["TotalRecordCount"] = 0
         return actor_list
 
@@ -1023,13 +976,13 @@ class AVDC_Main_UI(QMainWindow):
         self, mode
     ):  # mode=1，上传头像，mode=2，显示可添加头像的女优
         if mode == 1:
-            self.add_text_main("[+]Start upload profile pictures!")
+            self.logger.info("[+]Start upload profile pictures!")
         elif mode == 2:
-            self.add_text_main("[+]可添加头像的女优!")
+            self.logger.info("[+]可添加头像的女优!")
         path = "Actor"
         if not os.path.exists(path):
-            self.add_text_main("[+]Actor folder not exist!")
-            self.add_text_main(
+            self.logger.info("[+]Actor folder not exist!")
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -1039,7 +992,7 @@ class AVDC_Main_UI(QMainWindow):
         profile_pictures = os.listdir(path)
         actor_list = self.get_emby_actor_list()
         if actor_list["TotalRecordCount"] == 0:
-            self.add_text_main(
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -1075,11 +1028,11 @@ class AVDC_Main_UI(QMainWindow):
                             path + "/" + pic_name, path_success + "/" + pic_name
                         )
                     except Exception as error_info:
-                        self.add_text_main(
+                        self.logger.info(
                             "[-]Error in found_profile_picture! " + str(error_info)
                         )
                 else:
-                    self.add_text_main(
+                    self.logger.info(
                         "[+]"
                         + "%4s" % str(count)
                         + ".Actor name: "
@@ -1089,8 +1042,8 @@ class AVDC_Main_UI(QMainWindow):
                     )
                 count += 1
         if count == 1:
-            self.add_text_main("[-]NO profile picture can be uploaded!")
-        self.add_text_main("[*]======================================================")
+            self.logger.info("[-]NO profile picture can be uploaded!")
+        self.logger.info("[*]======================================================")
 
     def upload_profile_picture(self, count, actor, pic_path):  # 上传头像
         emby_url = self.Ui.lineEdit_EmbyAddr.text()
@@ -1117,7 +1070,7 @@ class AVDC_Main_UI(QMainWindow):
                     "Content-Type": "image/jpeg",
                 }
             requests.post(url=url, data=b6_pic, headers=header)
-            self.add_text_main(
+            self.logger.info(
                 "[+]"
                 + "%4s" % str(count)
                 + ".Success upload profile picture for "
@@ -1125,7 +1078,7 @@ class AVDC_Main_UI(QMainWindow):
                 + "!"
             )
         except Exception as error_info:
-            self.add_text_main("[-]Error in upload_profile_picture! " + str(error_info))
+            self.logger.info("[-]Error in upload_profile_picture! " + str(error_info))
 
     # ========================================================================自定义文件名
     def get_naming_rule(self, json_data):
@@ -1170,19 +1123,14 @@ class AVDC_Main_UI(QMainWindow):
         )
         name_file = name_file.replace("//", "/").replace("--", "-").strip("-")
         if len(name_file) > 100:  # 文件名过长 取标题前70个字符
-            self.add_text_main("[-]Error in Length of Path! Cut title!")
+            self.logger.info("[-]Error in Length of Path! Cut title!")
             name_file = name_file.replace(title, title[0:70])
         return name_file
 
-    # ========================================================================语句添加到日志框
+    # ========================================================================语句添加到日志框（兼容方法，新代码直接用 self.logger.info）
     def add_text_main(self, text):
-        """统一的日志输出接口 - 输出到界面、文件和控制台"""
-        try:
-            # 使用统一的日志系统
-            if hasattr(self, 'logger'):
-                self.logger.info(str(text))
-        except Exception as error_info:
-            print(f"[-]Error in add_text_main: {str(error_info)}")
+        """兼容旧代码的日志接口 — 内部委托给 logger"""
+        self.logger.info(str(text))
 
     # ========================================================================移动到失败文件夹
     def moveFailedFolder(self, filepath, failed_folder):
@@ -1190,13 +1138,13 @@ class AVDC_Main_UI(QMainWindow):
             if self.Ui.radioButton_4.isChecked():
                 try:
                     shutil.move(filepath, failed_folder + "/")
-                    self.add_text_main(
+                    self.logger.info(
                         "[-]Move "
                         + os.path.split(filepath)[1]
                         + " to Failed output folder Success!"
                     )
                 except Exception as error_info:
-                    self.add_text_main(
+                    self.logger.info(
                         "[-]Error in moveFailedFolder! " + str(error_info)
                     )
 
@@ -1212,7 +1160,7 @@ class AVDC_Main_UI(QMainWindow):
             proxy_type, proxy, timeout, retry_count = get_config()
         except Exception as error_info:
             print("[-]Error in DownloadFileWithFilename! " + str(error_info))
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in DownloadFileWithFilename! Proxy config error! Please check the config."
             )
         proxies = get_proxies(proxy_type, proxy)
@@ -1242,7 +1190,7 @@ class AVDC_Main_UI(QMainWindow):
                     + "/"
                     + str(retry_count)
                 )
-        self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
+        self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
         self.moveFailedFolder(filepath, failed_folder)
 
     # ========================================================================下载缩略图
@@ -1251,7 +1199,7 @@ class AVDC_Main_UI(QMainWindow):
     ):
         thumb_name = naming_rule + "-thumb.jpg"
         if os.path.exists(path + "/" + thumb_name):
-            self.add_text_main("[+]Thumb Existed!     " + thumb_name)
+            self.logger.info("[+]Thumb Existed!     " + thumb_name)
             return
         i = 1
         while i <= int(Config["proxy"]["retry"]):
@@ -1269,7 +1217,7 @@ class AVDC_Main_UI(QMainWindow):
             else:
                 break
         if check_pic(path + "/" + thumb_name):
-            self.add_text_main("[+]Thumb Downloaded!  " + thumb_name)
+            self.logger.info("[+]Thumb Downloaded!  " + thumb_name)
         else:
             os.remove(path + "/" + thumb_name)
             raise Exception("The Size of Thumb is Error! Deleted " + thumb_name + "!")
@@ -1279,11 +1227,11 @@ class AVDC_Main_UI(QMainWindow):
             thumb_path = path + "/" + naming_rule + "-thumb.jpg"
             if (not self.Ui.checkBox_4.isChecked()) and os.path.exists(thumb_path):
                 os.remove(thumb_path)
-                self.add_text_main(
+                self.logger.info(
                     "[+]Thumb Delete!      " + naming_rule + "-thumb.jpg"
                 )
         except Exception as error_info:
-            self.add_text_main("[-]Error in deletethumb: " + str(error_info))
+            self.logger.info("[-]Error in deletethumb: " + str(error_info))
 
     # ========================================================================无码片下载封面图
     def smallCoverDownload(
@@ -1295,7 +1243,7 @@ class AVDC_Main_UI(QMainWindow):
             is_pic_open = 0
             poster_name = naming_rule + "-poster.jpg"
             if os.path.exists(path + "/" + poster_name):
-                self.add_text_main("[+]Poster Existed!    " + poster_name)
+                self.logger.info("[+]Poster Existed!    " + poster_name)
                 return
             self.DownloadFileWithFilename(
                 json_data["cover_small"],
@@ -1316,22 +1264,22 @@ class AVDC_Main_UI(QMainWindow):
                 w = img.width
                 h = img.height
                 if not (1.4 <= h / w <= 1.6):
-                    self.add_text_main(
+                    self.logger.info(
                         "[-]The size of cover_small.jpg is unfit, Try to cut thumb!"
                     )
                     fp.close()
                     os.remove(path + "/cover_small.jpg")
                     return "small_cover_error"
                 img.save(path + "/" + poster_name)
-                self.add_text_main("[+]Poster Downloaded! " + poster_name)
+                self.logger.info("[+]Poster Downloaded! " + poster_name)
                 fp.close()
                 os.remove(path + "/cover_small.jpg")
             except Exception as error_info:
-                self.add_text_main("[-]Error in smallCoverDownload: " + str(error_info))
+                self.logger.info("[-]Error in smallCoverDownload: " + str(error_info))
                 if is_pic_open:
                     fp.close()
                 os.remove(path + "/cover_small.jpg")
-                self.add_text_main("[+]Try to cut cover!")
+                self.logger.info("[+]Try to cut cover!")
                 return "small_cover_error"
 
     # ========================================================================下载剧照
@@ -1339,7 +1287,7 @@ class AVDC_Main_UI(QMainWindow):
         if len(json_data["extrafanart"]) == 0:
             json_data["extrafanart"] = ""
         if self.Ui.radioButton_13.isChecked() and str(json_data["extrafanart"]) != "":
-            self.add_text_main("[+]ExtraFanart Downloading!")
+            self.logger.info("[+]ExtraFanart Downloading!")
             extrafanart_folder = self.Ui.lineEdit_10.text()
             if extrafanart_folder == "":
                 extrafanart_folder = "extrafanart"
@@ -1417,7 +1365,7 @@ class AVDC_Main_UI(QMainWindow):
             if not os.path.exists(path):
                 os.makedirs(path)
             if os.path.exists(path + "/" + name_file + ".nfo"):
-                self.add_text_main("[+]Nfo Existed!       " + name_file + ".nfo")
+                self.logger.info("[+]Nfo Existed!       " + name_file + ".nfo")
                 return
             with open(path + "/" + name_file + ".nfo", "wt", encoding="UTF-8") as code:
                 print('<?xml version="1.0" encoding="UTF-8" ?>', file=code)
@@ -1463,7 +1411,7 @@ class AVDC_Main_UI(QMainWindow):
                                 print("   <thumb>" + value + "</thumb>", file=code)
                             print("  </actor>", file=code)
                 except Exception as error_info:
-                    self.add_text_main("[-]Error in actor_photo: " + str(error_info))
+                    self.logger.info("[-]Error in actor_photo: " + str(error_info))
                 if studio != "unknown":
                     print("  <maker>" + studio + "</maker>", file=code)
                 if publisher != "unknown":
@@ -1475,7 +1423,7 @@ class AVDC_Main_UI(QMainWindow):
                         if i != "unknown":
                             print("  <tag>" + i + "</tag>", file=code)
                 except Exception as error_info:
-                    self.add_text_main("[-]Error in tag: " + str(error_info))
+                    self.logger.info("[-]Error in tag: " + str(error_info))
                 if json_data["imagecut"] == 3:
                     print("  <tag>無碼</tag>", file=code)
                 if leak == 1:
@@ -1493,7 +1441,7 @@ class AVDC_Main_UI(QMainWindow):
                         if i != "unknown":
                             print("  <genre>" + i + "</genre>", file=code)
                 except Exception as error_info:
-                    self.add_text_main("[-]Error in genre: " + str(error_info))
+                    self.logger.info("[-]Error in genre: " + str(error_info))
                 if json_data["imagecut"] == 3:
                     print("  <genre>無碼</genre>", file=code)
                 if leak == 1:
@@ -1513,10 +1461,10 @@ class AVDC_Main_UI(QMainWindow):
                 print("  <cover>" + cover + "</cover>", file=code)
                 print("  <website>" + website + "</website>", file=code)
                 print("</movie>", file=code)
-                self.add_text_main("[+]Nfo Wrote!         " + name_file + ".nfo")
+                self.logger.info("[+]Nfo Wrote!         " + name_file + ".nfo")
         except Exception as error_info:
-            self.add_text_main("[-]Write Failed!")
-            self.add_text_main("[-]Error in PrintFiles: " + str(error_info))
+            self.logger.info("[-]Write Failed!")
+            self.logger.info("[-]Error in PrintFiles: " + str(error_info))
             self.moveFailedFolder(filepath, failed_folder)
 
     # ========================================================================thumb复制为fanart
@@ -1527,15 +1475,15 @@ class AVDC_Main_UI(QMainWindow):
                     path + "/" + naming_rule + "-thumb.jpg",
                     path + "/" + naming_rule + "-fanart.jpg",
                 )
-                self.add_text_main(
+                self.logger.info(
                     "[+]Fanart Copied!     " + naming_rule + "-fanart.jpg"
                 )
             else:
-                self.add_text_main(
+                self.logger.info(
                     "[+]Fanart Existed!    " + naming_rule + "-fanart.jpg"
                 )
         except Exception as error_info:
-            self.add_text_main("[-]Error in copyRenameJpgToFanart: " + str(error_info))
+            self.logger.info("[-]Error in copyRenameJpgToFanart: " + str(error_info))
 
     # ========================================================================移动视频、字幕
     def pasteFileToFolder(self, filepath, path, naming_rule, failed_folder):
@@ -1545,10 +1493,10 @@ class AVDC_Main_UI(QMainWindow):
                 raise FileExistsError
             if self.Ui.radioButton_3.isChecked():  # 如果使用软链接
                 os.symlink(filepath, path + "/" + naming_rule + type)
-                self.add_text_main("[+]Movie Linked!     " + naming_rule + type)
+                self.logger.info("[+]Movie Linked!     " + naming_rule + type)
             else:
                 shutil.move(filepath, path + "/" + naming_rule + type)
-                self.add_text_main("[+]Movie Moved!       " + naming_rule + type)
+                self.logger.info("[+]Movie Moved!       " + naming_rule + type)
             path_old = filepath.replace(filepath.split("/")[-1], "")
             filename = filepath.split("/")[-1].split(".")[0]
             sub_type = self.Ui.lineEdit_4.text().split("|")
@@ -1557,16 +1505,16 @@ class AVDC_Main_UI(QMainWindow):
                     shutil.move(
                         path_old + "/" + filename + sub, path + "/" + naming_rule + sub
                     )
-                    self.add_text_main("[+]Sub moved!         " + naming_rule + sub)
+                    self.logger.info("[+]Sub moved!         " + naming_rule + sub)
                     return True
         except FileExistsError:
-            self.add_text_main("[+]Movie Existed!     " + naming_rule + type)
+            self.logger.info("[+]Movie Existed!     " + naming_rule + type)
             if os.path.split(filepath)[0] != path:
                 self.moveFailedFolder(filepath, failed_folder)
         except PermissionError:
-            self.add_text_main("[-]PermissionError! Please run as Administrator!")
+            self.logger.info("[-]PermissionError! Please run as Administrator!")
         except Exception as error_info:
-            self.add_text_main("[-]Error in pasteFileToFolder: " + str(error_info))
+            self.logger.info("[-]Error in pasteFileToFolder: " + str(error_info))
         return False
 
     # ========================================================================有码片裁剪封面
@@ -1575,7 +1523,7 @@ class AVDC_Main_UI(QMainWindow):
             thumb_name = naming_rule + "-thumb.jpg"
             poster_name = naming_rule + "-poster.jpg"
             if os.path.exists(path + "/" + poster_name):
-                self.add_text_main("[+]Poster Existed!    " + poster_name)
+                self.logger.info("[+]Poster Existed!    " + poster_name)
                 return
             if imagecut == 0:
                 self.image_cut(path, thumb_name)
@@ -1586,9 +1534,9 @@ class AVDC_Main_UI(QMainWindow):
                     h = img.height
                     img2 = img.crop((w / 1.9, 0, w, h))
                     img2.save(path + "/" + poster_name)
-                    self.add_text_main("[+]Poster Cut!        " + poster_name)
+                    self.logger.info("[+]Poster Cut!        " + poster_name)
                 except Exception:
-                    self.add_text_main("[-]Thumb cut failed!")
+                    self.logger.info("[-]Thumb cut failed!")
 
     def fix_size(self, path, naming_rule):
         try:
@@ -1605,7 +1553,7 @@ class AVDC_Main_UI(QMainWindow):
                 fixed_pic.paste(pic, (0, int((3 / 2 * width - height) / 2)))  # 粘贴原图
                 fixed_pic.save(poster_path)
         except Exception as error_info:
-            self.add_text_main("[-]Error in fix_size: " + str(error_info))
+            self.logger.info("[-]Error in fix_size: " + str(error_info))
 
     # ========================================================================加水印
     def add_mark(self, poster_path, thumb_path, cn_sub, leak, uncensored, config):
@@ -1623,7 +1571,7 @@ class AVDC_Main_UI(QMainWindow):
             and os.path.exists(thumb_path)
         ):
             self.add_mark_thread(thumb_path, cn_sub, leak, uncensored)
-            self.add_text_main("[+]Thumb Add Mark:    " + mark_type.strip(","))
+            self.logger.info("[+]Thumb Add Mark:    " + mark_type.strip(","))
         if (
             self.Ui.radioButton_15.isChecked()
             and mark_type != ""
@@ -1631,7 +1579,7 @@ class AVDC_Main_UI(QMainWindow):
             and os.path.exists(poster_path)
         ):
             self.add_mark_thread(poster_path, cn_sub, leak, uncensored)
-            self.add_text_main("[+]Poster Add Mark:   " + mark_type.strip(","))
+            self.logger.info("[+]Poster Add Mark:   " + mark_type.strip(","))
 
     def add_mark_thread(self, pic_path, cn_sub, leak, uncensored):
         size = 14 - int(self.Ui.horizontalSlider.value())  # 获取自定义大小的值
@@ -1686,7 +1634,7 @@ class AVDC_Main_UI(QMainWindow):
             if re.search(r"-cd\d+", filepath):
                 return re.findall(r"-cd\d+", filepath)[0]
         except Exception as error_info:
-            self.add_text_main("[-]Error in get_part: " + str(error_info))
+            self.logger.info("[-]Error in get_part: " + str(error_info))
             self.moveFailedFolder(filepath, failed_folder)
 
     # ========================================================================更新进度条
@@ -1697,7 +1645,7 @@ class AVDC_Main_UI(QMainWindow):
     # ========================================================================输出调试信息
     def debug_mode(self, json_data):
         try:
-            self.add_text_main("[+] ---Debug info---")
+            self.logger.info("[+] ---Debug info---")
             for key, value in json_data.items():
                 if value == "" or key == "actor_photo" or key == "extrafanart":
                     continue
@@ -1705,10 +1653,10 @@ class AVDC_Main_UI(QMainWindow):
                     continue
                 elif key == "tag":
                     value = str(json_data["tag"]).strip(" ['']").replace("'", "")
-                self.add_text_main("   [+]-" + "%-13s" % key + ": " + str(value))
-            self.add_text_main("[+] ---Debug info---")
+                self.logger.info("   [+]-" + "%-13s" % key + ": " + str(value))
+            self.logger.info("[+] ---Debug info---")
         except Exception as error_info:
-            self.add_text_main("[-]Error in debug_mode: " + str(error_info))
+            self.logger.info("[-]Error in debug_mode: " + str(error_info))
 
     # ========================================================================创建输出文件夹
     def creatFolder(self, success_folder, json_data, config):
@@ -1753,7 +1701,7 @@ class AVDC_Main_UI(QMainWindow):
         )  # 生成文件夹名
         path = path.replace("--", "-").strip("-")
         if len(path) > 100:  # 文件夹名过长 取标题前70个字符
-            self.add_text_main("[-]Error in Length of Path! Cut title!")
+            self.logger.info("[-]Error in Length of Path! Cut title!")
             path = path.replace(title, title[0:70])
         path = success_folder + "/" + path
         path = path.replace("--", "-").strip("-")
@@ -1765,7 +1713,7 @@ class AVDC_Main_UI(QMainWindow):
     # ========================================================================从指定网站获取json_data
     def get_json_data(self, mode, number, config, appoint_url):
         if mode == 5:  # javdb模式
-            self.add_text_main("[!]Please Wait Three Seconds！")
+            self.logger.info("[!]Please Wait Three Seconds！")
             time.sleep(3)
         json_data = getDataFromJSON(number, config, mode, appoint_url)
         return json_data
@@ -1776,7 +1724,7 @@ class AVDC_Main_UI(QMainWindow):
             t = threading.Thread(target=self.add_label_info_Thread, args=(json_data,))
             t.start()  # 启动线程,即让线程开始执行
         except Exception as error_info:
-            self.add_text_main(
+            self.logger.info(
                 "[-]Error in pushButton_start_cap_clicked: " + str(error_info)
             )
 
@@ -1815,9 +1763,9 @@ class AVDC_Main_UI(QMainWindow):
         if self.Ui.radioButton_11.isChecked() and not os.path.exists(failed_folder):
             try:
                 os.makedirs(failed_folder + "/")
-                self.add_text_main("[+]Created folder named " + failed_folder + "!")
+                self.logger.info("[+]Created folder named " + failed_folder + "!")
             except Exception as error_info:
-                self.add_text_main("[-]Error in CreatFailedFolder: " + str(error_info))
+                self.logger.info("[-]Error in CreatFailedFolder: " + str(error_info))
 
     # ========================================================================删除空目录
     def CEF(self, path):
@@ -1828,7 +1776,7 @@ class AVDC_Main_UI(QMainWindow):
                         os.removedirs(
                             root.replace("\\", "/") + "/" + dir
                         )  # 删除这个空文件夹
-                        self.add_text_main(
+                        self.logger.info(
                             "[+]Deleting empty folder "
                             + root.replace("\\", "/")
                             + "/"
@@ -1865,10 +1813,10 @@ class AVDC_Main_UI(QMainWindow):
             self.debug_mode(json_data)
         # =======================================================================是否找到影片信息
         if json_data["website"] == "timeout":
-            self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
+            self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
             return "error"
         elif json_data["title"] == "":
-            self.add_text_main("[-]Movie Data not found!")
+            self.logger.info("[-]Movie Data not found!")
             node = QTreeWidgetItem(self.item_fail)
             node.setText(
                 0,
@@ -1903,8 +1851,8 @@ class AVDC_Main_UI(QMainWindow):
             leak = 1
         # =======================================================================创建输出文件夹
         path = self.creatFolder(success_folder, json_data, Config)
-        self.add_text_main("[+]Folder : " + path)
-        self.add_text_main("[+]From   : " + json_data["website"])
+        self.logger.info("[+]Folder : " + path)
+        self.logger.info("[+]From   : " + json_data["website"])
         # =======================================================================文件命名规则
         number = json_data["number"]
         naming_rule = str(self.get_naming_rule(json_data)).replace("--", "-").strip("-")
@@ -1981,9 +1929,9 @@ class AVDC_Main_UI(QMainWindow):
         escape_string = self.Ui.lineEdit_12.text()
         # =======================================================================检测更新,判断网络情况,新建failed目录,获取影片列表
         if self.UpdateCheck() == "ProxyError":
-            self.add_text_main("[-]Connect Failed! Please check your Proxy or Network!")
+            self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
             self.Ui.pushButton_start_cap.setEnabled(True)
-            self.add_text_main(
+            self.logger.info(
                 "[*]======================================================"
             )
             return
@@ -1994,17 +1942,17 @@ class AVDC_Main_UI(QMainWindow):
         )  # 获取所有需要刮削的影片列表
         count = 0
         count_all = str(len(movie_list))
-        self.add_text_main("[+]Find " + count_all + " movies")
+        self.logger.info("[+]Find " + count_all + " movies")
         if count_all == 0:
             self.progressBarValue.emit(int(100))
         if config["common"]["soft_link"] == "1":
-            self.add_text_main("[!] --- Soft link mode is ENABLE! ----")
+            self.logger.info("[!] --- Soft link mode is ENABLE! ----")
         # =======================================================================遍历电影列表 交给core处理
         for movie in movie_list:  # 遍历电影列表 交给core处理
             count += 1
             percentage = str(count / int(count_all) * 100)[:4] + "%"
             value = int(count / int(count_all) * 100)
-            self.add_text_main(
+            self.logger.info(
                 "[!] - "
                 + str(self.count_claw)
                 + " - "
@@ -2017,7 +1965,7 @@ class AVDC_Main_UI(QMainWindow):
             )
             try:
                 movie_number = getNumber(movie, escape_string)
-                self.add_text_main(
+                self.logger.info(
                     "[!]Making Data for   ["
                     + movie
                     + "], the number is ["
@@ -2039,7 +1987,7 @@ class AVDC_Main_UI(QMainWindow):
                     self.item_succ.addChild(node)
                 elif result == "error":
                     break
-                self.add_text_main(
+                self.logger.info(
                     "[*]======================================================"
                 )
             except Exception as error_info:
@@ -2053,19 +2001,19 @@ class AVDC_Main_UI(QMainWindow):
                     + os.path.splitext(movie.split("/")[-1])[0],
                 )
                 self.item_fail.addChild(node)
-                self.add_text_main("[-]Error in AVDC_Main: " + str(error_info))
+                self.logger.info("[-]Error in AVDC_Main: " + str(error_info))
                 if self.Ui.radioButton_11.isChecked() and not os.path.exists(
                     failed_folder + "/" + os.path.split(movie)[1]
                 ):
                     if config["common"]["soft_link"] == "0":
                         try:
                             shutil.move(movie, failed_folder + "/")
-                            self.add_text_main("[-]Move " + movie + " to failed folder")
+                            self.logger.info("[-]Move " + movie + " to failed folder")
                         except shutil.Error as error_info:
-                            self.add_text_main(
+                            self.logger.info(
                                 "[-]Error in AVDC_Main: " + str(error_info)
                             )
-                self.add_text_main(
+                self.logger.info(
                     "[*]======================================================"
                 )
             self.progressBarValue.emit(int(value))
@@ -2073,8 +2021,8 @@ class AVDC_Main_UI(QMainWindow):
 
         self.Ui.pushButton_start_cap.setEnabled(True)
         self.CEF(movie_path)
-        self.add_text_main("[+]All finished!!!")
-        self.add_text_main("[*]======================================================")
+        self.logger.info("[+]All finished!!!")
+        self.logger.info("[*]======================================================")
 
 
 if __name__ == "__main__":
