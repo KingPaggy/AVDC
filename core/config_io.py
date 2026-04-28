@@ -179,6 +179,7 @@ def save_config(json_config):
         print("show_poster = " + str(json_config["show_poster"]), file=code)
         print("website = " + json_config["website"], file=code)
         print("max_concurrent = " + str(json_config.get("max_concurrent", 1)), file=code)
+        print("# max_concurrent: concurrent scraper count (1-5, default 1)", file=code)
         print(
             "# all or mgstage or fc2club or javbus or jav321 or javdb or avsox or xcity or dmm",
             file=code,

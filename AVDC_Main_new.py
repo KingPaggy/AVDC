@@ -153,10 +153,13 @@ class AVDC_Main_UI(QMainWindow):
         # Initialize event bus and settings provider
         self.bus = EventBus()
         self.settings = UISettingsProvider(self.Ui)
-        self._setup_event_handlers()
 
         self.Init_Ui()
         self.Init()
+
+        # Add concurrent scraper control to proxy settings area
+        self._add_concurrent_control()
+
         self.Load_Config()
         self.show_version()
         self.show()
@@ -164,6 +167,9 @@ class AVDC_Main_UI(QMainWindow):
         self.file_service = FileProcessingService()
         self.fs_service = FileSystemService()
         self.remote_service = RemoteService()
+
+        # Set up event handlers after UI is ready
+        self._setup_event_handlers()
 
     def _setup_event_handlers(self):
         """Register event bus handlers to update the UI."""
@@ -189,6 +195,42 @@ class AVDC_Main_UI(QMainWindow):
         bus.on(EventType.FILE_MOVED, lambda e: self.add_text_main(
             f"   [+]Move {e.src} to {e.dst} Success!"
         ))
+
+    def _add_concurrent_control(self):
+        """Add concurrent scraper count control to proxy settings area."""
+        # Add label and spinbox to proxy group box (groupBox_19)
+        from PyQt5 import QtCore
+
+        groupBox = self.Ui.groupBox_19
+        layout = self.Ui.gridLayout_8
+
+        # Row 4: Concurrent scrapers label
+        self.label_concurrent = QtWidgets.QLabel("并发刮削数量", groupBox)
+        self.label_concurrent.setObjectName("label_concurrent")
+        layout.addWidget(self.label_concurrent, 4, 0, 1, 1)
+
+        # Spinbox for concurrent count (1-5)
+        self.spinBox_concurrent = QtWidgets.QSpinBox(groupBox)
+        self.spinBox_concurrent.setObjectName("spinBox_concurrent")
+        self.spinBox_concurrent.setMinimum(1)
+        self.spinBox_concurrent.setMaximum(5)
+        self.spinBox_concurrent.setValue(1)
+        layout.addWidget(self.spinBox_concurrent, 4, 1, 1, 1)
+
+        # Warning label
+        self.label_concurrent_warn = QtWidgets.QLabel("⚠ 不建议超过 5 个", groupBox)
+        self.label_concurrent_warn.setStyleSheet("color: orange; font-size: 10px;")
+        self.label_concurrent_warn.setObjectName("label_concurrent_warn")
+        layout.addWidget(self.label_concurrent_warn, 4, 2, 1, 2)
+
+        # Connect value change to lcd display
+        self.lcd_concurrent = QtWidgets.QLCDNumber(groupBox)
+        self.lcd_concurrent.setDigitCount(1)
+        self.lcd_concurrent.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
+        self.lcd_concurrent.display(1)
+        layout.addWidget(self.lcd_concurrent, 4, 4, 1, 1)
+
+        self.spinBox_concurrent.valueChanged.connect(self.lcd_concurrent.display)
 
     def Init_Ui(self):
         # 替换 listView_result 为 QTreeWidget
@@ -589,6 +631,9 @@ class AVDC_Main_UI(QMainWindow):
         elif int(config["extrafanart"]["extrafanart_download"]) == 0:
             self.Ui.radioButton_14.setChecked(True)
         self.Ui.lineEdit_10.setText(config["extrafanart"]["extrafanart_folder"])
+        # ========================================================================concurrent
+        if hasattr(self, "spinBox_concurrent"):
+            self.spinBox_concurrent.setValue(int(config["common"].get("max_concurrent", "1")))
 
     # ========================================================================读取设置页设置，保存在config.ini
     def pushButton_save_config_clicked(self):
@@ -757,6 +802,7 @@ class AVDC_Main_UI(QMainWindow):
             "thumb_download": thumb_download,
             "extrafanart_download": extrafanart_download,
             "extrafanart_folder": self.Ui.lineEdit_10.text(),
+            "max_concurrent": self.spinBox_concurrent.value() if hasattr(self, "spinBox_concurrent") else 1,
         }
         save_config(json_config)
 

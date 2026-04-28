@@ -182,7 +182,7 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
         max_concurrent = int(config.get("common", "max_concurrent", fallback="1"))
     except (ValueError, TypeError):
         max_concurrent = 1
-    max_concurrent = max(1, min(max_concurrent, 10))  # clamp 1-10
+    max_concurrent = max(1, min(max_concurrent, 5))  # clamp 1-5
 
     # Delegate chain selection to ScraperDispatcher
     chain = ScraperDispatcher.get_scraper_chain(file_number, mode)
