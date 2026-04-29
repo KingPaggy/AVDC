@@ -9,3 +9,6 @@ session/
 _trash/
 build
 dist
+
+# Environment overrides
+.env
