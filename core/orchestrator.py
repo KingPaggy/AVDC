@@ -25,7 +25,7 @@ from core.file_operations import (
     resolve_naming_rule,
     clean_empty_dirs,
 )
-from Function.image_ops import cut_poster as _cut_poster, fix_image_size as _fix_image_size, apply_marks as _apply_marks
+from core.image_processing import cut_poster_from_thumb as _cut_poster, fix_image_size as _fix_image_size, apply_marks as _apply_marks
 from core.file_utils import movie_lists, getNumber
 from core.scrape_pipeline import getDataFromJSON
 
