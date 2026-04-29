@@ -29,27 +29,15 @@ UI Development: Qt Designer `*.ui` files compile to `Ui/AVDC_new.py` via `pyuic5
 AVDC_Main_new.py          # UI layer: PyQt5 display + event handling
 cli.py                    # Standalone CLI (no Qt dependency)
 core/                     # ALL business logic (typed, no Qt)
-  config.py               #   AppConfig dataclass
-  logger.py               #   Centralized logging
-  orchestrator.py         #   CoreEngine — batch/single processing
-  file_operations.py      #   Downloads, NFO, file moves
-  file_utils.py           #   Number extraction, path utilities
-  image_processing.py     #   Watermark, face-detect crop, poster fix
-  emby_client.py          #   Emby API client
-  metadata.py             #   JSON field normalization
-  naming_service.py       #   Naming rule resolution
-  networking.py           #   HTTP with proxy/retry
-  models.py               #   Movie, Actor, ScraperResult dataclasses
-  scraper_base.py         #   ScraperBase ABC + Registry
-  scraper_dispatcher.py   #   Pattern-based scraper chain selection
-  scrape_pipeline.py      #   Scrape orchestration with caching
-  scraper_adapter.py      #   Legacy adapter + cache
-  event_bus.py            #   Pub/sub communication
-  events.py               #   Event types
-  settings_provider.py    #   Config abstraction layer
-  errors.py               #   Typed exceptions
-  process_result.py       #   ProcessResult dataclass
-  config_io.py            #   ConfigParser I/O
+  __init__.py             #   Package docstring only
+  _config/                #   AppConfig, logging, errors, settings
+  _models/                #   Movie, Actor, ProcessResult
+  _scraper/               #   Base, dispatcher, adapter, pipeline
+  _services/              #   CoreEngine, metadata, naming, emby_client
+  _files/                 #   file_utils, file_operations
+  _media/                 #   image_processing
+  _net/                   #   networking
+  _event/                 #   EventBus, events
   scrapers/               #   7 scraper implementations
     avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
 resources/                # Static assets
@@ -60,31 +48,47 @@ Ui/                       # Compiled PyQt5 UI from Qt Designer
 docs/                     # Documentation
 test/                     # Test suite
 
-### CoreEngine (`core/orchestrator.py`)
+### CoreEngine (`core/_services/orchestrator.py`)
 
 The main orchestrator for the scrape/organize workflow. Qt-free — accepts `AppConfig` and reports via callbacks (`on_log`, `on_progress`, `on_success`, `on_failure`). Two entry points:
 
 - `process_batch(movie_path, escape_folder, mode)` — scan directory, process all files
 - `process_single(filepath, number, mode, appoint_url)` — single file
 
-### core/ Package (Public API)
+### core/ Package Structure
 
-Defined in `core/__init__.py` — all core functionality accessible via `from core import ...`:
+```
+core/
+  _config/     — AppConfig, config_io, logger, errors, settings_provider
+  _models/     — Movie, Actor, ProcessResult dataclasses
+  _scraper/    — ScraperBase ABC, ScraperRegistry, ScraperDispatcher, pipeline, adapter
+  _services/   — CoreEngine (orchestrator), metadata, naming_service, emby_client
+  _files/      — file_utils (getNumber, movie_lists), file_operations (downloads, NFO, moves)
+  _media/      — image_processing (watermark, crop, face-detect)
+  _net/        — networking (get_html, get_html_javdb, post_html)
+  _event/      — EventBus, Event, EventType (pub/sub communication)
+  scrapers/    — avsox, dmm, jav321, javbus, javdb, mgstage, xcity
+```
 
-- **Config**: `get_config()` → `AppConfig` dataclass, `get_default_config()`, `get_proxy_config()` via `core.config_io`
-- **Data models**: `Movie`, `Actor`, `ScraperResult` dataclasses in `core/models.py`
-- **Scraper infrastructure**: `ScraperBase` ABC, `ScraperRegistry`, `@register_scraper`, `ScraperDispatcher` (pattern-based chain), `ScraperAdapter` (legacy wrapper with caching)
-- **Scrape pipeline**: `getDataFromJSON()` in `core/scrape_pipeline.py`
-- **File utilities**: `getNumber()`, `is_uncensored()`, `movie_lists()`, `escapePath()`, `check_pic()` in `core/file_utils.py`
-- **Image processing**: `add_watermark()`, `cut_poster()`, `cut_poster_ai()` in `core/image_processing.py`
-- **Naming**: `resolve_name()` in `core/naming_service.py`
-- **Networking**: `get_html()`, `get_html_javdb()`, `post_html()`, `get_proxies()` in `core/networking.py`
-- **Event system**: `EventBus` (thread-safe pub/sub), `Event`, `EventType` enum — all UI↔core communication flows through typed events. Usage: `bus.on(EventType.LOG_INFO, handler)` / `bus.emit(EventType.LOG_INFO, message="hello")`
-- **Settings interface**: `SettingsProvider` ABC in `core/settings_provider.py` — core queries runtime config through this abstraction instead of reaching into UI widgets
-- **Process results**: `ProcessResult` dataclass + `ProcessStatus` enum in `core/process_result.py`
-- **Errors**: `AVDCError`, `ConfigError`, `ScrapingError`, `NetworkError`, `ImageError`, `FileError` in `core/errors.py`
+Import from full subpackage module paths:
+```python
+from core._config.config import AppConfig
+from core._services.orchestrator import CoreEngine
+from core._event.event_bus import EventBus
+from core._models.models import Movie
+from core._scraper.pipeline import getDataFromJSON
+from core._files.file_utils import getNumber, movie_lists
+from core._files.file_operations import download_file, write_nfo
+from core._media.image_processing import add_watermark, cut_poster
+from core._net.networking import get_html, get_html_javdb
+from core._config.logger import logger, get_log_file_path
+from core._config.errors import AVDCError, ScrapingError
+```
 
-### Scraper Layer (`core/scrapers/`)
+### Scraper Layer (`core/_scraper/` + `core/scrapers/`)
+
+Infrastructure in `core/_scraper/` (base, dispatcher, adapter, pipeline).
+Site implementations in `core/scrapers/` (avsox, dmm, jav321, javbus, javdb, mgstage, xcity).
 
 Seven scraper modules, each with `main()` + `@register_scraper` subclass:
 
@@ -136,8 +140,8 @@ Tests in `test/` use pytest. Key test files:
 
 1. Create `core/scrapers/newsite.py`, subclass `ScraperBase`, implement `scrape()` → `Movie`
 2. Apply `@register_scraper` decorator
-3. Add entry in `core/scraper_dispatcher.py` `SCRAPER_MAPPING`
-4. Add import in `core/scrape_pipeline.py` `get_scraper_modules()`
+3. Add entry in `core/_scraper/scraper_dispatcher.py` `SCRAPER_MAPPING`
+4. Add import in `core/_scraper/scrape_pipeline.py` `get_scraper_modules()`
 
 ## Config
 
