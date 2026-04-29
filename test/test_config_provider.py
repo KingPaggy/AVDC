@@ -1,7 +1,7 @@
 """Tests for Function/config_provider.py"""
 import os
 import pytest
-from Function.config_provider import AppConfig
+from core.config import AppConfig
 
 
 def test_from_ini_reads_all_fields(tmp_config_ini):

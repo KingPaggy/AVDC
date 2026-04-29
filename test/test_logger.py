@@ -8,7 +8,7 @@ import pytest
 def test_setup_logger_creates_log_dir(tmp_log_dir):
     """setup_logger should create the log directory and log file."""
     # Force a fresh logger name to avoid handler duplication
-    from Function.logger import setup_logger, get_log_file_path
+    from core.logger import setup_logger, get_log_file_path
 
     test_logger = setup_logger(name="TestAVDC_Logger", log_dir=tmp_log_dir)
     test_logger.info("test message")
@@ -22,7 +22,7 @@ def test_setup_logger_creates_log_dir(tmp_log_dir):
 
 def test_logger_writes_to_file(tmp_log_dir):
     """Logger should write messages to the log file."""
-    from Function.logger import setup_logger, get_log_file_path
+    from core.logger import setup_logger, get_log_file_path
 
     test_logger = setup_logger(name="TestAVDC_Write", log_dir=tmp_log_dir)
     test_logger.info("hello logger test")
@@ -42,7 +42,7 @@ def test_logger_writes_to_file(tmp_log_dir):
 
 def test_logger_format_includes_timestamp(tmp_log_dir):
     """Log file lines should include timestamp, name, level, and message."""
-    from Function.logger import setup_logger, get_log_file_path
+    from core.logger import setup_logger, get_log_file_path
 
     test_logger = setup_logger(name="TestAVDC_Format", log_dir=tmp_log_dir)
     test_logger.info("format check")
@@ -66,7 +66,7 @@ def test_logger_format_includes_timestamp(tmp_log_dir):
 
 def test_get_log_file_path(tmp_log_dir):
     """get_log_file_path should return path with today's date."""
-    from Function.logger import get_log_file_path
+    from core.logger import get_log_file_path
     from datetime import datetime
 
     path = get_log_file_path(log_dir=tmp_log_dir)

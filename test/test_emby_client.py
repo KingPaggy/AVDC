@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from Function.emby_client import (
+from core.emby_client import (
     get_actor_list,
     list_actors,
     find_and_upload_pictures,
@@ -27,12 +27,12 @@ class TestGetActorList:
     def test_success(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"TotalRecordCount": 2, "Items": []}
-        with patch("Function.emby_client.requests.get", return_value=mock_resp):
+        with patch("core.emby_client.requests.get", return_value=mock_resp):
             result = get_actor_list("localhost:8096", "testkey")
         assert result["TotalRecordCount"] == 2
 
     def test_error_returns_empty(self):
-        with patch("Function.emby_client.requests.get", side_effect=Exception("fail")):
+        with patch("core.emby_client.requests.get", side_effect=Exception("fail")):
             result = get_actor_list("localhost:8096", "testkey")
         assert result["TotalRecordCount"] == 0
 
@@ -49,24 +49,24 @@ class TestListActors:
         }
 
     def test_list_all(self):
-        with patch("Function.emby_client.get_actor_list", return_value=self._mock_actors()):
+        with patch("core.emby_client.get_actor_list", return_value=self._mock_actors()):
             result = list_actors("localhost:8096", "key", mode=3)
         assert len(result) == 3
 
     def test_list_without_avatar(self):
-        with patch("Function.emby_client.get_actor_list", return_value=self._mock_actors()):
+        with patch("core.emby_client.get_actor_list", return_value=self._mock_actors()):
             result = list_actors("localhost:8096", "key", mode=1)
         # Alice and Charlie have no avatar
         assert len(result) == 2
 
     def test_list_with_avatar(self):
-        with patch("Function.emby_client.get_actor_list", return_value=self._mock_actors()):
+        with patch("core.emby_client.get_actor_list", return_value=self._mock_actors()):
             result = list_actors("localhost:8096", "key", mode=2)
         # Only Bob has avatar
         assert len(result) == 1
 
     def test_empty_response(self):
-        with patch("Function.emby_client.get_actor_list", return_value={"TotalRecordCount": 0}):
+        with patch("core.emby_client.get_actor_list", return_value={"TotalRecordCount": 0}):
             result = list_actors("localhost:8096", "key", mode=3)
         assert result == []
 
@@ -85,8 +85,8 @@ class TestFindAndUploadPictures:
             "Items": [{"Name": "Alice", "Id": "123", "ImageTags": {}}],
         }
 
-        with patch("Function.emby_client.get_actor_list", return_value=actor_list):
-            with patch("Function.emby_client.upload_actor_photo") as mock_upload:
+        with patch("core.emby_client.get_actor_list", return_value=actor_list):
+            with patch("core.emby_client.upload_actor_photo") as mock_upload:
                 find_and_upload_pictures(
                     "localhost:8096", "key", actor_dir=actor_dir, mode=1,
                 )
@@ -107,8 +107,8 @@ class TestFindAndUploadPictures:
             "Items": [{"Name": "Alice", "Id": "123", "ImageTags": {}}],
         }
 
-        with patch("Function.emby_client.get_actor_list", return_value=actor_list):
-            with patch("Function.emby_client.upload_actor_photo") as mock_upload:
+        with patch("core.emby_client.get_actor_list", return_value=actor_list):
+            with patch("core.emby_client.upload_actor_photo") as mock_upload:
                 find_and_upload_pictures(
                     "localhost:8096", "key", actor_dir=actor_dir, mode=2,
                 )
@@ -116,7 +116,7 @@ class TestFindAndUploadPictures:
 
     def test_skips_when_actor_dir_missing(self, tmp_dir):
         non_existent = os.path.join(tmp_dir, "NoActor")
-        with patch("Function.emby_client.get_actor_list") as mock_get:
+        with patch("core.emby_client.get_actor_list") as mock_get:
             find_and_upload_pictures("localhost:8096", "key", actor_dir=non_existent, mode=1)
             mock_get.assert_not_called()
 
@@ -134,8 +134,8 @@ class TestFindAndUploadPictures:
             "Items": [{"Name": "Alice(Mary)", "Id": "123", "ImageTags": {}}],
         }
 
-        with patch("Function.emby_client.get_actor_list", return_value=actor_list):
-            with patch("Function.emby_client.upload_actor_photo") as mock_upload:
+        with patch("core.emby_client.get_actor_list", return_value=actor_list):
+            with patch("core.emby_client.upload_actor_photo") as mock_upload:
                 find_and_upload_pictures(
                     "localhost:8096", "key", actor_dir=actor_dir, mode=1,
                 )
@@ -147,7 +147,7 @@ class TestUploadActorPhoto:
         pic_path = os.path.join(tmp_dir, "test.jpg")
         with open(pic_path, "wb") as f:
             f.write(b"fake-img")
-        with patch("Function.emby_client.requests.post") as mock_post:
+        with patch("core.emby_client.requests.post") as mock_post:
             upload_actor_photo(
                 "localhost:8096", "key123",
                 {"Id": "456", "Name": "Alice"},

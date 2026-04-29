@@ -7,8 +7,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from Function.config_provider import AppConfig
-from Function.file_ops import (
+from core.config import AppConfig
+from core.file_operations import (
     download_file,
     download_thumb,
     download_small_cover,
@@ -33,14 +33,14 @@ class TestDownloadFile:
         config = AppConfig(timeout=5, retry=3, proxy_type="no")
         mock_resp = MagicMock()
         mock_resp.content = b"fake-image-data"
-        with patch("Function.file_ops.requests.get", return_value=mock_resp):
+        with patch("core.file_operations.requests.get", return_value=mock_resp):
             ok = download_file("http://example.com/img.jpg", "img.jpg", tmp_dir, config)
         assert ok is True
         assert os.path.exists(os.path.join(tmp_dir, "img.jpg"))
 
     def test_retry_then_fail(self, tmp_dir):
         config = AppConfig(timeout=2, retry=2, proxy_type="no")
-        with patch("Function.file_ops.requests.get", side_effect=Exception("network error")):
+        with patch("core.file_operations.requests.get", side_effect=Exception("network error")):
             ok = download_file("http://example.com/img.jpg", "img.jpg", tmp_dir, config)
         assert ok is False
 
@@ -48,7 +48,7 @@ class TestDownloadFile:
         config = AppConfig(timeout=5, retry=1, proxy_type="http", proxy="127.0.0.1:7890")
         mock_resp = MagicMock()
         mock_resp.content = b"data"
-        with patch("Function.file_ops.requests.get", return_value=mock_resp) as mock_get:
+        with patch("core.file_operations.requests.get", return_value=mock_resp) as mock_get:
             download_file("http://example.com/img.jpg", "img.jpg", tmp_dir, config)
         _, kwargs = mock_get.call_args
         assert kwargs["proxies"] == {"http": "http://127.0.0.1:7890"}

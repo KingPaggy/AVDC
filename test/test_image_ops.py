@@ -6,13 +6,13 @@ from unittest.mock import patch, MagicMock
 import pytest
 from PIL import Image
 
-from Function.config_provider import AppConfig
-from Function.image_ops import (
+from core.config import AppConfig
+from core.image_processing import (
     crop_by_face_detection,
-    cut_poster,
+    cut_poster_from_thumb as cut_poster,
     fix_image_size,
     apply_marks,
-    _add_watermark,
+    _add_watermark_overlay,
 )
 
 
@@ -62,7 +62,7 @@ class TestCutPoster:
                 "body_parts": {"nose": {"x": 100}}
             }]
         }
-        with patch("Function.image_ops.AipBodyAnalysis") as MockClient:
+        with patch("aip.AipBodyAnalysis") as MockClient:
             mock_instance = MockClient.return_value
             mock_instance.bodyAnalysis.return_value = mock_result
             cut_poster(

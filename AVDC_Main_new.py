@@ -16,26 +16,21 @@ from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
-from Function.Function import (
-    save_config,
-    movie_lists,
-    get_info,
-    getDataFromJSON,
-    escapePath,
-    getNumber,
-    check_pic,
-)
-from Function.logger import logger as avdc_logger, get_log_file_path
-from Function.image_ops import crop_by_face_detection as image_ops_crop
-from Function.emby_client import (
+from core.config_io import save_config
+from core.file_utils import movie_lists, escapePath, getNumber, check_pic
+from core.metadata import get_info
+from core.scrape_pipeline import getDataFromJSON
+from core.logger import logger as avdc_logger, get_log_file_path
+from core.image_processing import crop_by_face_detection as image_ops_crop
+from core.emby_client import (
     list_actors as emby_list_actors,
     get_actor_list as emby_get_actor_list,
     find_and_upload_pictures as emby_find_and_upload_pictures,
     upload_actor_photo as emby_upload_actor_photo,
 )
-from Function.file_ops import resolve_naming_rule as file_ops_resolve_naming_rule
-from Function.core_engine import CoreEngine
-from Function.config_provider import AppConfig
+from core.file_operations import resolve_naming_rule as file_ops_resolve_naming_rule
+from core.orchestrator import CoreEngine
+from core.config import AppConfig
 
 
 # ======================================================================== 日志轮询配置
@@ -123,7 +118,7 @@ class AVDC_Main_UI(QMainWindow):
             self.setWindowIcon(QIcon(ico_path))  # 设置窗口图标
 
         self.Ui.progressBar_avdc.setValue(0)  # 进度条清0
-        self.progressBarValue.connect(self.set_processbar)
+        self.progressBarValue.connect(self._on_progress)
         self.Ui.progressBar_avdc.setTextVisible(True)
 
         # 设置快捷键：Ctrl+1,2,3,4,5 切换主标签页
@@ -141,6 +136,10 @@ class AVDC_Main_UI(QMainWindow):
 
         self.shortcut_cmd5 = QtWidgets.QShortcut(QKeySequence("Ctrl+5"), self)
         self.shortcut_cmd5.activated.connect(lambda: self.Ui.tabWidget.setCurrentIndex(4))  # 关于
+
+    def _on_progress(self, value: int) -> None:
+        """Handle progress bar updates from CoreEngine callbacks."""
+        self.Ui.progressBar_avdc.setValue(value)
 
     def cleanup_old_logs(self, max_keep=100):
         """清理旧日志文件，仅保留最新的 max_keep 个"""

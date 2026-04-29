@@ -9,9 +9,9 @@ Usage:
 import argparse
 import sys
 
-from Function.core_engine import CoreEngine
-from Function.config_provider import AppConfig
-from Function.logger import logger
+from core.orchestrator import CoreEngine
+from core.config import AppConfig
+from core.logger import logger
 
 
 def main():

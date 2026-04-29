@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock, call
 
 import pytest
 
-from Function.config_provider import AppConfig
+from core.config import AppConfig
 from core.orchestrator import CoreEngine
 
 
