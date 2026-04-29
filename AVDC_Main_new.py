@@ -54,6 +54,12 @@ from Function.image_ops import (
     fix_image_size as image_ops_fix_size,
     apply_marks as image_ops_apply_marks,
 )
+from Function.emby_client import (
+    get_actor_list as emby_get_actor_list,
+    list_actors as emby_list_actors,
+    find_and_upload_pictures as emby_find_and_upload_pictures,
+    upload_actor_photo as emby_upload_actor_photo,
+)
 from Function.config_provider import AppConfig
 
 
@@ -905,162 +911,34 @@ class AVDC_Main_UI(QMainWindow):
                     "[-]Error in pushButton_show_pic_actor_clicked: " + str(error_info)
                 )
 
-    def show_actor(self, mode):  # 按模式显示相应列表
-        if mode == 1:  # 没有头像的女优
-            self.logger.info("[+]没有头像的女优!")
-        elif mode == 2:  # 有头像的女优
-            self.logger.info("[+]有头像的女优!")
-        elif mode == 3:  # 所有女优
-            self.logger.info("[+]所有女优!")
-        actor_list = self.get_emby_actor_list()
-        if actor_list["TotalRecordCount"] == 0:
-            self.logger.info(
-                "[*]======================================================"
-            )
+    # ========================================================================按模式显示相应列表
+    def show_actor(self, mode):
+        config = self._get_app_config()
+        result = emby_list_actors(config.emby_url, config.api_key, mode)
+        if not result:
+            logger.info("[*]======================================================")
             return
-        count = 1
-        actor_list_temp = ""
-        for actor in actor_list["Items"]:
-            if mode == 3:  # 所有女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            elif mode == 2 and actor["ImageTags"] != {}:  # 有头像的女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            elif mode == 1 and actor["ImageTags"] == {}:  # 没有头像的女优
-                actor_list_temp += str(count) + "." + actor["Name"] + ","
-                count += 1
-            if (count - 1) % 5 == 0 and actor_list_temp != "":
-                self.logger.info("[+]" + actor_list_temp)
-                actor_list_temp = ""
+        for i, name in enumerate(result):
+            self.logger.info(f"[+]{name}")
+            if (i + 1) % 5 == 0:
+                self.logger.info("[*]======================================================")
         self.logger.info("[*]======================================================")
 
-    def get_emby_actor_list(self):  # 获取emby的演员列表
-        emby_url = self.Ui.lineEdit_EmbyAddr.text()
-        api_key = self.Ui.lineEdit_APIKey.text()
-        emby_url = emby_url.replace("：", ":")
-        url = "http://" + emby_url + "/emby/Persons?api_key=" + api_key
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/60.0.3100.0 Safari/537.36"
-        }
-        actor_list = {}
-        try:
-            getweb = requests.get(str(url), headers=headers, timeout=10)
-            getweb.encoding = "utf-8"
-            actor_list = json.loads(getweb.text)
-        except Exception:
-            self.logger.info("[-]Error! Check your emby_url or api_key!")
-            actor_list["TotalRecordCount"] = 0
-        return actor_list
+    # ========================================================================获取emby的演员列表
+    def get_emby_actor_list(self):
+        config = self._get_app_config()
+        return emby_get_actor_list(config.emby_url, config.api_key)
 
     def found_profile_picture(
         self, mode
-    ):  # mode=1，上传头像，mode=2，显示可添加头像的女优
-        if mode == 1:
-            self.logger.info("[+]Start upload profile pictures!")
-        elif mode == 2:
-            self.logger.info("[+]可添加头像的女优!")
-        path = "Actor"
-        if not os.path.exists(path):
-            self.logger.info("[+]Actor folder not exist!")
-            self.logger.info(
-                "[*]======================================================"
-            )
-            return
-        path_success = "Actor/Success"
-        if not os.path.exists(path_success):
-            os.makedirs(path_success)
-        profile_pictures = os.listdir(path)
-        actor_list = self.get_emby_actor_list()
-        if actor_list["TotalRecordCount"] == 0:
-            self.logger.info(
-                "[*]======================================================"
-            )
-            return
-        count = 1
-        for actor in actor_list["Items"]:
-            flag = 0
-            pic_name = ""
-            if actor["Name"] + ".jpg" in profile_pictures:
-                flag = 1
-                pic_name = actor["Name"] + ".jpg"
-            elif actor["Name"] + ".png" in profile_pictures:
-                flag = 1
-                pic_name = actor["Name"] + ".png"
-            if flag == 0:
-                byname_list = re.split("[,，()（）]", actor["Name"])
-                for byname in byname_list:
-                    if byname + ".jpg" in profile_pictures:
-                        pic_name = byname + ".jpg"
-                        flag = 1
-                        break
-                    elif byname + ".png" in profile_pictures:
-                        pic_name = byname + ".png"
-                        flag = 1
-                        break
-            if flag == 1 and (
-                actor["ImageTags"] == {}
-                or not os.path.exists(path_success + "/" + pic_name)
-            ):
-                if mode == 1:
-                    try:
-                        self.upload_profile_picture(count, actor, path + "/" + pic_name)
-                        shutil.copy(
-                            path + "/" + pic_name, path_success + "/" + pic_name
-                        )
-                    except Exception as error_info:
-                        self.logger.info(
-                            "[-]Error in found_profile_picture! " + str(error_info)
-                        )
-                else:
-                    self.logger.info(
-                        "[+]"
-                        + "%4s" % str(count)
-                        + ".Actor name: "
-                        + actor["Name"]
-                        + "  Pic name: "
-                        + pic_name
-                    )
-                count += 1
-        if count == 1:
-            self.logger.info("[-]NO profile picture can be uploaded!")
-        self.logger.info("[*]======================================================")
+    ):
+        """mode=1: upload profile pictures, mode=2: list actors missing avatars."""
+        config = self._get_app_config()
+        emby_find_and_upload_pictures(config.emby_url, config.api_key, actor_dir="Actor", mode=mode)
 
-    def upload_profile_picture(self, count, actor, pic_path):  # 上传头像
-        emby_url = self.Ui.lineEdit_EmbyAddr.text()
-        api_key = self.Ui.lineEdit_APIKey.text()
-        emby_url = emby_url.replace("：", ":")
-        try:
-            f = open(pic_path, "rb")  # 二进制方式打开图文件
-            b6_pic = base64.b64encode(f.read())  # 读取文件内容，转换为base64编码
-            f.close()
-            url = (
-                "http://"
-                + emby_url
-                + "/emby/Items/"
-                + actor["Id"]
-                + "/Images/Primary?api_key="
-                + api_key
-            )
-            if pic_path.endswith("jpg"):
-                header = {
-                    "Content-Type": "image/png",
-                }
-            else:
-                header = {
-                    "Content-Type": "image/jpeg",
-                }
-            requests.post(url=url, data=b6_pic, headers=header)
-            self.logger.info(
-                "[+]"
-                + "%4s" % str(count)
-                + ".Success upload profile picture for "
-                + actor["Name"]
-                + "!"
-            )
-        except Exception as error_info:
-            self.logger.info("[-]Error in upload_profile_picture! " + str(error_info))
+    def upload_profile_picture(self, count, actor, pic_path):
+        config = self._get_app_config()
+        emby_upload_actor_photo(config.emby_url, config.api_key, actor, pic_path)
 
     # ========================================================================自定义文件名
     def get_naming_rule(self, json_data):
