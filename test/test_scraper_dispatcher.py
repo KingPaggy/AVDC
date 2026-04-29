@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from Function.scraper_base import ScraperBase, register_scraper, ScraperRegistry
-from Function.models import Movie
+from core.scraper_base import ScraperBase, register_scraper, ScraperRegistry
+from core.models import Movie
 
 
 class TestMovie:
@@ -89,36 +89,36 @@ class TestScraperDispatcher:
     """Test the dispatcher without importing existing Getter modules."""
 
     def test_uncensored_detection(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         assert ScraperDispatcher.is_uncensored("111111-1111")
         assert ScraperDispatcher.is_uncensored("HEYZO-1234")
         assert ScraperDispatcher.is_uncensored("n1234")
         assert not ScraperDispatcher.is_uncensored("SSNI-123")
 
     def test_fc2_detection(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         assert ScraperDispatcher.is_fc2("FC2-123456")
         assert not ScraperDispatcher.is_fc2("SSNI-123")
 
     def test_get_auto_chain_standard(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         chain = ScraperDispatcher.get_scraper_chain("SSNI-123", mode=1)
         # Standard chain should start with javbus
         assert "javbus.main" in chain[0][0]
 
     def test_get_auto_chain_fc2(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         chain = ScraperDispatcher.get_scraper_chain("FC2-123456", mode=1)
         assert len(chain) == 1
         assert "javdb" in chain[0][0]
 
     def test_get_auto_chain_uncensored(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         chain = ScraperDispatcher.get_scraper_chain("111111-1111", mode=1)
         assert "javbus.main_uncensored" in chain[0][0]
 
     def test_single_site_modes(self):
-        from Function.scraper_dispatcher import ScraperDispatcher
+        from core.scraper_dispatcher import ScraperDispatcher
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=2) == [("mgstage.main", 5)]
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=6) == [("avsox.main", 50)]
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=8) == [("dmm.main", 70)]
