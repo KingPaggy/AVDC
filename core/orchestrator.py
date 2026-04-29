@@ -9,7 +9,7 @@ import os
 import re
 from typing import Callable, Optional
 
-from Function.config_provider import AppConfig
+from core.config import AppConfig
 from Function.logger import logger
 from Function.file_ops import (
     download_thumb,
