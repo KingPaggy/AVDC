@@ -222,3 +222,19 @@ print(main('300MIUM-382'))
 """
 # print(main('300MIUM-382', ''))
 # print(main('300MIUM-382', 'https://www.mgstage.com/product/product_detail/300MIUM-382/'))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperMgstage(ScraperBase):
+    name = "mgstage"
+    priority = 5
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        raw = main(number, appoint_url)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)

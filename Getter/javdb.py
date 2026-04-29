@@ -491,3 +491,23 @@ print(main('LUXU-1217'))
 # print(main('S2M-055', ''))
 # print(main('LUXU-1217', ''))
 # print(main_us('x-art.19.11.03', ''))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperJavdb(ScraperBase):
+    """Handles all javdb variants: normal and us."""
+    name = "javdb"
+    priority = 20
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        if "." in number and re.match(r"[a-zA-Z]+\.d{2}\.", number):
+            raw = main_us(number, appoint_url)
+        else:
+            raw = main(number, appoint_url, isuncensored=is_uncensored)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)
