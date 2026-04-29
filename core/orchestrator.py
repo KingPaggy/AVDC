@@ -10,7 +10,7 @@ import re
 from typing import Callable, Optional
 
 from core.config import AppConfig
-from Function.logger import logger
+from core.logger import logger
 from Function.file_ops import (
     download_thumb,
     download_small_cover,
