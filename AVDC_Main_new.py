@@ -112,8 +112,8 @@ class AVDC_Main_UI(QMainWindow):
         ico_path = ""
         if os.path.exists("AVDC-ico.png"):
             ico_path = "AVDC-ico.png"
-        elif os.path.exists("Img/AVDC-ico.png"):
-            ico_path = "Img/AVDC-ico.png"
+        elif os.path.exists("resources/icons/AVDC-ico.png"):
+            ico_path = "resources/icons/AVDC-ico.png"
         if ico_path:
             self.setWindowIcon(QIcon(ico_path))  # 设置窗口图标
 

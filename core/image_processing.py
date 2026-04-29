@@ -12,9 +12,9 @@ from core.config import AppConfig
 
 # Watermark mark image paths
 MARK_PATHS = {
-    "SUB": "Img/SUB.png",
-    "LEAK": "Img/LEAK.png",
-    "UNCENSORED": "Img/UNCENSORED.png",
+    "SUB": "resources/watermarks/SUB.png",
+    "LEAK": "resources/watermarks/LEAK.png",
+    "UNCENSORED": "resources/watermarks/UNCENSORED.png",
 }
 
 # Watermark corner positions: top-left, top-right, bottom-right, bottom-left
@@ -344,9 +344,9 @@ def fix_image_size(path: str, naming_rule: str) -> None:
 
 # Watermark overlay file paths (relative to project root)
 _WATERMARK_PATHS = {
-    1: "Img/SUB.png",
-    2: "Img/LEAK.png",
-    3: "Img/UNCENSORED.png",
+    1: "resources/watermarks/SUB.png",
+    2: "resources/watermarks/LEAK.png",
+    3: "resources/watermarks/UNCENSORED.png",
 }
 
 
