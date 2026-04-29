@@ -117,16 +117,27 @@ All scrapers discovered via `ScraperRegistry` + `@register_scraper`, dispatched 
 
 ### Testing
 
-Tests in `test/` use pytest. Key test files:
-- `test_core.py` — Core logic tests (largest file)
-- `test_core_engine.py` — CoreEngine batch/single processing
-- `test_file_ops.py`, `test_image_ops.py` — File and image operations
-- `test_logger.py`, `test_config_provider.py` — Infrastructure
-- `test_emby_client.py` — Emby API client
-- `test_scraper_dispatcher.py` — Scraper dispatch logic
-- `test_image_processing.py`, `test_infrastructure.py` — core/ package
-- `test_event_bus_integration.py` — EventBus integration
-- `scrape_test.py`, `test_real_scrape.py` — Live scraper tests (require video files)
+Tests in `test/` use pytest, organized into three categories:
+
+| Directory | Purpose |
+|-----------|---------|
+| `test/unit/` | Unit tests (isolated modules) |
+| `test/integration/` | Integration tests (component interaction) |
+| `test/live/` | Live scraper tests (require network + video files) |
+
+Key test files:
+- `test/unit/test_core.py` — Core logic tests (largest file)
+- `test/unit/test_core_engine.py` — CoreEngine batch/single processing
+- `test/unit/test_file_ops.py`, `test/unit/test_image_ops.py` — File and image operations
+- `test/unit/test_logger.py`, `test/unit/test_config_provider.py` — Infrastructure
+- `test/unit/test_emby_client.py` — Emby API client
+- `test/unit/test_scraper_dispatcher.py` — Scraper dispatch logic
+- `test/unit/test_image_processing.py`, `test/unit/test_infrastructure.py` — core/ package
+- `test/integration/test_event_bus_integration.py` — EventBus integration
+- `test/live/scrape_test.py`, `test/live/test_real_scrape.py` — Live scraper tests
+- `test/unit/test_cli.py` — CLI argument parsing
+- `test/unit/test_errors.py`, `test/unit/test_models.py`, `test/unit/test_networking.py` — Additional coverage
+- `test/unit/test_scraper_base.py`, `test/unit/test_scraper_adapter.py` — Scraper infrastructure
 - `conftest.py` — Shared fixtures: `tmp_dir`, `tmp_log_dir`, `tmp_config_ini`
 
 ### Proxy Requirements
