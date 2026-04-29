@@ -25,46 +25,47 @@ UI Development: Qt Designer `*.ui` files compile to `Ui/AVDC_new.py` via `pyuic5
 
 ### Package Layout
 
-The codebase is undergoing a layered refactoring from a monolithic UI structure into three packages:
-
 ```
 AVDC_Main_new.py          # UI layer: PyQt5 display + event handling
-application/              # High-level app services (batch, file system, remote)
-core/                     # Business logic: typed models, scraper infra, networking
-Function/                 # Legacy business layer (being migrated into core/)
-Getter/                   # Scraper implementations (7 sites)
+cli.py                    # Standalone CLI (no Qt dependency)
+core/                     # ALL business logic (typed, no Qt)
+  config.py               #   AppConfig dataclass
+  logger.py               #   Centralized logging
+  orchestrator.py         #   CoreEngine — batch/single processing
+  file_operations.py      #   Downloads, NFO, file moves
+  file_utils.py           #   Number extraction, path utilities
+  image_processing.py     #   Watermark, face-detect crop, poster fix
+  emby_client.py          #   Emby API client
+  metadata.py             #   JSON field normalization
+  naming_service.py       #   Naming rule resolution
+  networking.py           #   HTTP with proxy/retry
+  models.py               #   Movie, Actor, ScraperResult dataclasses
+  scraper_base.py         #   ScraperBase ABC + Registry
+  scraper_dispatcher.py   #   Pattern-based scraper chain selection
+  scrape_pipeline.py      #   Scrape orchestration with caching
+  scraper_adapter.py      #   Legacy adapter + cache
+  event_bus.py            #   Pub/sub communication
+  events.py               #   Event types
+  settings_provider.py    #   Config abstraction layer
+  errors.py               #   Typed exceptions
+  process_result.py       #   ProcessResult dataclass
+  config_io.py            #   ConfigParser I/O
+  scrapers/               #   7 scraper implementations
+    avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
+resources/                # Static assets
+  icons/                  #   App icons (AVDC-ico.png, AVDC.ico)
+  watermarks/             #   Watermark overlays (SUB.png, LEAK.png, UNCENSORED.png)
+  screenshots/            #   README images
 Ui/                       # Compiled PyQt5 UI from Qt Designer
-```
+docs/                     # Documentation
+test/                     # Test suite
 
-### Refactoring Status
-
-The legacy `Function/` layer has been partially decomposed into `core/` and `application/` packages. Migration is progressing; during the transition, `Function/` modules still handle orchestration and heavy lifting.
-
-| Package | Purpose | Status |
-|---------|---------|--------|
-| `core/` | Typed business logic with event-driven API | Active |
-| `application/` | Higher-level services composing core | Active |
-| `Function/` | Legacy modules (core_engine, config_provider, file_ops, image_ops, emby_client, logger) | Shrinking |
-| `AVDC_Main_new.py` | PyQt5 UI | Needs decoupling |
-
-### CoreEngine (`Function/core_engine.py`)
+### CoreEngine (`core/orchestrator.py`)
 
 The main orchestrator for the scrape/organize workflow. Qt-free — accepts `AppConfig` and reports via callbacks (`on_log`, `on_progress`, `on_success`, `on_failure`). Two entry points:
 
 - `process_batch(movie_path, escape_folder, mode)` — scan directory, process all files
 - `process_single(filepath, number, mode, appoint_url)` — single file
-
-### Legacy `Function/` Modules
-
-| Module | Purpose |
-|--------|---------|
-| `config_provider.py` | `AppConfig` dataclass — typed relay between config.ini and business logic |
-| `core_engine.py` | Orchestrator (see above) |
-| `file_ops.py` | Downloads, NFO generation, file moves, naming — all Qt-free |
-| `image_ops.py` | Watermarking, Baidu AI face-detect cropping, size fixing |
-| `logger.py` | Centralized logging (backed by file), UI reads via QTimer polling |
-| `emby_client.py` | Emby API client for actor/profile photo upload |
-| `getHtml.py` | HTTP helpers with proxy/retry (migrating into `core/networking.py`) |
 
 ### core/ Package (Public API)
 
@@ -83,28 +84,21 @@ Defined in `core/__init__.py` — all core functionality accessible via `from co
 - **Process results**: `ProcessResult` dataclass + `ProcessStatus` enum in `core/process_result.py`
 - **Errors**: `AVDCError`, `ConfigError`, `ScrapingError`, `NetworkError`, `ImageError`, `FileError` in `core/errors.py`
 
-### application/ Package
+### Scraper Layer (`core/scrapers/`)
 
-- `batch_service.py` — Batch processing orchestration
-- `file_processing_service.py` — Single/multi file metadata + media processing
-- `file_system_service.py` — File watching, scanning, organizing
-- `remote_service.py` — Remote storage/external integration
-
-### Scraper Layer (Getter/)
-
-Seven scraper modules in `Getter/`, each with `main()` + `@register_scraper` subclass:
+Seven scraper modules, each with `main()` + `@register_scraper` subclass:
 
 | Scraper | File | Notes |
 |---------|------|-------|
-| javbus | `javbus.py` | Primary for censored; also handles uncensored |
-| javdb | `javdb.py` | Primary for FC2; uses cloudscraper for CF bypass |
-| jav321 | `jav321.py` | Fallback |
-| avsox | `avsox.py` | Fallback |
-| dmm | `dmm.py` | Requires Japan proxy |
-| mgstage | `mgstage.py` | Primary for mgstage/amateur patterns |
-| xcity | `xcity.py` | Fallback |
+| javbus | `core/scrapers/javbus.py` | Primary for censored; also handles uncensored |
+| javdb | `core/scrapers/javdb.py` | Primary for FC2; uses cloudscraper for CF bypass |
+| jav321 | `core/scrapers/jav321.py` | Fallback |
+| avsox | `core/scrapers/avsox.py` | Fallback |
+| dmm | `core/scrapers/dmm.py` | Requires Japan proxy |
+| mgstage | `core/scrapers/mgstage.py` | Primary for mgstage/amateur patterns |
+| xcity | `core/scrapers/xcity.py` | Fallback |
 
-All scrapers are discovered automatically via `ScraperRegistry` + `@register_scraper` decorator, then dispatched by `ScraperDispatcher` based on number pattern matching.
+All scrapers discovered via `ScraperRegistry` + `@register_scraper`, dispatched by `ScraperDispatcher`.
 
 ### Number Pattern Classification
 
@@ -120,16 +114,16 @@ All scrapers are discovered automatically via `ScraperRegistry` + `@register_scr
 ### Testing
 
 Tests in `test/` use pytest. Key test files:
-- `test_core.py` — Core logic tests (largest file, ~56k)
-- `test_core_engine.py`, `test_file_ops.py`, `test_image_ops.py`, `test_logger.py`, `test_emby_client.py` — Function/ module tests
-- `test_config_provider.py`, `test_scraper_dispatcher.py` — Legacy module tests
-- `test_file_processing_service.py`, `test_file_system_service.py`, `test_batch_service.py` — application/ service tests
-- `test_image_processing.py`, `test_infrastructure.py`, `test_event_bus_integration.py` — core/ package tests
-- `test_remote_service.py` — Remote service tests
+- `test_core.py` — Core logic tests (largest file)
+- `test_core_engine.py` — CoreEngine batch/single processing
+- `test_file_ops.py`, `test_image_ops.py` — File and image operations
+- `test_logger.py`, `test_config_provider.py` — Infrastructure
+- `test_emby_client.py` — Emby API client
+- `test_scraper_dispatcher.py` — Scraper dispatch logic
+- `test_image_processing.py`, `test_infrastructure.py` — core/ package
+- `test_event_bus_integration.py` — EventBus integration
 - `scrape_test.py`, `test_real_scrape.py` — Live scraper tests (require video files)
 - `conftest.py` — Shared fixtures: `tmp_dir`, `tmp_log_dir`, `tmp_config_ini`
-
-Run a single test file: `uv run python -m pytest test/test_core.py -v`
 
 ### Proxy Requirements
 
@@ -140,23 +134,20 @@ Run a single test file: `uv run python -m pytest test/test_core.py -v`
 
 ### Adding New Scrapers
 
-1. Subclass `ScraperBase` in `Getter/newsite.py`, implement `scrape()` → `Movie`
+1. Create `core/scrapers/newsite.py`, subclass `ScraperBase`, implement `scrape()` → `Movie`
 2. Apply `@register_scraper` decorator
-3. Add entry in `ScraperDispatcher.SCRAPER_MAPPING`
+3. Add entry in `core/scraper_dispatcher.py` `SCRAPER_MAPPING`
+4. Add import in `core/scrape_pipeline.py` `get_scraper_modules()`
 
 ## Config
 
 `config.ini` sections: common, proxy, Name_Rule, update, log, media, escape, debug_mode, emby, mark, uncensored, file_download, extrafanart, baidu. **Note**: `[emby] api_key` is sensitive.
 
-## Resources
-
-`Img/` — application icon + watermark overlays (LEAK.png, SUB.png, UNCENSORED.png, 500×300 transparent PNG).
-
 ## Reference Documents
 
 - `docs/requirements.md` — Core I/O contract (what the engine receives and produces), useful when modifying the scrape/organize pipeline.
-- `main.py` — Stub entry point (placeholder for future CLI). The real application entry is `AVDC_Main_new.py`.
 
-## Refactoring Conventions
+## Entry Points
 
-- `_trash/` — Archive directory for files removed during refactoring (preserves history without git deletion).
+- `AVDC_Main_new.py` — PyQt5 GUI entry
+- `cli.py` — Standalone CLI (no Qt dependency): `uv run python cli.py --path /path/to/movies`

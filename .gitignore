@@ -1,15 +1,11 @@
-
 __pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
 
-/log/
-
-
-/dev-log/
-
+/Log/
 .DS_Store
-
 session/
-
 _trash/
 build
 dist
