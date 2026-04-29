@@ -6,7 +6,9 @@ from configparser import ConfigParser
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Function.Function import get_config, getNumber, movie_lists, getDataFromJSON
+from core.config_io import get_config
+from core.file_utils import getNumber, movie_lists
+from core.scrape_pipeline import getDataFromJSON
 
 
 def main():

@@ -1,10 +1,9 @@
 import requests
-import os
 import cloudscraper
 from core.config_io import get_proxy_config
+from core.errors import NetworkError, ConfigError
 
 
-# ========================================================================获取proxies
 def get_proxies(proxy_type, proxy):
     proxies = {}
     if proxy == "" or proxy_type == "" or proxy_type == "no":
@@ -16,36 +15,30 @@ def get_proxies(proxy_type, proxy):
     return proxies
 
 
-# ========================================================================网页请求
-# 破解cf5秒盾
 def get_html_javdb(url):
+    """Fetch HTML with Cloudflare bypass via cloudscraper."""
     scraper = cloudscraper.create_scraper()
-    # 发送请求，获得响应
     response = scraper.get(url)
-    # 获得网页源代码
-    html = response.text
-    return html
+    return response.text
 
 
 def get_html(url, cookies=None):
-    proxy_type = ""
-    retry_count = 0
-    proxy = ""
-    timeout = 0
+    """Fetch HTML with proxy support and retry.
+
+    Returns HTML text on success, "ProxyError" on failure.
+    """
     try:
         proxy_type, proxy, timeout, retry_count = get_proxy_config()
-    except Exception as error_info:
-        print("Error in get_html :" + str(error_info))
-        print("[-]Proxy config error! Please check the config.")
+    except Exception as e:
+        raise ConfigError(f"Proxy config error: {e}") from e
+
     proxies = get_proxies(proxy_type, proxy)
-    i = 0
-    while i < retry_count:
+    for i in range(retry_count):
         try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/60.0.3100.0 Safari/537.36"
             }
-            print(f"[Debug] Requesting URL: {url} with Proxy: {proxies}")
             getweb = requests.get(
                 str(url),
                 headers=headers,
@@ -55,33 +48,35 @@ def get_html(url, cookies=None):
             )
             getweb.encoding = "utf-8"
             return getweb.text
-        except Exception as error_info:
-            i += 1
-            print("Error in get_html :" + str(error_info))
-            print("[-]Connect retry " + str(i) + "/" + str(retry_count))
-    print("[-]Connect Failed! Please check your Proxy or Network!")
+        except Exception as e:
+            if i == retry_count - 1:
+                raise NetworkError(
+                    f"Request to {url} failed after {retry_count} retries: {e}"
+                ) from e
+
     return "ProxyError"
 
 
 def post_html(url: str, query: dict):
-    proxy_type = ""
-    retry_count = 0
-    proxy = ""
-    timeout = 0
+    """POST request with proxy support and retry.
+
+    Returns response text on success, "ProxyError" on failure.
+    """
     try:
         proxy_type, proxy, timeout, retry_count = get_proxy_config()
-    except Exception as error_info:
-        print("Error in post_html :" + str(error_info))
-        print("[-]Proxy config error! Please check the config.")
+    except Exception as e:
+        raise ConfigError(f"Proxy config error: {e}") from e
+
     proxies = get_proxies(proxy_type, proxy)
     for i in range(retry_count):
         try:
             result = requests.post(url, data=query, proxies=proxies, timeout=timeout)
             result.encoding = "utf-8"
-            result = result.text
-            return result
-        except Exception as error_info:
-            print("Error in post_html :" + str(error_info))
-            print("[-]Connect retry {}/{}".format(i + 1, retry_count))
-    print("[-]Connect Failed! Please check your Proxy or Network!")
+            return result.text
+        except Exception as e:
+            if i == retry_count - 1:
+                raise NetworkError(
+                    f"POST to {url} failed after {retry_count} retries: {e}"
+                ) from e
+
     return "ProxyError"

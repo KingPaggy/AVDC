@@ -3,8 +3,8 @@ from pyquery import PyQuery as pq
 from lxml import etree
 from bs4 import BeautifulSoup
 import json
-from Function.getHtml import get_html
-from Function.getHtml import post_html
+from core.networking import get_html
+from core.networking import post_html
 
 
 def getActorPhoto(htmlcode):

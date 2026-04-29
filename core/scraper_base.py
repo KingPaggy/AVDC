@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from Function.models import Movie
+from core.models import Movie
+from core.errors import ScrapingError
 
 
 class ScraperBase(ABC):
@@ -39,8 +40,7 @@ class ScraperBase(ABC):
         try:
             return self.scrape(number, appoint_url, is_uncensored)
         except Exception as e:
-            print(f"Error in {self.name}.scrape: {e}")
-            return Movie.empty()
+            raise ScrapingError(self.name, number, str(e)) from e
 
 
 class ScraperRegistry:
