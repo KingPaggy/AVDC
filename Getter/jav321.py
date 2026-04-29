@@ -208,8 +208,8 @@ print(main('ABP-905'))
 
 
 # ======================================================================== ScraperBase integration
-from Function.scraper_base import ScraperBase, register_scraper
-from Function.models import Movie as _Movie
+from core.scraper_base import ScraperBase, register_scraper
+from core.models import Movie as _Movie
 
 
 @register_scraper

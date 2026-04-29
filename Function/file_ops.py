@@ -18,7 +18,8 @@ from PIL import Image
 
 from Function.config_provider import AppConfig
 from Function.logger import logger
-from Function.Function import check_pic, escapePath, get_info
+from core.file_utils import check_pic, escapePath
+from core.metadata import get_info
 
 # ========================================================================
 # 下载
