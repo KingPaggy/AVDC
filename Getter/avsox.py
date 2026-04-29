@@ -196,3 +196,19 @@ def main(number, appoint_url=""):
 # print(main('051119-917'))
 # print(main('032620_001'))
 # print(main('032620_001', 'https://avsox.website/cn/movie/cb8d28437cff4e90'))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperAvsox(ScraperBase):
+    name = "avsox"
+    priority = 50
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        raw = main(number, appoint_url)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)

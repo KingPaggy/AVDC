@@ -205,3 +205,19 @@ print(main('ABP-905'))
 # print(main('heyzo-1031', ''))
 # print(main('ssni-645', ''))
 # print(main('ymdd-173', 'https://www.jav321.com/video/ymdd00173'))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperJav321(ScraperBase):
+    name = "jav321"
+    priority = 40
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        raw = main(number, appoint_url, isuncensored=is_uncensored)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)

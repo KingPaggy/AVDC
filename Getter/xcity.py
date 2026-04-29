@@ -245,3 +245,19 @@ print(main('DMOW185'))
 print(main('EMOT007'))
 """
 # print(main('EMOT007', "https://xcity.jp/avod/detail/?id=147036"))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperXcity(ScraperBase):
+    name = "xcity"
+    priority = 60
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        raw = main(number, appoint_url)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)

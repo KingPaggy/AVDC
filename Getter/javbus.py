@@ -492,3 +492,25 @@ print(main_uncensored('heyzo-1031'))
 # print(main('ssni-644', "https://www.javbus.com/SSNI-644"))
 # print(main('ssni-802', ""))
 # print(main_us('DirtyMasseur.20.07.26', "https://www.javbus.one/DirtyMasseur-20-07-26"))
+
+
+# ======================================================================== ScraperBase integration
+from Function.scraper_base import ScraperBase, register_scraper
+from Function.models import Movie as _Movie
+
+
+@register_scraper
+class ScraperJavbus(ScraperBase):
+    """Handles all javbus variants: normal, uncensored, us."""
+    name = "javbus"
+    priority = 10
+
+    def scrape(self, number: str, appoint_url: str = "", is_uncensored: bool = False) -> _Movie:
+        if is_uncensored:
+            raw = main_uncensored(number, appoint_url)
+        elif "." in number and re.match(r"[a-zA-Z]+\.d{2}\.", number):
+            raw = main_us(number, appoint_url)
+        else:
+            raw = main(number, appoint_url)
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        return _Movie.from_dict(data)
