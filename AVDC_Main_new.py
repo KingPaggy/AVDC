@@ -3,22 +3,17 @@
 import threading
 import json
 import logging
-import logging.handlers
-import traceback
+import sys
+import os.path
+import os
+import re
+import shutil
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QPixmap, QTextCursor, QIcon, QKeySequence
 from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QApplication, QShortcut
 from PyQt5.QtCore import pyqtSignal, QT_VERSION_STR
-import sys
-import time
-import os.path
-import requests
-import shutil
-import base64
-import re
 from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
-import os
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
 from Function.Function import (
@@ -30,36 +25,15 @@ from Function.Function import (
     getNumber,
     check_pic,
 )
-from Function.getHtml import get_html, get_proxies, get_config
 from Function.logger import logger as avdc_logger, get_log_file_path
-from Function.file_ops import (
-    download_file as file_ops_download_file,
-    download_thumb as file_ops_download_thumb,
-    download_small_cover as file_ops_download_small_cover,
-    download_extrafanart as file_ops_download_extrafanart,
-    write_nfo as file_ops_write_nfo,
-    move_to_failed as file_ops_move_to_failed,
-    paste_file_to_folder as file_ops_paste_file_to_folder,
-    copy_as_fanart as file_ops_copy_as_fanart,
-    delete_thumb as file_ops_delete_thumb,
-    get_disc_part as file_ops_get_disc_part,
-    create_output_folder as file_ops_create_output_folder,
-    resolve_naming_rule as file_ops_resolve_naming_rule,
-    ensure_failed_folder as file_ops_ensure_failed_folder,
-    clean_empty_dirs as file_ops_clean_empty_dirs,
-)
-from Function.image_ops import (
-    crop_by_face_detection as image_ops_crop,
-    cut_poster as image_ops_cut_poster,
-    fix_image_size as image_ops_fix_size,
-    apply_marks as image_ops_apply_marks,
-)
+from Function.image_ops import crop_by_face_detection as image_ops_crop
 from Function.emby_client import (
-    get_actor_list as emby_get_actor_list,
     list_actors as emby_list_actors,
+    get_actor_list as emby_get_actor_list,
     find_and_upload_pictures as emby_find_and_upload_pictures,
     upload_actor_photo as emby_upload_actor_photo,
 )
+from Function.file_ops import resolve_naming_rule as file_ops_resolve_naming_rule
 from Function.core_engine import CoreEngine
 from Function.config_provider import AppConfig
 
@@ -730,35 +704,26 @@ class AVDC_Main_UI(QMainWindow):
         file_path = (
             file_name.replace(file_root, ".").replace("\\\\", "/").replace("\\", "/")
         )
-        # 获取去掉拓展名的文件名做为番号
-        file_name = os.path.splitext(file_name.split("/")[-1])[0]
+        file_name_base = os.path.splitext(file_name.split("/")[-1])[0]
         mode = self.Ui.comboBox_ScrapWeb_2.currentIndex() + 1
-        # 指定的网址
         appoint_url = self.Ui.lineEdit_ScrapWeb_1.text()
         appoint_number = self.Ui.lineEdit_SerialNumber_2.text()
         try:
             if appoint_number:
-                file_name = appoint_number
+                file_name_base = appoint_number
             else:
-                if "-CD" in file_name or "-cd" in file_name:
-                    part = ""
-                    if re.search(r"-CD\d+", file_name):
-                        part = re.findall(r"-CD\d+", file_name)[0]
-                    elif re.search(r"-cd\d+", file_name):
-                        part = re.findall(r"-cd\d+", file_name)[0]
-                    file_name = file_name.replace(part, "")
+                if "-CD" in file_name_base or "-cd" in file_name_base:
+                    part = re.search(r"-[Cc][Dd]\d+", file_name_base)
+                    if part:
+                        file_name_base = file_name_base.replace(part.group(), "")
                 if "-c." in file_path or "-C." in file_path:
-                    file_name = file_name[0:-2]
-            self.logger.info(
-                "[!]Making Data for   ["
-                + file_path
-                + "], the number is ["
-                + file_name
-                + "]"
-            )
-            self.Core_Main(file_path, file_name, mode, 0, appoint_url)
+                    file_name_base = file_name_base[:-2]
+            config = self._get_app_config()
+            engine = CoreEngine(config)
+            result = engine.process_single(file_path, file_name_base, mode, appoint_url)
+            self.logger.info(f"[+]Single file result: {result}")
         except Exception as error_info:
-            self.logger.info("[-]Error in select_file_thread: " + str(error_info))
+            self.logger.info(f"[-]Error in select_file_thread: {error_info}")
         self.logger.info("[*]======================================================")
 
     # ========================================================================小工具-裁剪封面图
@@ -997,307 +962,6 @@ class AVDC_Main_UI(QMainWindow):
     def add_text_main(self, text):
         """兼容旧代码的日志接口 — 内部委托给 logger"""
         self.logger.info(str(text))
-
-    # ========================================================================移动到失败文件夹
-    def moveFailedFolder(self, filepath, failed_folder):
-        config = self._get_app_config()
-        file_ops_move_to_failed(filepath, failed_folder, config)
-
-    # ========================================================================下载文件
-    def DownloadFileWithFilename(
-        self, url, filename, path, Config, filepath, failed_folder
-    ):
-        config = self._get_app_config()
-        file_ops_download_file(url, filename, path, config, filepath, failed_folder)
-
-    # ========================================================================下载缩略图
-    def thumbDownload(
-        self, json_data, path, naming_rule, Config, filepath, failed_folder
-    ):
-        config = self._get_app_config()
-        file_ops_download_thumb(json_data, path, naming_rule, config, filepath, failed_folder)
-
-    def deletethumb(self, path, naming_rule):
-        keep = self.Ui.checkBox_4.isChecked()
-        file_ops_delete_thumb(path, naming_rule, keep)
-
-    # ========================================================================无码片下载封面图
-    def smallCoverDownload(
-        self, path, naming_rule, json_data, Config, filepath, failed_folder
-    ):
-        config = self._get_app_config()
-        return file_ops_download_small_cover(path, naming_rule, json_data, config, filepath, failed_folder)
-
-    # ========================================================================下载剧照
-    def extrafanartDownload(self, json_data, path, Config, filepath, failed_folder):
-        config = self._get_app_config()
-        file_ops_download_extrafanart(json_data, path, config, filepath, failed_folder)
-
-    # ========================================================================打印NFO
-    def PrintFiles(
-        self, path, name_file, cn_sub, leak, json_data, filepath, failed_folder
-    ):
-        config = self._get_app_config()
-        file_ops_write_nfo(path, name_file, cn_sub, leak, json_data, filepath, failed_folder, config)
-
-    # ========================================================================thumb复制为fanart
-    def copyRenameJpgToFanart(self, path, naming_rule):
-        file_ops_copy_as_fanart(path, naming_rule)
-
-    # ========================================================================移动视频、字幕
-    def pasteFileToFolder(self, filepath, path, naming_rule, failed_folder):
-        config = self._get_app_config()
-        return file_ops_paste_file_to_folder(filepath, path, naming_rule, failed_folder, config)
-
-    # ========================================================================有码片裁剪封面
-    def cutImage(self, imagecut, path, naming_rule):
-        config = self._get_app_config()
-        image_ops_cut_poster(
-            imagecut, path, naming_rule,
-            baidu_credentials={
-                "app_id": config.baidu_app_id,
-                "api_key": config.baidu_api_key,
-                "secret_key": config.baidu_secret_key,
-            },
-        )
-
-    def fix_size(self, path, naming_rule):
-        image_ops_fix_size(path, naming_rule)
-
-    # ========================================================================加水印
-    def add_mark(self, poster_path, thumb_path, cn_sub, leak, uncensored, config):
-        config_obj = self._get_app_config()
-        mark_config = {
-            "mark_size": config_obj.mark_size,
-            "mark_pos": config_obj.mark_pos,
-            "poster_mark": config_obj.poster_mark,
-            "thumb_mark": config_obj.thumb_mark,
-        }
-        # Thumb mark
-        if cn_sub or leak or uncensored:
-            if mark_config["thumb_mark"] and cn_sub or leak or uncensored:
-                if config_obj.thumb_mark and os.path.exists(thumb_path):
-                    if config_obj.thumb_download:
-                        image_ops_apply_marks(thumb_path, cn_sub, leak, uncensored, mark_config)
-            # Poster mark
-            if config_obj.poster_mark and os.path.exists(poster_path):
-                if config_obj.poster_download:
-                    image_ops_apply_marks(poster_path, cn_sub, leak, uncensored, mark_config)
-
-    # ========================================================================获取分集序号
-    def get_part(self, filepath, failed_folder):
-        return file_ops_get_disc_part(filepath)
-
-    # ========================================================================更新进度条
-    def set_processbar(self, value):
-        self.Ui.progressBar_avdc.setProperty("value", value)
-        self.Ui.label_percent.setText(str(value) + "%")
-
-    # ========================================================================输出调试信息
-    def debug_mode(self, json_data):
-        try:
-            self.logger.info("[+] ---Debug info---")
-            for key, value in json_data.items():
-                if value == "" or key == "actor_photo" or key == "extrafanart":
-                    continue
-                if key == "tag" and len(value) == 0:
-                    continue
-                elif key == "tag":
-                    value = str(json_data["tag"]).strip(" ['']").replace("'", "")
-                self.logger.info("   [+]-" + "%-13s" % key + ": " + str(value))
-            self.logger.info("[+] ---Debug info---")
-        except Exception as error_info:
-            self.logger.info("[-]Error in debug_mode: " + str(error_info))
-
-    # ========================================================================创建输出文件夹
-    def creatFolder(self, success_folder, json_data, config):
-        app_config = self._get_app_config()
-        return file_ops_create_output_folder(success_folder, json_data, app_config)
-
-    # ========================================================================从指定网站获取json_data
-    def get_json_data(self, mode, number, config, appoint_url):
-        if mode == 5:  # javdb模式
-            self.logger.info("[!]Please Wait Three Seconds！")
-            time.sleep(3)
-        json_data = getDataFromJSON(number, config, mode, appoint_url)
-        return json_data
-
-    # ========================================================================json_data添加到主界面
-    def add_label_info(self, json_data):
-        try:
-            t = threading.Thread(target=self.add_label_info_Thread, args=(json_data,))
-            t.start()  # 启动线程,即让线程开始执行
-        except Exception as error_info:
-            self.logger.info(
-                "[-]Error in pushButton_start_cap_clicked: " + str(error_info)
-            )
-
-    def add_label_info_Thread(self, json_data):
-        self.Ui.lineEdit_SerialNumber.setText(json_data["number"])
-        self.Ui.lineEdit_ReleaseDate.setText(json_data["release"])
-        self.Ui.lineEdit_Director.setText(json_data["director"])
-        self.Ui.lineEdit_Serial.setText(json_data["series"])
-        self.Ui.lineEdit_Product.setText(json_data["studio"])
-        self.Ui.lineEdit_Release.setText(json_data["publisher"])
-        self.Ui.lineEdit_Title.setText(json_data["title"])
-        self.Ui.lineEdit_Actor.setText(json_data["actor"])
-        self.Ui.lineEdit_Intra.setText(json_data["outline"])
-        self.Ui.lineEdit_Type.setText(
-            str(json_data["tag"]).strip(" [',']").replace("'", "")
-        )
-        # if self.Ui.checkBox_cover.isChecked(): # No simple check box, always show if exists
-        poster_path = json_data["poster_path"]
-        thumb_path = json_data["thumb_path"]
-        if os.path.exists(poster_path):
-            pix = QPixmap(poster_path)
-            self.Ui.label_cover.setScaledContents(True)
-            self.Ui.label_cover.setPixmap(pix)  # 添加封面图
-        if os.path.exists(thumb_path):
-            pix = QPixmap(thumb_path)
-            self.Ui.label_thumbnail.setScaledContents(True)
-            self.Ui.label_thumbnail.setPixmap(pix)  # 添加缩略图
-
-    # ========================================================================检查更新
-    def UpdateCheck(self):
-        # 更新检查已禁用
-        return "True"
-
-    # ========================================================================新建失败输出文件夹
-    def CreatFailedFolder(self, failed_folder):
-        config = self._get_app_config()
-        file_ops_ensure_failed_folder(failed_folder, config)
-
-    # ========================================================================删除空目录
-    def CEF(self, path):
-        file_ops_clean_empty_dirs(path)
-
-    def Core_Main(self, filepath, number, mode, count, appoint_url=""):
-        # =======================================================================初始化所需变量
-        leak = 0
-        uncensored = 0
-        cn_sub = 0
-        c_word = ""
-        multi_part = 0
-        part = ""
-        program_mode = 0
-        config_file = "config.ini"
-        Config = ConfigParser()
-        Config.read(config_file, encoding="UTF-8")
-        if self.Ui.radioButton.isChecked():
-            program_mode = 1
-        elif self.Ui.radioButton_2.isChecked():
-            program_mode = 2
-        movie_path = self.Ui.lineEdit_7.text()
-        if movie_path == "":
-            movie_path = os.getcwd().replace("\\", "/")
-        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()  # 失败输出目录
-        success_folder = movie_path + "/" + self.Ui.lineEdit_8.text()  # 成功输出目录
-        # =======================================================================获取json_data
-        json_data = self.get_json_data(mode, number, Config, appoint_url)
-        # =======================================================================调试模式
-        if self.Ui.radioButton_5.isChecked():
-            self.debug_mode(json_data)
-        # =======================================================================是否找到影片信息
-        if json_data["website"] == "timeout":
-            self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
-            return "error"
-        elif json_data["title"] == "":
-            self.logger.info("[-]Movie Data not found!")
-            node = QTreeWidgetItem(self.item_fail)
-            node.setText(
-                0,
-                str(self.count_claw)
-                + "-"
-                + str(count)
-                + "."
-                + os.path.splitext(filepath.split("/")[-1])[0],
-            )
-            self.item_fail.addChild(node)
-            self.moveFailedFolder(filepath, failed_folder)
-            return "not found"
-        elif "http" not in json_data["cover"]:
-            raise Exception("Cover Url is None!")
-        elif json_data["imagecut"] == 3 and "http" not in json_data["cover_small"]:
-            raise Exception("Cover_small Url is None!")
-        # =======================================================================判断-C,-CD后缀,无码,流出
-        if "-CD" in filepath or "-cd" in filepath:
-            multi_part = 1
-            part = self.get_part(filepath, failed_folder)
-        if (
-            "-c." in filepath
-            or "-C." in filepath
-            or "中文" in filepath
-            or "字幕" in filepath
-        ):
-            cn_sub = 1
-            c_word = "-C"  # 中文字幕影片后缀
-        if json_data["imagecut"] == 3:  # imagecut=3为无码
-            uncensored = 1
-        if "流出" in os.path.split(filepath)[1]:
-            leak = 1
-        # =======================================================================创建输出文件夹
-        path = self.creatFolder(success_folder, json_data, Config)
-        self.logger.info("[+]Folder : " + path)
-        self.logger.info("[+]From   : " + json_data["website"])
-        # =======================================================================文件命名规则
-        number = json_data["number"]
-        naming_rule = str(self.get_naming_rule(json_data)).replace("--", "-").strip("-")
-        if leak == 1:
-            naming_rule += "-流出"
-        if multi_part == 1:
-            naming_rule += part
-        if cn_sub == 1:
-            naming_rule += c_word
-        # =======================================================================封面路径
-        thumb_path = path + "/" + naming_rule + "-thumb.jpg"
-        poster_path = path + "/" + naming_rule + "-poster.jpg"
-        # =======================================================================无码封面获取方式
-        if json_data["imagecut"] == 3 and self.Ui.radioButton_27.isChecked():
-            json_data["imagecut"] = 0
-        # =======================================================================刮削模式
-        if program_mode == 1:
-            # imagecut 0 判断人脸位置裁剪缩略图为封面，1 裁剪右半面，3 下载小封面
-            self.thumbDownload(
-                json_data, path, naming_rule, Config, filepath, failed_folder
-            )
-            if self.Ui.checkBox_2.isChecked():
-                if (
-                    self.smallCoverDownload(
-                        path, naming_rule, json_data, Config, filepath, failed_folder
-                    )
-                    == "small_cover_error"
-                ):  # 下载小封面
-                    json_data["imagecut"] = 0
-                self.cutImage(json_data["imagecut"], path, naming_rule)  # 裁剪图
-                self.fix_size(path, naming_rule)
-            if self.Ui.checkBox_3.isChecked():
-                self.copyRenameJpgToFanart(path, naming_rule)
-            self.deletethumb(path, naming_rule)
-            if self.pasteFileToFolder(
-                filepath, path, naming_rule, failed_folder
-            ):  # 移动文件,True 为有外挂字幕
-                cn_sub = 1
-            if self.Ui.checkBox.isChecked():
-                self.PrintFiles(
-                    path, naming_rule, cn_sub, leak, json_data, filepath, failed_folder
-                )  # 打印文件
-            if self.Ui.radioButton_13.isChecked():
-                self.extrafanartDownload(
-                    json_data, path, Config, filepath, failed_folder
-                )
-            self.add_mark(poster_path, thumb_path, cn_sub, leak, uncensored, Config)
-        # =======================================================================整理模式
-        elif program_mode == 2:
-            self.pasteFileToFolder(
-                filepath, path, naming_rule, failed_folder
-            )  # 移动文件
-        # =======================================================================json添加封面项
-        json_data["thumb_path"] = thumb_path
-        json_data["poster_path"] = poster_path
-        json_data["number"] = number
-        self.add_label_info(json_data)
-        self.json_array[str(self.count_claw) + "-" + str(count)] = json_data
-        return part + c_word
 
     def AVDC_Main(self):
         """Batch processing using CoreEngine (runs in background thread)."""
