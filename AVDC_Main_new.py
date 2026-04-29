@@ -48,6 +48,12 @@ from Function.file_ops import (
     ensure_failed_folder as file_ops_ensure_failed_folder,
     clean_empty_dirs as file_ops_clean_empty_dirs,
 )
+from Function.image_ops import (
+    crop_by_face_detection as image_ops_crop,
+    cut_poster as image_ops_cut_poster,
+    fix_image_size as image_ops_fix_size,
+    apply_marks as image_ops_apply_marks,
+)
 from Function.config_provider import AppConfig
 
 
@@ -771,69 +777,28 @@ class AVDC_Main_UI(QMainWindow):
         self.logger.info("[*]======================================================")
 
     def image_cut(self, path, file_name, mode=1):
+        config = self._get_app_config()
         png_name = file_name.replace("-thumb.jpg", "-poster.jpg")
-        file_path = os.path.join(path, file_name)
         png_path = os.path.join(path, png_name)
         try:
             if os.path.exists(png_path):
                 os.remove(png_path)
+            image_ops_crop(
+                path, file_name, mode=mode,
+                app_id=config.baidu_app_id,
+                api_key=config.baidu_api_key,
+                secret_key=config.baidu_secret_key,
+            )
         except Exception as error_info:
-            self.logger.info("[-]Error in image_cut: " + str(error_info))
-            return
-
-        """ 你的 APPID AK SK """
-        APP_ID = "17013175"
-        API_KEY = "IQs1mkG4FerdtmNh6qKDI4fW"
-        SECRET_KEY = "dLr9GTqqutqP9nWKKRaEinVDhxYlPbnD"
-
-        client = AipBodyAnalysis(APP_ID, API_KEY, SECRET_KEY)
-
-        """ 获取图片分辨率 """
-        im = Image.open(file_path)  # 返回一个Image对象
-        width, height = im.size
-
-        """ 读取图片 """
-        with open(file_path, "rb") as fp:
-            image = fp.read()
-        ex, ey, ew, eh = 0, 0, 0, 0
-        """ 获取裁剪区域 """
-        if height / width <= 1.5:  # 长宽比大于1.5，太宽
-            """ 调用人体检测与属性识别 """
-            result = client.bodyAnalysis(image)
-            ewidth = int(height / 1.5)
-            ex = int(result["person_info"][0]["body_parts"]["nose"]["x"])
-            if width - ex < ewidth / 2:
-                ex = width - ewidth
-            else:
-                ex -= int(ewidth / 2)
-            if ex < 0:
-                ex = 0
-            ey = 0
-            eh = height
-            if ewidth > width:
-                ew = width
-            else:
-                ew = ewidth
-        elif height / width > 1.5:  # 长宽比小于1.5，太窄
-            ex = 0
-            ey = 0
-            ew = int(width)
-            eh = ew * 1.5
-        fp = open(file_path, "rb")
-        img = Image.open(fp)
-        img_new_png = img.crop((ex, ey, ew + ex, eh + ey))
-        fp.close()
-        img_new_png.save(png_path)
-        self.logger.info(
-            "[+]Poster Cut         " + png_name + " from " + file_name + "!"
-        )
+            self.logger.info(f"[-]Error in image_cut: {error_info}")
         if mode == 2:
+            file_path = os.path.join(path, file_name)
             pix = QPixmap(file_path)
             self.Ui.label_thumbnail.setScaledContents(True)
-            self.Ui.label_thumbnail.setPixmap(pix)  # 添加图标
+            self.Ui.label_thumbnail.setPixmap(pix)
             pix = QPixmap(png_path)
             self.Ui.label_cover.setScaledContents(True)
-            self.Ui.label_cover.setPixmap(pix)  # 添加图标
+            self.Ui.label_cover.setPixmap(pix)
 
     # ========================================================================小工具-视频移动
     def move_file(self):
@@ -1207,112 +1172,38 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================有码片裁剪封面
     def cutImage(self, imagecut, path, naming_rule):
-        if imagecut != 3:
-            thumb_name = naming_rule + "-thumb.jpg"
-            poster_name = naming_rule + "-poster.jpg"
-            if os.path.exists(path + "/" + poster_name):
-                self.logger.info("[+]Poster Existed!    " + poster_name)
-                return
-            if imagecut == 0:
-                self.image_cut(path, thumb_name)
-            else:
-                try:
-                    img = Image.open(path + "/" + thumb_name)
-                    w = img.width
-                    h = img.height
-                    img2 = img.crop((w / 1.9, 0, w, h))
-                    img2.save(path + "/" + poster_name)
-                    self.logger.info("[+]Poster Cut!        " + poster_name)
-                except Exception:
-                    self.logger.info("[-]Thumb cut failed!")
+        config = self._get_app_config()
+        image_ops_cut_poster(
+            imagecut, path, naming_rule,
+            baidu_credentials={
+                "app_id": config.baidu_app_id,
+                "api_key": config.baidu_api_key,
+                "secret_key": config.baidu_secret_key,
+            },
+        )
 
     def fix_size(self, path, naming_rule):
-        try:
-            poster_path = path + "/" + naming_rule + "-poster.jpg"
-            pic = Image.open(poster_path)
-            (width, height) = pic.size
-            if (
-                not 2 / 3 - 0.05 <= width / height <= 2 / 3 + 0.05
-            ):  # 仅处理会过度拉伸的图片
-                fixed_pic = pic.resize((int(width), int(3 / 2 * width)))  # 拉伸图片
-                fixed_pic = fixed_pic.filter(
-                    ImageFilter.GaussianBlur(radius=50)
-                )  # 高斯模糊
-                fixed_pic.paste(pic, (0, int((3 / 2 * width - height) / 2)))  # 粘贴原图
-                fixed_pic.save(poster_path)
-        except Exception as error_info:
-            self.logger.info("[-]Error in fix_size: " + str(error_info))
+        image_ops_fix_size(path, naming_rule)
 
     # ========================================================================加水印
     def add_mark(self, poster_path, thumb_path, cn_sub, leak, uncensored, config):
-        mark_type = ""
-        if self.Ui.checkBox_5.isChecked() and cn_sub:
-            mark_type += ",字幕"
-        if self.Ui.checkBox_6.isChecked() and leak:
-            mark_type += ",流出"
-        if self.Ui.checkBox_7.isChecked() and uncensored:
-            mark_type += ",无码"
-        if (
-            self.Ui.radioButton_17.isChecked()
-            and mark_type != ""
-            and self.Ui.checkBox_4.isChecked()
-            and os.path.exists(thumb_path)
-        ):
-            self.add_mark_thread(thumb_path, cn_sub, leak, uncensored)
-            self.logger.info("[+]Thumb Add Mark:    " + mark_type.strip(","))
-        if (
-            self.Ui.radioButton_15.isChecked()
-            and mark_type != ""
-            and self.Ui.checkBox_2.isChecked()
-            and os.path.exists(poster_path)
-        ):
-            self.add_mark_thread(poster_path, cn_sub, leak, uncensored)
-            self.logger.info("[+]Poster Add Mark:   " + mark_type.strip(","))
-
-    def add_mark_thread(self, pic_path, cn_sub, leak, uncensored):
-        size = 14 - int(self.Ui.horizontalSlider.value())  # 获取自定义大小的值
-        img_pic = Image.open(pic_path)
-        count = 0  # 获取自定义位置，取余配合pos达到顺时针添加的效果
-        if self.Ui.radioButton_21.isChecked():
-            count = 0
-        elif self.Ui.radioButton_24.isChecked():
-            count = 1
-        elif self.Ui.radioButton_22.isChecked():
-            count = 2
-        elif self.Ui.radioButton_23.isChecked():
-            count = 3
-        if self.Ui.checkBox_5.isChecked() and cn_sub == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 1)  # 添加
-            count = (count + 1) % 4
-        if self.Ui.checkBox_6.isChecked() and leak == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 2)
-            count = (count + 1) % 4
-        if self.Ui.checkBox_7.isChecked() and uncensored == 1:
-            self.add_to_pic(pic_path, img_pic, size, count, 3)
-        img_pic.close()
-
-    def add_to_pic(self, pic_path, img_pic, size, count, mode):
-        mark_pic_path = ""
-        if mode == 1:
-            mark_pic_path = "Img/SUB.png"
-        elif mode == 2:
-            mark_pic_path = "Img/LEAK.png"
-        elif mode == 3:
-            mark_pic_path = "Img/UNCENSORED.png"
-        img_subt = Image.open(mark_pic_path)
-        scroll_high = int(img_pic.height / size)
-        scroll_wide = int(scroll_high * img_subt.width / img_subt.height)
-        img_subt = img_subt.resize((scroll_wide, scroll_high), Image.ANTIALIAS)
-        r, g, b, a = img_subt.split()  # 获取颜色通道，保持png的透明性
-        # 封面四个角的位置
-        pos = [
-            {"x": 0, "y": 0},
-            {"x": img_pic.width - scroll_wide, "y": 0},
-            {"x": img_pic.width - scroll_wide, "y": img_pic.height - scroll_high},
-            {"x": 0, "y": img_pic.height - scroll_high},
-        ]
-        img_pic.paste(img_subt, (pos[count]["x"], pos[count]["y"]), mask=a)
-        img_pic.save(pic_path, quality=95)
+        config_obj = self._get_app_config()
+        mark_config = {
+            "mark_size": config_obj.mark_size,
+            "mark_pos": config_obj.mark_pos,
+            "poster_mark": config_obj.poster_mark,
+            "thumb_mark": config_obj.thumb_mark,
+        }
+        # Thumb mark
+        if cn_sub or leak or uncensored:
+            if mark_config["thumb_mark"] and cn_sub or leak or uncensored:
+                if config_obj.thumb_mark and os.path.exists(thumb_path):
+                    if config_obj.thumb_download:
+                        image_ops_apply_marks(thumb_path, cn_sub, leak, uncensored, mark_config)
+            # Poster mark
+            if config_obj.poster_mark and os.path.exists(poster_path):
+                if config_obj.poster_download:
+                    image_ops_apply_marks(poster_path, cn_sub, leak, uncensored, mark_config)
 
     # ========================================================================获取分集序号
     def get_part(self, filepath, failed_folder):
