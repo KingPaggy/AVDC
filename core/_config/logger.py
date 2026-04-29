@@ -1,7 +1,7 @@
 """
 Centralized logging for AVDC application.
 
-Business modules should use: from core.logger import logger
+Business modules should use: from core._config.logger import logger
 UI layer reads log file via QTimer polling to display in QTextBrowser.
 
 This module has ZERO Qt dependencies.

@@ -7,9 +7,9 @@ from configparser import ConfigParser
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.config_io import get_config
-from core.file_utils import getNumber, is_uncensored
-from core.scrape_pipeline import getDataFromJSON
+from core._config.config_io import get_config
+from core._files.file_utils import getNumber, is_uncensored
+from core._scraper.scrape_pipeline import getDataFromJSON
 
 # Real numbers to test, covering each category
 TEST_NUMBERS = [

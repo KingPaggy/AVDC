@@ -3,8 +3,8 @@ from pyquery import PyQuery as pq
 from lxml import etree
 from bs4 import BeautifulSoup
 import json
-from core.networking import get_html
-from core.networking import post_html
+from core._net.networking import get_html
+from core._net.networking import post_html
 
 
 def getActorPhoto(htmlcode):
@@ -495,8 +495,8 @@ print(main_uncensored('heyzo-1031'))
 
 
 # ======================================================================== ScraperBase integration
-from core.scraper_base import ScraperBase, register_scraper
-from core.models import Movie as _Movie
+from core._scraper.scraper_base import ScraperBase, register_scraper
+from core._models.models import Movie as _Movie
 
 
 @register_scraper

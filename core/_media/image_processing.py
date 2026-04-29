@@ -6,9 +6,9 @@ watermark compositing, and size fixing. All functions are pure — no UI depende
 import os
 import functools
 from PIL import Image, ImageFilter
-from core.errors import ImageError
-from core.logger import logger
-from core.config import AppConfig
+from core._config.errors import ImageError
+from core._config.logger import logger
+from core._config.config import AppConfig
 
 # Watermark mark image paths
 MARK_PATHS = {

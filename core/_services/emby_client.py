@@ -14,7 +14,7 @@ from typing import Optional
 
 import requests
 
-from core.logger import logger
+from core._config.logger import logger
 
 _EMBA_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

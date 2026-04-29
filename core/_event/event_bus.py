@@ -3,7 +3,7 @@
 import threading
 from typing import Callable
 
-from core.events import Event, EventType
+from core._event.events import Event, EventType
 
 
 class EventBus:

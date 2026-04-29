@@ -1,7 +1,7 @@
 import re
 from lxml import etree
 import json
-from core.networking import get_html
+from core._net.networking import get_html
 
 
 def getTitle(htmlcode):
@@ -225,8 +225,8 @@ print(main('300MIUM-382'))
 
 
 # ======================================================================== ScraperBase integration
-from core.scraper_base import ScraperBase, register_scraper
-from core.models import Movie as _Movie
+from core._scraper.scraper_base import ScraperBase, register_scraper
+from core._models.models import Movie as _Movie
 
 
 @register_scraper

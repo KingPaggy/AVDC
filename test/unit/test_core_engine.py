@@ -5,8 +5,8 @@ from unittest.mock import patch, MagicMock, call
 
 import pytest
 
-from core.config import AppConfig
-from core.orchestrator import CoreEngine
+from core._config.config import AppConfig
+from core._services.orchestrator import CoreEngine
 
 
 def _make_config(**overrides):
@@ -21,7 +21,7 @@ class TestCoreEngineSingle:
         logs = []
         engine = CoreEngine(config, on_log=logs.append)
 
-        with patch("core.orchestrator.getDataFromJSON") as mock_get:
+        with patch("core._services.orchestrator.getDataFromJSON") as mock_get:
             mock_get.return_value = {"website": "timeout", "title": ""}
             result = engine.process_single(
                 filepath=os.path.join(tmp_dir, "test.mp4"),
@@ -36,7 +36,7 @@ class TestCoreEngineSingle:
         logs = []
         engine = CoreEngine(config, on_log=logs.append)
 
-        with patch("core.orchestrator.getDataFromJSON") as mock_get:
+        with patch("core._services.orchestrator.getDataFromJSON") as mock_get:
             mock_get.return_value = {"website": "", "title": ""}
             result = engine.process_single(
                 filepath=os.path.join(tmp_dir, "test.mp4"),
@@ -63,15 +63,15 @@ class TestCoreEngineSingle:
             "score": "", "imagecut": 1, "extrafanart": [], "source": "javbus",
         }
 
-        with patch("core.orchestrator.getDataFromJSON", return_value=json_response):
-            with patch("core.orchestrator.download_thumb"):
-                with patch("core.orchestrator.download_small_cover", return_value=None):
-                    with patch("core.orchestrator._cut_poster"):
-                        with patch("core.orchestrator._fix_image_size"):
-                            with patch("core.orchestrator.copy_as_fanart"):
-                                with patch("core.orchestrator.delete_thumb"):
-                                    with patch("core.orchestrator.paste_file_to_folder", return_value=False):
-                                        with patch("core.orchestrator.write_nfo"):
+        with patch("core._services.orchestrator.getDataFromJSON", return_value=json_response):
+            with patch("core._services.orchestrator.download_thumb"):
+                with patch("core._services.orchestrator.download_small_cover", return_value=None):
+                    with patch("core._services.orchestrator._cut_poster"):
+                        with patch("core._services.orchestrator._fix_image_size"):
+                            with patch("core._services.orchestrator.copy_as_fanart"):
+                                with patch("core._services.orchestrator.delete_thumb"):
+                                    with patch("core._services.orchestrator.paste_file_to_folder", return_value=False):
+                                        with patch("core._services.orchestrator.write_nfo"):
                                             result = engine.process_single(
                                                 filepath=os.path.join(tmp_dir, "SSNI-123.mp4"),
                                                 number="SSNI-123",
@@ -88,7 +88,7 @@ class TestCoreEngineBatch:
         logs = []
         engine = CoreEngine(config, on_log=logs.append)
 
-        with patch("core.orchestrator.movie_lists", return_value=[]):
+        with patch("core._services.orchestrator.movie_lists", return_value=[]):
             result = engine.process_batch(tmp_dir)
         assert result["total"] == 0
 
@@ -112,17 +112,17 @@ class TestCoreEngineBatch:
             "score": "", "imagecut": 1, "extrafanart": [], "source": "javbus",
         }
 
-        with patch("core.orchestrator.movie_lists", return_value=[filepath]):
-            with patch("core.orchestrator.getNumber", return_value="SSNI-123"):
-                with patch("core.orchestrator.getDataFromJSON", return_value=json_response):
-                    with patch("core.orchestrator.download_thumb"):
-                        with patch("core.orchestrator.download_small_cover", return_value=None):
-                            with patch("core.orchestrator._cut_poster"):
-                                with patch("core.orchestrator._fix_image_size"):
-                                    with patch("core.orchestrator.copy_as_fanart"):
-                                        with patch("core.orchestrator.delete_thumb"):
-                                            with patch("core.orchestrator.paste_file_to_folder", return_value=False):
-                                                with patch("core.orchestrator.write_nfo"):
+        with patch("core._services.orchestrator.movie_lists", return_value=[filepath]):
+            with patch("core._services.orchestrator.getNumber", return_value="SSNI-123"):
+                with patch("core._services.orchestrator.getDataFromJSON", return_value=json_response):
+                    with patch("core._services.orchestrator.download_thumb"):
+                        with patch("core._services.orchestrator.download_small_cover", return_value=None):
+                            with patch("core._services.orchestrator._cut_poster"):
+                                with patch("core._services.orchestrator._fix_image_size"):
+                                    with patch("core._services.orchestrator.copy_as_fanart"):
+                                        with patch("core._services.orchestrator.delete_thumb"):
+                                            with patch("core._services.orchestrator.paste_file_to_folder", return_value=False):
+                                                with patch("core._services.orchestrator.write_nfo"):
                                                     result = engine.process_batch(tmp_dir)
         assert result["total"] == 1
         assert result["success"] == 1

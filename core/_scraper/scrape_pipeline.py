@@ -3,11 +3,11 @@
 import json
 import re
 import concurrent.futures
-from core.file_utils import getDataState, is_uncensored
-from core.errors import ScrapingError
-from core.models import Movie
-from core.scraper_adapter import clear_cache, cache_key, get_cached, set_cache
-from core.scraper_dispatcher import ScraperDispatcher
+from core._files.file_utils import getDataState, is_uncensored
+from core._config.errors import ScrapingError
+from core._models.models import Movie
+from core._scraper.scraper_adapter import clear_cache, cache_key, get_cached, set_cache
+from core._scraper.scraper_dispatcher import ScraperDispatcher
 
 _SCRAPER_MODULES = None
 

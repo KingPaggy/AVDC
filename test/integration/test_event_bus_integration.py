@@ -15,8 +15,8 @@ import threading
 import time
 import unittest
 
-from core.event_bus import EventBus
-from core.events import Event, EventType
+from core._event.event_bus import EventBus
+from core._event.events import Event, EventType
 
 
 class MockUI:

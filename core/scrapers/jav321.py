@@ -1,7 +1,7 @@
 import re
 from lxml import etree
 import json
-from core.networking import post_html
+from core._net.networking import post_html
 
 
 def getActorPhoto(actor):
@@ -208,8 +208,8 @@ print(main('ABP-905'))
 
 
 # ======================================================================== ScraperBase integration
-from core.scraper_base import ScraperBase, register_scraper
-from core.models import Movie as _Movie
+from core._scraper.scraper_base import ScraperBase, register_scraper
+from core._models.models import Movie as _Movie
 
 
 @register_scraper

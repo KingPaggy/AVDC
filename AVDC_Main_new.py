@@ -16,21 +16,21 @@ from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
 from configparser import ConfigParser
 from Ui.AVDC_new import Ui_MainWindow
-from core.config_io import save_config
-from core.file_utils import movie_lists, escapePath, getNumber, check_pic
-from core.metadata import get_info
-from core.scrape_pipeline import getDataFromJSON
-from core.logger import logger as avdc_logger, get_log_file_path
-from core.image_processing import crop_by_face_detection as image_ops_crop
-from core.emby_client import (
+from core._config.config_io import save_config
+from core._files.file_utils import movie_lists, escapePath, getNumber, check_pic
+from core._services.metadata import get_info
+from core._scraper.scrape_pipeline import getDataFromJSON
+from core._config.logger import logger as avdc_logger, get_log_file_path
+from core._media.image_processing import crop_by_face_detection as image_ops_crop
+from core._services.emby_client import (
     list_actors as emby_list_actors,
     get_actor_list as emby_get_actor_list,
     find_and_upload_pictures as emby_find_and_upload_pictures,
     upload_actor_photo as emby_upload_actor_photo,
 )
-from core.file_operations import resolve_naming_rule as file_ops_resolve_naming_rule
-from core.orchestrator import CoreEngine
-from core.config import AppConfig
+from core._files.file_operations import resolve_naming_rule as file_ops_resolve_naming_rule
+from core._services.orchestrator import CoreEngine
+from core._config.config import AppConfig
 
 
 # ======================================================================== 日志轮询配置

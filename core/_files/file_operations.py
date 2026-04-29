@@ -16,10 +16,10 @@ from typing import Optional
 import requests
 from PIL import Image
 
-from core.config import AppConfig
-from core.logger import logger
-from core.file_utils import check_pic, escapePath
-from core.metadata import get_info
+from core._config.config import AppConfig
+from core._config.logger import logger
+from core._files.file_utils import check_pic, escapePath
+from core._services.metadata import get_info
 
 # ========================================================================
 # 下载

@@ -1,8 +1,8 @@
 import re
 from typing import Optional
-from core.models import Movie
-from core.scraper_adapter import ScraperAdapter, cache_key, get_cached
-from core.errors import ScrapingError
+from core._models.models import Movie
+from core._scraper.scraper_adapter import ScraperAdapter, cache_key, get_cached
+from core._config.errors import ScrapingError
 
 
 class ScraperDispatcher:

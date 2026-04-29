@@ -6,8 +6,8 @@ from unittest.mock import patch, MagicMock
 import pytest
 from PIL import Image
 
-from core.config import AppConfig
-from core.image_processing import (
+from core._config.config import AppConfig
+from core._media.image_processing import (
     crop_by_face_detection,
     cut_poster_from_thumb as cut_poster,
     fix_image_size,

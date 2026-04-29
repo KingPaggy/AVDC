@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from core.models import Movie
-from core.errors import ScrapingError
+from core._models.models import Movie
+from core._config.errors import ScrapingError
 
 
 class ScraperBase(ABC):

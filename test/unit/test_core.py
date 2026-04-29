@@ -9,12 +9,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from core.config_io import get_config, get_config_file, save_config, get_default_config, get_proxy_config
-from core.file_utils import escapePath, getNumber, getDataState, is_uncensored, movie_lists, check_pic
-from core.metadata import get_info
-from core.naming_service import resolve_name
-from core.models import Movie
-import core.scrape_pipeline as scrape_pipeline
+from core._config.config_io import get_config, get_config_file, save_config, get_default_config, get_proxy_config
+from core._files.file_utils import escapePath, getNumber, getDataState, is_uncensored, movie_lists, check_pic
+from core._services.metadata import get_info
+from core._services.naming_service import resolve_name
+from core._models.models import Movie
+from core._scraper.scrape_pipeline import getDataFromJSON as scrape_pipeline_getDataFromJSON
+import core._scraper.scrape_pipeline as scrape_pipeline
 
 
 class CoreFileUtilsTests(unittest.TestCase):
@@ -230,7 +231,7 @@ class CoreFileUtilsTests(unittest.TestCase):
         config = ConfigParser()
         config.read_dict({"uncensored": {"uncensored_prefix": "ZZZ"}})
 
-        with patch("core.config_io.get_config", return_value=config):
+        with patch("core._config.config_io.get_config", return_value=config):
             self.assertTrue(is_uncensored("HEYZO-1234"))
             self.assertTrue(is_uncensored("123456-7890"))
             self.assertTrue(is_uncensored("n1234"))
@@ -557,7 +558,7 @@ class CoreModelTests(unittest.TestCase):
 
 class ScrapePipelineDispatchTests(unittest.TestCase):
     def setUp(self):
-        from core.scraper_adapter import clear_cache
+        from core._scraper.scraper_adapter import clear_cache
         clear_cache()
         self.config = ConfigParser()
         self.config.read_dict(
@@ -649,7 +650,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("HEYZO-1234", self.config, 1, "")
 
         self.assertEqual(
             [name for name, _ in call_order],
@@ -668,7 +669,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("259LUXU-1111", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("259LUXU-1111", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["mgstage.main", "jav321.main", "javdb.main"])
         self.assertEqual(call_order[1][1][0], "LUXU-1111")
@@ -679,7 +680,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         responses = {"mgstage.main": self._movie_payload(title="ok")}
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("MIDE-001", self.config, 2, "")
+            result = scrape_pipeline_getDataFromJSON("MIDE-001", self.config, 2, "")
 
         self.assertEqual([name for name, _ in call_order], ["mgstage.main"])
         self.assertEqual(result["title"], "ok")
@@ -690,7 +691,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 3, "")
+            result = scrape_pipeline_getDataFromJSON("HEYZO-1234", self.config, 3, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main_uncensored"])
         self.assertEqual(call_order[0][1], ("HEYZO-1234", ""))
@@ -702,7 +703,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("FC2-PPV-123456", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("FC2-PPV-123456", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main"])
         self.assertEqual(result["title"], "ok")
@@ -716,7 +717,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("sexart.19.11.03", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main_us", "javbus.main_us"])
         self.assertEqual(result["title"], "ok")
@@ -727,7 +728,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 5, "")
+            result = scrape_pipeline_getDataFromJSON("sexart.19.11.03", self.config, 5, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main_us"])
         self.assertEqual(call_order[0][1], ("sexart.19.11.03", ""))
@@ -739,7 +740,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 4, "url")
+            result = scrape_pipeline_getDataFromJSON("HEYZO-1234", self.config, 4, "url")
 
         self.assertEqual([name for name, _ in call_order], ["jav321.main"])
         self.assertEqual(call_order[0][1], ("HEYZO-1234", True, "url"))
@@ -750,7 +751,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         responses = {"avsox.main": self._movie_payload(title="ok")}
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("ABP-123", self.config, 6, "")
+            result = scrape_pipeline_getDataFromJSON("ABP-123", self.config, 6, "")
 
         self.assertEqual([name for name, _ in call_order], ["avsox.main"])
         self.assertEqual(result["title"], "ok")
@@ -760,7 +761,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         responses = {"xcity.main": self._movie_payload(title="ok")}
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("ABP-123", self.config, 7, "")
+            result = scrape_pipeline_getDataFromJSON("ABP-123", self.config, 7, "")
 
         self.assertEqual([name for name, _ in call_order], ["xcity.main"])
         self.assertEqual(result["title"], "ok")
@@ -772,7 +773,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("abcd00123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("abcd00123", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["dmm.main"])
         self.assertEqual(result["title"], "ok")
@@ -790,7 +791,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("abcd-00123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("abcd-00123", self.config, 1, "")
 
         names = [name for name, _ in call_order]
         self.assertEqual(names, ["javbus.main", "jav321.main", "xcity.main", "javdb.main", "avsox.main"])
@@ -809,7 +810,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         names = [name for name, _ in call_order]
         self.assertEqual(names, ["javbus.main", "jav321.main", "xcity.main", "javdb.main", "avsox.main"])
@@ -822,7 +823,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main"])
         self.assertEqual(result["title"], "ok")
@@ -834,7 +835,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 3, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 3, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main"])
         self.assertEqual(result["title"], "ok")
@@ -846,7 +847,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 3, "")
+            result = scrape_pipeline_getDataFromJSON("sexart.19.11.03", self.config, 3, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main_us"])
         self.assertEqual(result["title"], "ok")
@@ -858,7 +859,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("HEYZO-1234", self.config, 5, "")
+            result = scrape_pipeline_getDataFromJSON("HEYZO-1234", self.config, 5, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main"])
         self.assertEqual(call_order[0][1], ("HEYZO-1234", "", True))
@@ -873,7 +874,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertEqual(result["cover_small"], "")
 
@@ -886,7 +887,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers({}, [])
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("abcd00123", self.config, 9, "")
+            result = scrape_pipeline_getDataFromJSON("abcd00123", self.config, 9, "")
 
         self.assertEqual(result["title"], "")
         self.assertEqual(result["actor"], "")
@@ -901,7 +902,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertEqual(result["actor"], "Unknown")
 
@@ -913,7 +914,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertNotIn(" ", result["title"])
         self.assertIn(".", result["title"])  # space replaced with .
@@ -927,7 +928,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertEqual(result["release"], "2024-01-15")
 
@@ -941,7 +942,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         self.assertEqual(result["studio"], "StudioName")
         self.assertEqual(result["director"], "Director")
@@ -958,7 +959,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("ABP-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("ABP-123", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main"])
         self.assertEqual(result["website"], "timeout")
@@ -977,7 +978,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", self.config, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", self.config, 1, "")
 
         # Should try all sites and return last result
         self.assertEqual(result["website"], "timeout")
@@ -994,7 +995,7 @@ class ScrapePipelineDispatchTests(unittest.TestCase):
         }
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("ABP-123", self.config, 6, "")
+            result = scrape_pipeline_getDataFromJSON("ABP-123", self.config, 6, "")
 
         self.assertEqual([name for name, _ in call_order], ["avsox.main"])
         self.assertEqual(result["title"], "")
@@ -1011,7 +1012,7 @@ class RealNumberDispatchTests(unittest.TestCase):
     """Verify that real-world video numbers are dispatched to the correct scrapers."""
 
     def setUp(self):
-        from core.scraper_adapter import clear_cache
+        from core._scraper.scraper_adapter import clear_cache
         clear_cache()
         self.config = ConfigParser()
         self.config.read_dict(
@@ -1156,7 +1157,7 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            scrape_pipeline.getDataFromJSON("SSIS-487", self.config, 1, "")
+            scrape_pipeline_getDataFromJSON("SSIS-487", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javbus.main"])
 
@@ -1171,7 +1172,7 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=True), \
             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            scrape_pipeline.getDataFromJSON("HEYZO-3032", self.config, 1, "")
+            scrape_pipeline_getDataFromJSON("HEYZO-3032", self.config, 1, "")
 
         names = [name for name, _ in call_order]
         self.assertEqual(names, ["javbus.main_uncensored", "javdb.main"])
@@ -1183,7 +1184,7 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         fake_scrapers = self._fake_scrapers(responses, call_order)
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            scrape_pipeline.getDataFromJSON("FC2-3052557", self.config, 1, "")
+            scrape_pipeline_getDataFromJSON("FC2-3052557", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main"])
 
@@ -1198,7 +1199,7 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            scrape_pipeline.getDataFromJSON("sexart.19.11.03", self.config, 1, "")
+            scrape_pipeline_getDataFromJSON("sexart.19.11.03", self.config, 1, "")
 
         self.assertEqual([name for name, _ in call_order], ["javdb.main_us", "javbus.main_us"])
 
@@ -1213,14 +1214,14 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
             patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
             patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            scrape_pipeline.getDataFromJSON("259LUXU-504", self.config, 1, "")
+            scrape_pipeline_getDataFromJSON("259LUXU-504", self.config, 1, "")
 
         names = [name for name, _ in call_order]
         self.assertEqual(names, ["mgstage.main", "jav321.main"])
 
     def test_concurrent_mode_launches_multiple_scrapers(self):
         """max_concurrent=3 时同时发起 3 个抓取请求"""
-        from core.scraper_adapter import clear_cache
+        from core._scraper.scraper_adapter import clear_cache
         clear_cache()
         import time
         call_order = []
@@ -1251,7 +1252,7 @@ class RealNumberDispatchRoutingTests(RealNumberDispatchTests):
         with patch.object(scrape_pipeline, "is_uncensored", return_value=False), \
              patch.object(scrape_pipeline, "getDataState", side_effect=lambda data: 0 if not data.get("title") else 1), \
              patch.object(scrape_pipeline, "get_scraper_modules", return_value=fake_scrapers):
-            result = scrape_pipeline.getDataFromJSON("SSIS-123", cfg, 1, "")
+            result = scrape_pipeline_getDataFromJSON("SSIS-123", cfg, 1, "")
 
         # With max_concurrent=3, first 3 should start concurrently
         # avsox is 4th in chain, should return "ok"

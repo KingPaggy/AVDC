@@ -3,7 +3,7 @@
 Resolves file/folder naming patterns by substituting metadata placeholders
 (e.g. number, title, actor) into config-defined templates.
 """
-from core.metadata import get_info
+from core._services.metadata import get_info
 
 
 def resolve_name(pattern: str, json_data: dict, max_length: int = 100) -> str:

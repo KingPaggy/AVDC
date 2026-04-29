@@ -1,8 +1,8 @@
 import json
 import time
 from typing import Callable
-from core.models import Movie
-from core.errors import ScrapingError
+from core._models.models import Movie
+from core._config.errors import ScrapingError
 
 _scraper_cache: dict[str, tuple[str, float]] = {}
 _cache_ttl: float = 3600  # 1 hour

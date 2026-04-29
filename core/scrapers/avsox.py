@@ -2,7 +2,7 @@ import json
 import re
 from bs4 import BeautifulSoup
 from lxml import etree
-from core.networking import get_html
+from core._net.networking import get_html
 
 
 def getActorPhoto(htmlcode):  # //*[@id="star_qdt"]/li/a/img
@@ -199,8 +199,8 @@ def main(number, appoint_url=""):
 
 
 # ======================================================================== ScraperBase integration
-from core.scraper_base import ScraperBase, register_scraper
-from core.models import Movie as _Movie
+from core._scraper.scraper_base import ScraperBase, register_scraper
+from core._models.models import Movie as _Movie
 
 
 @register_scraper

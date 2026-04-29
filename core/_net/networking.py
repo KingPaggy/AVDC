@@ -1,7 +1,7 @@
 import requests
 import cloudscraper
-from core.config_io import get_proxy_config
-from core.errors import NetworkError, ConfigError
+from core._config.config_io import get_proxy_config
+from core._config.errors import NetworkError, ConfigError
 
 
 def get_proxies(proxy_type, proxy):

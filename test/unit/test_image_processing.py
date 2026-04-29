@@ -6,13 +6,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from core.image_processing import (
+from core._media.image_processing import (
     add_watermark,
     cut_poster,
     cut_poster_ai,
     cut_poster_center,
 )
-from core.naming_service import resolve_name
+from core._services.naming_service import resolve_name
 
 
 class ImageProcessingCropTests(unittest.TestCase):
@@ -51,7 +51,7 @@ class ImageProcessingCropTests(unittest.TestCase):
         with patch.dict("sys.modules", {"aip": None}):
             # When aip is not importable, cut_poster_ai returns None
             from importlib import reload
-            import core.image_processing as ip
+            import core._media.image_processing as ip
             # Force reimport to pick up the mocked module
             result = cut_poster_ai(thumb, poster)
             self.assertIsNone(result)
@@ -103,7 +103,7 @@ class ImageProcessingWatermarkTests(unittest.TestCase):
 
     def test_load_mark_image_caches_result(self):
         """_load_mark_image should cache the same image object across calls."""
-        from core.image_processing import _load_mark_image
+        from core._media.image_processing import _load_mark_image
         # Clear cache first
         _load_mark_image.cache_clear()
         # Mark files don't exist in test env, so we test the cache mechanism

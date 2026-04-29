@@ -1,7 +1,7 @@
 """
 AppConfig — typed configuration relay between UI and business logic.
 
-Business modules should use: from core.config import AppConfig
+Business modules should use: from core._config.config import AppConfig
 UI layer reads/writes config.ini through AppConfig, never directly.
 
 This module has ZERO Qt dependencies.

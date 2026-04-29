@@ -127,7 +127,7 @@ def is_uncensored(number, config=None):
     ):
         return True
     if config is None:
-        from core.config_io import get_config
+        from core._config.config_io import get_config
         config = get_config()
     prefix_list = str(config["uncensored"]["uncensored_prefix"]).split("|")
     for pre in prefix_list:
