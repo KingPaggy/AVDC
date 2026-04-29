@@ -60,6 +60,7 @@ from Function.emby_client import (
     find_and_upload_pictures as emby_find_and_upload_pictures,
     upload_actor_photo as emby_upload_actor_photo,
 )
+from Function.core_engine import CoreEngine
 from Function.config_provider import AppConfig
 
 
@@ -1299,114 +1300,50 @@ class AVDC_Main_UI(QMainWindow):
         return part + c_word
 
     def AVDC_Main(self):
-        # =======================================================================初始化所需变量
-        os.chdir(os.getcwd())
-        config_file = "config.ini"
-        config = ConfigParser()
-        config.read(config_file, encoding="UTF-8")
-        movie_path = self.Ui.lineEdit_7.text()
-        if movie_path == "":
-            movie_path = os.getcwd().replace("\\", "/")
-        failed_folder = movie_path + "/" + self.Ui.lineEdit_9.text()  # 失败输出目录
-        escape_folder = self.Ui.lineEdit_5.text()  # 多级目录刮削需要排除的目录
-        mode = self.Ui.comboBox_2.currentIndex() + 1
-        movie_type = self.Ui.lineEdit_6.text()
-        escape_string = self.Ui.lineEdit_12.text()
-        # =======================================================================检测更新,判断网络情况,新建failed目录,获取影片列表
-        if self.UpdateCheck() == "ProxyError":
-            self.logger.info("[-]Connect Failed! Please check your Proxy or Network!")
-            self.Ui.pushButton_start_cap.setEnabled(True)
-            self.logger.info(
-                "[*]======================================================"
-            )
-            return
-        if self.Ui.radioButton_11.isChecked():
-            self.CreatFailedFolder(failed_folder)  # 新建failed文件夹
-        movie_list = movie_lists(
-            escape_folder, movie_type, movie_path
-        )  # 获取所有需要刮削的影片列表
-        count = 0
-        count_all = str(len(movie_list))
-        self.logger.info("[+]Find " + count_all + " movies")
-        if count_all == 0:
-            self.progressBarValue.emit(int(100))
-        if config["common"]["soft_link"] == "1":
-            self.logger.info("[!] --- Soft link mode is ENABLE! ----")
-        # =======================================================================遍历电影列表 交给core处理
-        for movie in movie_list:  # 遍历电影列表 交给core处理
-            count += 1
-            percentage = str(count / int(count_all) * 100)[:4] + "%"
-            value = int(count / int(count_all) * 100)
-            self.logger.info(
-                "[!] - "
-                + str(self.count_claw)
-                + " - "
-                + percentage
-                + " - ["
-                + str(count)
-                + "/"
-                + count_all
-                + "] -"
-            )
-            try:
-                movie_number = getNumber(movie, escape_string)
-                self.logger.info(
-                    "[!]Making Data for   ["
-                    + movie
-                    + "], the number is ["
-                    + movie_number
-                    + "]"
-                )
-                result = self.Core_Main(movie, movie_number, mode, count)
-                if result != "not found" and movie_number != "" and result != "error":
-                    node = QTreeWidgetItem(self.item_succ)
-                    node.setText(
-                        0,
-                        str(self.count_claw)
-                        + "-"
-                        + str(count)
-                        + "."
-                        + movie_number
-                        + result,
-                    )
-                    self.item_succ.addChild(node)
-                elif result == "error":
-                    break
-                self.logger.info(
-                    "[*]======================================================"
-                )
-            except Exception as error_info:
-                node = QTreeWidgetItem(self.item_fail)
-                node.setText(
-                    0,
-                    str(self.count_claw)
-                    + "-"
-                    + str(count)
-                    + "."
-                    + os.path.splitext(movie.split("/")[-1])[0],
-                )
-                self.item_fail.addChild(node)
-                self.logger.info("[-]Error in AVDC_Main: " + str(error_info))
-                if self.Ui.radioButton_11.isChecked() and not os.path.exists(
-                    failed_folder + "/" + os.path.split(movie)[1]
-                ):
-                    if config["common"]["soft_link"] == "0":
-                        try:
-                            shutil.move(movie, failed_folder + "/")
-                            self.logger.info("[-]Move " + movie + " to failed folder")
-                        except shutil.Error as error_info:
-                            self.logger.info(
-                                "[-]Error in AVDC_Main: " + str(error_info)
-                            )
-                self.logger.info(
-                    "[*]======================================================"
-                )
-            self.progressBarValue.emit(int(value))
-            # self.Ui.label_percent.setText(percentage_text) # handled by set_processbar
+        """Batch processing using CoreEngine (runs in background thread)."""
+        from PyQt5.QtCore import QMetaObject, Qt, Q_ARG
+
+        config = self._get_app_config()
+        movie_path = config.media_path or os.getcwd().replace("\\", "/")
+
+        def safe_log(msg):
+            QMetaObject.invokeMethod(self.Ui.textBrowser_log, "append",
+                Qt.QueuedConnection, Q_ARG(str, msg))
+
+        def safe_progress(current, total, filepath):
+            value = int(current / total * 100)
+            self.progressBarValue.emit(value)
+
+        def safe_success(filepath, suffix):
+            movie_number = os.path.splitext(filepath.split("/")[-1])[0]
+            node = QTreeWidgetItem(self.item_succ)
+            node.setText(0, f"{self.count_claw}-{movie_number}{suffix}")
+            self.item_succ.addChild(node)
+
+        def safe_failure(filepath, reason, error):
+            movie_name = os.path.splitext(filepath.split("/")[-1])[0]
+            node = QTreeWidgetItem(self.item_fail)
+            node.setText(0, f"{self.count_claw}-{movie_name}")
+            self.item_fail.addChild(node)
+
+        engine = CoreEngine(
+            config=config,
+            on_log=safe_log,
+            on_progress=safe_progress,
+            on_success=safe_success,
+            on_failure=safe_failure,
+        )
+
+        result = engine.process_batch(
+            movie_path=movie_path,
+            escape_folder=config.folders,
+            mode=config.main_mode,
+        )
+
+        if result["total"] == 0:
+            self.progressBarValue.emit(100)
 
         self.Ui.pushButton_start_cap.setEnabled(True)
-        self.CEF(movie_path)
-        self.logger.info("[+]All finished!!!")
         self.logger.info("[*]======================================================")
 
 
