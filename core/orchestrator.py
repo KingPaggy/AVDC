@@ -11,7 +11,7 @@ from typing import Callable, Optional
 
 from core.config import AppConfig
 from core.logger import logger
-from Function.file_ops import (
+from core.file_operations import (
     download_thumb,
     download_small_cover,
     download_extrafanart,
