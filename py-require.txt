@@ -1,8 +1,0 @@
-lxml
-pyqt5
-pyuic5-tool
-pillow
-bs4
-pyquery
-requests
-baidu-aip
