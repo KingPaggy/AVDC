@@ -7,12 +7,12 @@
 ### PyQt5 + Qt Designer
 
 UI 开发流程：
-1. 在 Qt Designer 中编辑 `Ui/AVDC_new.ui`（121KB）
-2. 通过 `pyuic5` 编译为 `Ui/AVDC_new.py`（~900 行 Python 代码）
+1. 在 Qt Designer 中编辑 `ui/main_window.ui`（121KB）
+2. 通过 `pyuic5` 编译为 `ui/main_window.py`（~900 行 Python 代码）
 3. 运行时加载编译后的 UI 类
 
 ```python
-from Ui.AVDC_new import Ui_MainWindow
+from ui.main_window import Ui_MainWindow
 
 class AVDC_Main_UI(QMainWindow):
     def __init__(self):

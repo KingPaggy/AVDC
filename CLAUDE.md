@@ -14,37 +14,37 @@ AVDC (AV Data Capture) is a Python GUI application for scraping JAV website meta
 
 ```bash
 uv sync                              # Install dependencies
-uv run python AVDC_Main_new.py       # Run the application
+uv run python main.py                  # Run the application
 uv run python -m pytest test/ -v     # Run all tests
 uv run python -m pytest test/test_core_engine.py -v  # Single test file
 ```
 
-UI Development: Qt Designer `*.ui` files compile to `Ui/AVDC_new.py` via `pyuic5-tool`.
+UI Development: Qt Designer `*.ui` files compile to `ui/main_window.py` via `pyuic5-tool`.
 
 ## Architecture
 
 ### Package Layout
 
 ```
-AVDC_Main_new.py          # UI layer: PyQt5 display + event handling
+main.py                   # UI layer: PyQt5 display + event handling
 cli.py                    # Standalone CLI (no Qt dependency)
 core/                     # ALL business logic (typed, no Qt)
   __init__.py             #   Package docstring only
   _config/                #   AppConfig, logging, errors, settings
   _models/                #   Movie, Actor, ProcessResult
   _scraper/               #   Base, dispatcher, adapter, pipeline
+    scrapers/             #   7 scraper implementations
+      avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
   _services/              #   CoreEngine, metadata, naming, emby_client
   _files/                 #   file_utils, file_operations
   _media/                 #   image_processing
   _net/                   #   networking
   _event/                 #   EventBus, events
-  scrapers/               #   7 scraper implementations
-    avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
 resources/                # Static assets
   icons/                  #   App icons (AVDC-ico.png, AVDC.ico)
   watermarks/             #   Watermark overlays (SUB.png, LEAK.png, UNCENSORED.png)
   screenshots/            #   README images
-Ui/                       # Compiled PyQt5 UI from Qt Designer
+ui/                       # Compiled PyQt5 UI from Qt Designer
 docs/                     # Documentation
 test/                     # Test suite
 
@@ -61,13 +61,12 @@ The main orchestrator for the scrape/organize workflow. Qt-free — accepts `App
 core/
   _config/     — AppConfig, config_io, logger, errors, settings_provider
   _models/     — Movie, Actor, ProcessResult dataclasses
-  _scraper/    — ScraperBase ABC, ScraperRegistry, ScraperDispatcher, pipeline, adapter
+  _scraper/    — ScraperBase ABC, ScraperRegistry, ScraperDispatcher, pipeline, adapter, scrapers/
   _services/   — CoreEngine (orchestrator), metadata, naming_service, emby_client
   _files/      — file_utils (getNumber, movie_lists), file_operations (downloads, NFO, moves)
   _media/      — image_processing (watermark, crop, face-detect)
   _net/        — networking (get_html, get_html_javdb, post_html)
   _event/      — EventBus, Event, EventType (pub/sub communication)
-  scrapers/    — avsox, dmm, jav321, javbus, javdb, mgstage, xcity
 ```
 
 Import from full subpackage module paths:
@@ -85,22 +84,22 @@ from core._config.logger import logger, get_log_file_path
 from core._config.errors import AVDCError, ScrapingError
 ```
 
-### Scraper Layer (`core/_scraper/` + `core/scrapers/`)
+### Scraper Layer (`core/_scraper/`)
 
 Infrastructure in `core/_scraper/` (base, dispatcher, adapter, pipeline).
-Site implementations in `core/scrapers/` (avsox, dmm, jav321, javbus, javdb, mgstage, xcity).
+Site implementations in `core/_scraper/scrapers/` (avsox, dmm, jav321, javbus, javdb, mgstage, xcity).
 
 Seven scraper modules, each with `main()` + `@register_scraper` subclass:
 
 | Scraper | File | Notes |
 |---------|------|-------|
-| javbus | `core/scrapers/javbus.py` | Primary for censored; also handles uncensored |
-| javdb | `core/scrapers/javdb.py` | Primary for FC2; uses cloudscraper for CF bypass |
-| jav321 | `core/scrapers/jav321.py` | Fallback |
-| avsox | `core/scrapers/avsox.py` | Fallback |
-| dmm | `core/scrapers/dmm.py` | Requires Japan proxy |
-| mgstage | `core/scrapers/mgstage.py` | Primary for mgstage/amateur patterns |
-| xcity | `core/scrapers/xcity.py` | Fallback |
+| javbus | `core/_scraper/scrapers/javbus.py` | Primary for censored; also handles uncensored |
+| javdb | `core/_scraper/scrapers/javdb.py` | Primary for FC2; uses cloudscraper for CF bypass |
+| jav321 | `core/_scraper/scrapers/jav321.py` | Fallback |
+| avsox | `core/_scraper/scrapers/avsox.py` | Fallback |
+| dmm | `core/_scraper/scrapers/dmm.py` | Requires Japan proxy |
+| mgstage | `core/_scraper/scrapers/mgstage.py` | Primary for mgstage/amateur patterns |
+| xcity | `core/_scraper/scrapers/xcity.py` | Fallback |
 
 All scrapers discovered via `ScraperRegistry` + `@register_scraper`, dispatched by `ScraperDispatcher`.
 
@@ -149,7 +148,7 @@ Key test files:
 
 ### Adding New Scrapers
 
-1. Create `core/scrapers/newsite.py`, subclass `ScraperBase`, implement `scrape()` → `Movie`
+1. Create `core/_scraper/scrapers/newsite.py`, subclass `ScraperBase`, implement `scrape()` → `Movie`
 2. Apply `@register_scraper` decorator
 3. Add entry in `core/_scraper/scraper_dispatcher.py` `SCRAPER_MAPPING`
 4. Add import in `core/_scraper/scrape_pipeline.py` `get_scraper_modules()`
@@ -164,5 +163,5 @@ Key test files:
 
 ## Entry Points
 
-- `AVDC_Main_new.py` — PyQt5 GUI entry
+- `main.py` — PyQt5 GUI entry
 - `cli.py` — Standalone CLI (no Qt dependency): `uv run python cli.py --path /path/to/movies`

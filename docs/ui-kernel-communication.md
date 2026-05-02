@@ -36,7 +36,7 @@ engine = CoreEngine(
 
 ## UI 如何创建 CoreEngine
 
-**文件**：[AVDC_Main_new.py](AVDC_Main_new.py)
+**文件**：[main.py](main.py)
 
 ### 批量刮削（`AVDC_Main()` 方法，第 965-1010 行）
 
@@ -137,7 +137,7 @@ def safe_log(msg):
 
 ### UI → CoreEngine：`_get_app_config()`
 
-**文件**：[AVDC_Main_new.py](AVDC_Main_new.py) 第 913-958 行
+**文件**：[main.py](main.py) 第 913-958 行
 
 从 UI 控件状态构建 `AppConfig` dataclass：
 

@@ -15,7 +15,7 @@ from PyQt5.QtCore import pyqtSignal, QT_VERSION_STR
 from aip import AipBodyAnalysis
 from PIL import Image, ImageFilter
 from configparser import ConfigParser
-from Ui.AVDC_new import Ui_MainWindow
+from ui.main_window import Ui_MainWindow
 from core._config.config_io import save_config
 from core._files.file_utils import movie_lists, escapePath, getNumber, check_pic
 from core._services.metadata import get_info

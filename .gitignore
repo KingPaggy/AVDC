@@ -12,3 +12,6 @@ dist
 
 # Environment overrides
 .env
+
+# Runtime data
+update_check.json

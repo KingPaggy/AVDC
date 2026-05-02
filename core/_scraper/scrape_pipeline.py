@@ -15,7 +15,7 @@ _SCRAPER_MODULES = None
 def get_scraper_modules():
     global _SCRAPER_MODULES
     if _SCRAPER_MODULES is None:
-        from core.scrapers import avsox, javbus, javdb, mgstage, dmm, jav321, xcity
+        from core._scraper.scrapers import avsox, javbus, javdb, mgstage, dmm, jav321, xcity
 
         _SCRAPER_MODULES = {
             "avsox": avsox,
