@@ -3,7 +3,7 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
-
+from cli.cli import main
 # ========================================================================
 # Argument parsing
 # ========================================================================
@@ -13,11 +13,10 @@ class TestArgumentParsing:
 
     def test_default_mode_is_scrape(self):
         """When --mode is not specified, default should be 1 (scrape)."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     main()
         engine_kwargs = MockEngine.call_args.kwargs
@@ -25,11 +24,10 @@ class TestArgumentParsing:
 
     def test_mode_2_is_organize(self):
         """--mode 2 should pass organize mode to process_batch."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies", "--mode", "2"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
@@ -39,11 +37,10 @@ class TestArgumentParsing:
 
     def test_single_mode_calls_process_single(self):
         """--single should call process_single instead of process_batch."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp", "--single", "/tmp/m.mp4"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
@@ -52,25 +49,23 @@ class TestArgumentParsing:
 
     def test_custom_config_path(self):
         """--config should be passed to AppConfig.from_ini."""
-        from cli import main
         test_args = ["cli.py", "--config", "/custom/config.ini", "--path", "/tmp"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine"):
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine"):
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     main()
         MockConfig.from_ini.assert_called_once_with("/custom/config.ini")
 
     def test_number_passed_to_process_single(self):
         """--number should be passed to process_single."""
-        from cli import main
         test_args = [
             "cli.py", "--path", "/tmp",
             "--single", "/tmp/v.mp4", "--number", "ABC-123",
         ]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
@@ -86,11 +81,10 @@ class TestCallbacks:
 
     def test_on_progress_format(self, capsys):
         """progress callback should print percentage to stderr."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     # Capture the on_progress callback and call it directly
@@ -103,11 +97,10 @@ class TestCallbacks:
 
     def test_on_success_format(self, capsys):
         """success callback should print [OK] to stdout."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
@@ -119,11 +112,10 @@ class TestCallbacks:
 
     def test_on_failure_format(self, capsys):
         """failure callback should print [FAIL] to stdout."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
@@ -135,16 +127,15 @@ class TestCallbacks:
 
     def test_on_log_calls_logger_info(self):
         """log callback should delegate to logger.info."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine") as MockEngine:
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     instance = MockEngine.return_value
                     main()
                     on_log = MockEngine.call_args.kwargs["on_log"]
-        with patch("cli.logger.info") as mock_info:
+        with patch("cli.cli.logger.info") as mock_info:
             on_log("test message")
         mock_info.assert_called_once_with("test message")
 
@@ -158,18 +149,16 @@ class TestErrorHandling:
 
     def test_main_when_called_directly(self):
         """__name__ == '__main__' guard should invoke main()."""
-        from cli import main
         test_args = ["cli.py", "--path", "/tmp"]
         with patch("sys.argv", test_args):
-            with patch("cli.CoreEngine"):
-                with patch("cli.AppConfig") as MockConfig:
+            with patch("cli.cli.CoreEngine"):
+                with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = MagicMock()
                     # Invoke via __main__ path simulation
                     main()
 
     def test_requires_path(self):
         """--path is required and should error if missing."""
-        from cli import main
         test_args = ["cli.py"]
         with patch("sys.argv", test_args):
             with pytest.raises(SystemExit):

@@ -1,0 +1,17 @@
+[project]
+name = "avdc-cli"
+version = "0.1.0"
+description = "AVDC CLI frontend"
+requires-python = ">=3.13"
+dependencies = ["avdc-core"]
+
+[tool.uv.sources]
+avdc-core = { workspace = true }
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

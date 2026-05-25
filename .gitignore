@@ -13,5 +13,13 @@ dist
 # Environment overrides
 .env
 
+# Local agent/tooling configuration
+AGENTS.md
+.agents/
+.claude/
+
 # Runtime data
 update_check.json
+
+# Go TUI build artifacts
+tui-go/avdc-tui

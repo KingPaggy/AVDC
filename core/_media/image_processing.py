@@ -10,11 +10,14 @@ from core._config.errors import ImageError
 from core._config.logger import logger
 from core._config.config import AppConfig
 
+# Watermark directory (relative to this file)
+_WATERMARK_DIR = os.path.join(os.path.dirname(__file__), "watermarks")
+
 # Watermark mark image paths
 MARK_PATHS = {
-    "SUB": "resources/watermarks/SUB.png",
-    "LEAK": "resources/watermarks/LEAK.png",
-    "UNCENSORED": "resources/watermarks/UNCENSORED.png",
+    "SUB": os.path.join(_WATERMARK_DIR, "SUB.png"),
+    "LEAK": os.path.join(_WATERMARK_DIR, "LEAK.png"),
+    "UNCENSORED": os.path.join(_WATERMARK_DIR, "UNCENSORED.png"),
 }
 
 # Watermark corner positions: top-left, top-right, bottom-right, bottom-left
@@ -342,11 +345,11 @@ def fix_image_size(path: str, naming_rule: str) -> None:
 # 水印（源自 Function/image_ops — 标记类型分发）
 # ========================================================================
 
-# Watermark overlay file paths (relative to project root)
+# Watermark overlay file paths
 _WATERMARK_PATHS = {
-    1: "resources/watermarks/SUB.png",
-    2: "resources/watermarks/LEAK.png",
-    3: "resources/watermarks/UNCENSORED.png",
+    1: os.path.join(_WATERMARK_DIR, "SUB.png"),
+    2: os.path.join(_WATERMARK_DIR, "LEAK.png"),
+    3: os.path.join(_WATERMARK_DIR, "UNCENSORED.png"),
 }
 
 

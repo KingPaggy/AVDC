@@ -358,7 +358,7 @@ class AVDC_Main_UI(QMainWindow):
 
     # ========================================================================加载config
     def Load_Config(self):
-        config_file = "config.ini"
+        config_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.ini")
         config = ConfigParser()
         config.read(config_file, encoding="UTF-8")
         # ========================================================================common

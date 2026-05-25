@@ -13,22 +13,31 @@ AVDC (AV Data Capture) is a Python GUI application for scraping JAV website meta
 ## Common Commands
 
 ```bash
-uv sync                              # Install dependencies
-uv run python main.py                  # Run the application
-uv run python -m pytest test/ -v     # Run all tests
-uv run python -m pytest test/test_core_engine.py -v  # Single test file
+uv sync                                        # Install all dependencies (workspace)
+uv run python PyQt5-GUI/main.py                # Run PyQt5 GUI
+uv run python cli/cli.py --path /path/to/movies  # Run CLI
+uv run pytest core/test cli/test/ -v           # Run all tests
+uv run pytest core/test/test_core_engine.py -v # Single test file
 ```
 
-UI Development: Qt Designer `*.ui` files compile to `ui/main_window.py` via `pyuic5-tool`.
+UI Development: Qt Designer `*.ui` files compile to `PyQt5-GUI/ui/main_window.py` via `pyuic5-tool`:
+```bash
+uv run pyuic5 PyQt5-GUI/ui/main_window.ui -o PyQt5-GUI/ui/main_window.py
+```
 
 ## Architecture
 
 ### Package Layout
 
 ```
-main.py                   # UI layer: PyQt5 display + event handling
-cli.py                    # Standalone CLI (no Qt dependency)
+cli/                      # CLI frontend (no Qt dependency)
+  cli.py                  #   Entry point
+  pyproject.toml          #   Workspace member (depends on avdc-core)
+  test/                   #   CLI tests
 core/                     # ALL business logic (typed, no Qt)
+  pyproject.toml          #   Workspace member: avdc-core
+  test/                   #   Core test suite (unit, integration, live)
+    conftest.py           #   Shared fixtures
   __init__.py             #   Package docstring only
   _config/                #   AppConfig, logging, errors, settings
   _models/                #   Movie, Actor, ProcessResult
@@ -37,16 +46,17 @@ core/                     # ALL business logic (typed, no Qt)
       avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
   _services/              #   CoreEngine, metadata, naming, emby_client
   _files/                 #   file_utils, file_operations
-  _media/                 #   image_processing
+  _media/                 #   image_processing (watermarks in _media/watermarks/)
   _net/                   #   networking
   _event/                 #   EventBus, events
-resources/                # Static assets
-  icons/                  #   App icons (AVDC-ico.png, AVDC.ico)
-  watermarks/             #   Watermark overlays (SUB.png, LEAK.png, UNCENSORED.png)
-  screenshots/            #   README images
-ui/                       # Compiled PyQt5 UI from Qt Designer
-docs/                     # Documentation
-test/                     # Test suite
+test/                     # Test suite (core)
+tui-go/                   # Go TUI frontend
+PyQt5-GUI/                # PyQt5 GUI frontend
+  main.py                 #   UI layer: PyQt5 display + event handling
+  ui/                     #   Compiled PyQt5 UI from Qt Designer
+  resources/              #   GUI-only assets (icons, screenshots)
+  docs/                   #   UI-specific documentation
+docs/                     # Documentation (shared)
 
 ### CoreEngine (`core/_services/orchestrator.py`)
 
@@ -116,28 +126,29 @@ All scrapers discovered via `ScraperRegistry` + `@register_scraper`, dispatched 
 
 ### Testing
 
-Tests in `test/` use pytest, organized into three categories:
+Tests in `core/test/` use pytest, organized into three categories:
 
 | Directory | Purpose |
 |-----------|---------|
-| `test/unit/` | Unit tests (isolated modules) |
-| `test/integration/` | Integration tests (component interaction) |
-| `test/live/` | Live scraper tests (require network + video files) |
+| `core/test/unit/` | Unit tests (isolated modules) |
+| `core/test/integration/` | Integration tests (component interaction) |
+| `core/test/live/` | Live scraper tests (require network + video files) |
 
 Key test files:
-- `test/unit/test_core.py` — Core logic tests (largest file)
-- `test/unit/test_core_engine.py` — CoreEngine batch/single processing
-- `test/unit/test_file_ops.py`, `test/unit/test_image_ops.py` — File and image operations
-- `test/unit/test_logger.py`, `test/unit/test_config_provider.py` — Infrastructure
-- `test/unit/test_emby_client.py` — Emby API client
-- `test/unit/test_scraper_dispatcher.py` — Scraper dispatch logic
-- `test/unit/test_image_processing.py`, `test/unit/test_infrastructure.py` — core/ package
-- `test/integration/test_event_bus_integration.py` — EventBus integration
-- `test/live/scrape_test.py`, `test/live/test_real_scrape.py` — Live scraper tests
-- `test/unit/test_cli.py` — CLI argument parsing
-- `test/unit/test_errors.py`, `test/unit/test_models.py`, `test/unit/test_networking.py` — Additional coverage
-- `test/unit/test_scraper_base.py`, `test/unit/test_scraper_adapter.py` — Scraper infrastructure
+- `core/test/unit/test_core.py` — Core logic tests (largest file)
+- `core/test/unit/test_core_engine.py` — CoreEngine batch/single processing
+- `core/test/unit/test_file_ops.py`, `core/test/unit/test_image_ops.py` — File and image operations
+- `core/test/unit/test_logger.py`, `core/test/unit/test_config_provider.py` — Infrastructure
+- `core/test/unit/test_emby_client.py` — Emby API client
+- `core/test/unit/test_scraper_dispatcher.py` — Scraper dispatch logic
+- `core/test/unit/test_image_processing.py`, `core/test/unit/test_infrastructure.py` — core/ package
+- `core/test/integration/test_event_bus_integration.py` — EventBus integration
+- `core/test/live/scrape_test.py`, `core/test/live/test_real_scrape.py` — Live scraper tests
+- `core/test/unit/test_errors.py`, `core/test/unit/test_models.py`, `core/test/unit/test_networking.py` — Additional coverage
+- `core/test/unit/test_scraper_base.py`, `core/test/unit/test_scraper_adapter.py` — Scraper infrastructure
 - `conftest.py` — Shared fixtures: `tmp_dir`, `tmp_log_dir`, `tmp_config_ini`
+
+CLI tests are in `cli/test/` (workspace member).
 
 ### Proxy Requirements
 
@@ -163,5 +174,14 @@ Key test files:
 
 ## Entry Points
 
-- `main.py` — PyQt5 GUI entry
-- `cli.py` — Standalone CLI (no Qt dependency): `uv run python cli.py --path /path/to/movies`
+- `PyQt5-GUI/main.py` — PyQt5 GUI: `uv run python PyQt5-GUI/main.py`
+- `cli/cli.py` — Standalone CLI (no Qt dependency): `uv run python cli/cli.py --path /path/to/movies`
+
+## Dependency Management (uv workspace)
+
+Root `pyproject.toml` declares a workspace with three members:
+- **core/** (`avdc-core`) — core business logic dependencies
+- **cli/** (`avdc-cli`) — depends on avdc-core, no additional deps
+- **PyQt5-GUI/** (`avdc-pyqt5-gui`) — depends on avdc-core + pyqt5/pyuic5-tool
+
+All dependencies are installed via `uv sync` into a single `.venv` at root.

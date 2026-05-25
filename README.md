@@ -30,15 +30,47 @@
 ![](https://img.shields.io/github/downloads/yoshiko2/av_data_capture/total.svg?style=flat-square)
 ![](https://img.shields.io/github/license/yoshiko2/av_data_capture.svg?style=flat-square)
 ![](https://img.shields.io/github/release/yoshiko2/av_data_capture.svg?style=flat-square)
-![](https://img.shields.io/badge/Python-3.7-yellow.svg?style=flat-square&logo=python)<br>
+![](https://img.shields.io/badge/Python-3.13-yellow.svg?style=flat-square&logo=python)<br>
 **GUI版(本项目)**：<br>
 <a title="Hits" target="_blank" href="https://github.com/moyy996/avdc"><img src="https://hits.b3log.org/moyy996/AVDC.svg"></a>
 ![](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)
 ![](https://img.shields.io/github/downloads/moyy996/avdc/total.svg?style=flat-square)
 ![](https://img.shields.io/github/license/moyy996/avdc.svg?style=flat-square)
 ![](https://img.shields.io/github/release/moyy996/avdc.svg?style=flat-square)
-![](https://img.shields.io/badge/Python-3.7-yellow.svg?style=flat-square&logo=python)
+![](https://img.shields.io/badge/Python-3.13-yellow.svg?style=flat-square&logo=python)
 ![](https://img.shields.io/badge/Pyqt-5-blue.svg?style=flat-square)<br>
+
+## 项目结构
+
+```
+AVDC_Page/
+├── core/               # 核心业务逻辑（元数据抓取、文件整理、图片处理）
+│   └── test/           # 核心测试套件
+├── cli/                # CLI 命令行前端
+│   └── test/           # CLI 测试
+├── PyQt5-GUI/          # PyQt5 图形界面前端
+├── tui-go/             # Go TUI 终端界面前端
+├── config.ini          # 共享配置文件
+└── docs/               # 文档
+```
+
+三个前端（CLI、PyQt5-GUI、tui-go）共用 `core/` 核心逻辑。使用 `uv` 管理依赖（uv workspace monorepo）。
+
+### 快速开始
+
+```bash
+# 安装依赖
+uv sync
+
+# 运行图形界面
+uv run python PyQt5-GUI/main.py
+
+# 运行命令行
+uv run python cli/cli.py --path /path/to/movies
+
+# 运行全部测试
+uv run pytest core/test cli/test/ -v
+```
 
 ## 主要功能
 * **日本电影元数据 抓取工具 | 刮削器**，配合本地影片管理软件EMBY,KODI，PLEX等管理本地影片，该软件起到分类与元数据抓取作用，利用元数据信息来分类，供本地影片分类整理使用。<br>
@@ -129,18 +161,20 @@
 * **(5).把JAV_output导入至KODI,EMBY,PLEX中。**<br>
 
 ## 5.3..模块安装
-如果运行**源码**版，运行前请安装**Python环境**和安装以下**模块**<br>  
-在终端/cmd/Powershell中输入以下代码来安装模块,两种方法任选其一。<br>
-* **5.3.1、批量**从py-require.txt安装<br>
->pip install -r py-require.txt<br>
+本项目使用 [uv](https://github.com/astral-sh/uv) 管理 Python 依赖。
 
-* **5.3.2、单个**按需安装<br>
->pip install requests<br>
->pip install pyquery<br>
->pip install lxml<br>
->pip install Beautifulsoup4<br>
->pip install pillow<br>
->pip install pyqt5<br>
+### 使用 uv（推荐）
+```bash
+# 安装 uv（如未安装）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 安装项目所有依赖
+uv sync
+```
+
+### 传统 pip 方式（不推荐）
+如果不用 uv，也可以直接 pip 安装所需模块：<br>
+>pip install requests pyquery lxml beautifulsoup4 pillow pyqt5 cloudscraper baidu-aip chardet pyuic5-tool<br>
 
 ## 5.4.配置设置
 **设置界面**
