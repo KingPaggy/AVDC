@@ -33,6 +33,6 @@ RowLayout {
         text: root.labelText
         font.pixelSize: Theme.fontBody
         color: Theme.secondaryText
-        Layout.fillWidth: true
+        Layout.preferredWidth: Theme.labelWidthWide
     }
 }

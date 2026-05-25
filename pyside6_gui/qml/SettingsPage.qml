@@ -211,36 +211,23 @@ Item {
                     onSliderValueChanged: settings.markSize = sliderValue
                 }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingMD
-                    Text {
-                        text: "水印类型"
-                        font.pixelSize: Theme.fontBody
-                        color: Theme.secondaryText
-                        Layout.preferredWidth: 120
-                    }
-                    CheckBox {
-                        id: markSub
-                        text: "SUB"
-                        checked: settings.markType.indexOf("SUB") >= 0
-                        palette.windowText: Theme.textColor
-                        onCheckedChanged: _updateMarkType()
-                    }
-                    CheckBox {
-                        id: markLeak
-                        text: "LEAK"
-                        checked: settings.markType.indexOf("LEAK") >= 0
-                        palette.windowText: Theme.textColor
-                        onCheckedChanged: _updateMarkType()
-                    }
-                    CheckBox {
-                        id: markUncensored
-                        text: "UNCENSORED"
-                        checked: settings.markType.indexOf("UNCENSORED") >= 0
-                        palette.windowText: Theme.textColor
-                        onCheckedChanged: _updateMarkType()
-                    }
+                ConfigCheckbox {
+                    id: markSubCheckbox
+                    labelText: "SUB"
+                    checked: settings.markType.indexOf("SUB") >= 0
+                    onCheckedChanged: _updateMarkType()
+                }
+                ConfigCheckbox {
+                    id: markLeakCheckbox
+                    labelText: "LEAK"
+                    checked: settings.markType.indexOf("LEAK") >= 0
+                    onCheckedChanged: _updateMarkType()
+                }
+                ConfigCheckbox {
+                    id: markUncensoredCheckbox
+                    labelText: "UNCENSORED"
+                    checked: settings.markType.indexOf("UNCENSORED") >= 0
+                    onCheckedChanged: _updateMarkType()
                 }
 
                 ConfigRadioGroup {
@@ -385,9 +372,9 @@ Item {
     // Helper to rebuild mark_type string from checkboxes
     function _updateMarkType() {
         var parts = []
-        if (markSub.checked) parts.push("SUB")
-        if (markLeak.checked) parts.push("LEAK")
-        if (markUncensored.checked) parts.push("UNCENSORED")
+        if (markSubCheckbox.checked) parts.push("SUB")
+        if (markLeakCheckbox.checked) parts.push("LEAK")
+        if (markUncensoredCheckbox.checked) parts.push("UNCENSORED")
         settings.markType = parts.join(",")
     }
 }

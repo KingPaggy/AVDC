@@ -26,7 +26,7 @@ RowLayout {
         text: root.labelText
         font.pixelSize: Theme.fontBody
         color: Theme.secondaryText
-        Layout.preferredWidth: 120
+        Layout.preferredWidth: Theme.labelWidthWide
     }
 
     Slider {
