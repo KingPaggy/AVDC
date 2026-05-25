@@ -26,6 +26,8 @@ Rectangle {
                 case "maximize": return "□"
                 case "restore": return "⧉"
                 case "close": return "×"
+                case "expand": return "▶"
+                case "collapse": return "◀"
                 default: return ""
             }
         }

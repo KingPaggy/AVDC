@@ -2,15 +2,15 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 
-// SectionCard — 分组容器，带标题和分割线
+// SectionCard — 分组容器，带标题、分割线和子内容区域
 Rectangle {
     id: root
     radius: Theme.radiusLG
     color: Theme.cardBg
     Layout.fillWidth: true
-    implicitHeight: column.implicitHeight + Theme.spacingMD * 2
 
     property string sectionTitle: "Section"
+    default property alias contentData: column.children
 
     ColumnLayout {
         id: column

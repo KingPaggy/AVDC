@@ -24,74 +24,78 @@ Item {
                 width: Math.min(parent.width - Theme.spacingXL * 2, 680)
                 spacing: Theme.spacingLG
 
-                // ===== 输入目录 =====
-                SectionCard { sectionTitle: "输入" }
+                // ===== 输入 =====
+                SectionCard {
+                    sectionTitle: "输入"
+                    ConfigFilePicker {
+                        labelText: "输入目录"
+                        textValue: settings.successOutputFolder
+                        onTextValueChanged: settings.successOutputFolder = textValue
+                    }
 
-                ConfigFilePicker {
-                    labelText: "输入目录"
-                    textValue: settings.successOutputFolder
-                    onTextValueChanged: settings.successOutputFolder = textValue
+                    ConfigInput {
+                        labelText: "排除文件夹"
+                        textValue: settings.escapeFolders
+                        onTextValueChanged: settings.escapeFolders = textValue
+                    }
                 }
 
-                ConfigInput {
-                    labelText: "排除文件夹"
-                    textValue: settings.escapeFolders
-                    onTextValueChanged: settings.escapeFolders = textValue
-                }
-
-                // ===== 模式 =====
-                SectionCard { sectionTitle: "处理模式" }
-
-                ConfigRadioGroup {
-                    labelText: "模式"
-                    options: [
-                        {value: 1, text: "刮削模式"},
-                        {value: 2, text: "整理模式"}
-                    ]
-                    selectedValue: settings.mainMode
-                    onSelectedValueChanged: settings.mainMode = selectedValue
+                // ===== 处理模式 =====
+                SectionCard {
+                    sectionTitle: "处理模式"
+                    ConfigRadioGroup {
+                        labelText: "模式"
+                        options: [
+                            {value: 1, text: "刮削模式"},
+                            {value: 2, text: "整理模式"}
+                        ]
+                        selectedValue: settings.mainMode
+                        onSelectedValueChanged: settings.mainMode = selectedValue
+                    }
                 }
 
                 // ===== 操作 =====
-                SectionCard { sectionTitle: "操作" }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingLG
-
-                    Button {
-                        text: "开始处理"
-                        font.pixelSize: Theme.fontBody
-                        highlighted: true
+                SectionCard {
+                    sectionTitle: "操作"
+                    RowLayout {
                         Layout.fillWidth: true
-                        onClicked: toast.show("开始处理...")
-                    }
+                        spacing: Theme.spacingLG
 
-                    Button {
-                        text: "停止"
-                        font.pixelSize: Theme.fontBody
-                        Layout.fillWidth: true
-                        onClicked: toast.show("已停止")
+                        Button {
+                            text: "开始处理"
+                            font.pixelSize: Theme.fontBody
+                            highlighted: true
+                            Layout.fillWidth: true
+                            onClicked: toast.show("开始处理...")
+                        }
+
+                        Button {
+                            text: "停止"
+                            font.pixelSize: Theme.fontBody
+                            Layout.fillWidth: true
+                            onClicked: toast.show("已停止")
+                        }
                     }
                 }
 
                 // ===== 进度 =====
-                SectionCard { sectionTitle: "进度" }
+                SectionCard {
+                    sectionTitle: "进度"
+                    ProgressBar {
+                        progressValue: homePage._demoProgress
+                        statusText: homePage._demoStatusText
+                        Layout.fillWidth: true
+                    }
 
-                ProgressBar {
-                    progressValue: homePage._demoProgress
-                    statusText: homePage._demoStatusText
-                    Layout.fillWidth: true
-                }
+                    // Stats row
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingLG
 
-                // Stats row
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingLG
-
-                    StatusBadge { status: "success"; text: "成功: " + homePage._successCount }
-                    StatusBadge { status: "error"; text: "失败: " + homePage._errorCount }
-                    StatusBadge { status: "info"; text: "跳过: " + homePage._skipCount }
+                        StatusBadge { status: "success"; text: "成功: " + homePage._successCount }
+                        StatusBadge { status: "error"; text: "失败: " + homePage._errorCount }
+                        StatusBadge { status: "info"; text: "跳过: " + homePage._skipCount }
+                    }
                 }
             }
         }
