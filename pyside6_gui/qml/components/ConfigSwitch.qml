@@ -1,12 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ConfigSwitch — Label + Switch for boolean config values
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 12
+    spacing: Theme.spacingSM
 
     property string labelText: ""
     property bool checked: false
@@ -17,8 +18,8 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.fillWidth: true
     }
 

@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
+import AVDC 1.0
 
 // HomePage — workspace: file selection, mode, process button, progress
 Item {
@@ -18,11 +19,11 @@ Item {
                 id: column
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: 16
+                anchors.topMargin: Theme.spacingXL
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 24
-                width: 680
-                spacing: 16
+                anchors.bottomMargin: Theme.spacingXL
+                width: Math.min(parent.width - Theme.spacingXL * 2, 680)
+                spacing: Theme.spacingLG
 
                 // ===== 输入目录 =====
                 SectionCard { sectionTitle: "输入" }
@@ -57,27 +58,21 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 16
+                    spacing: Theme.spacingLG
 
                     Button {
                         text: "开始处理"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontBody
                         highlighted: true
                         Layout.fillWidth: true
-                        // TODO: wire up to CoreEngine.process_batch()
-                        onClicked: {
-                            toast.show("开始处理...")
-                        }
+                        onClicked: toast.show("开始处理...")
                     }
 
                     Button {
                         text: "停止"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontBody
                         Layout.fillWidth: true
-                        // TODO: wire up to stop processing
-                        onClicked: {
-                            toast.show("已停止")
-                        }
+                        onClicked: toast.show("已停止")
                     }
                 }
 
@@ -85,19 +80,19 @@ Item {
                 SectionCard { sectionTitle: "进度" }
 
                 ProgressBar {
-                    progressValue: _demoProgress
-                    statusText: _demoStatusText
+                    progressValue: homePage._demoProgress
+                    statusText: homePage._demoStatusText
                     Layout.fillWidth: true
                 }
 
                 // Stats row
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 16
+                    spacing: Theme.spacingLG
 
-                    StatusBadge { status: "success"; text: "成功: " + _successCount }
-                    StatusBadge { status: "error"; text: "失败: " + _errorCount }
-                    StatusBadge { status: "info"; text: "跳过: " + _skipCount }
+                    StatusBadge { status: "success"; text: "成功: " + homePage._successCount }
+                    StatusBadge { status: "error"; text: "失败: " + homePage._errorCount }
+                    StatusBadge { status: "info"; text: "跳过: " + homePage._skipCount }
                 }
             }
         }

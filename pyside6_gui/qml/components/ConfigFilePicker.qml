@@ -2,12 +2,13 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import Qt.labs.platform 1.1 as LabPlatform
+import AVDC 1.0
 
 // ConfigFilePicker — Label + TextField + Browse button for directory paths
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 8
+    spacing: Theme.spacingXS
 
     property string labelText: ""
     property string textValue: ""
@@ -20,21 +21,21 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.preferredWidth: 100
     }
 
     TextField {
         id: input
         text: root.textValue
-        color: "#cdd6f4"
-        font.pixelSize: 13
+        color: Theme.textColor
+        font.pixelSize: Theme.fontCaption
         Layout.fillWidth: true
         background: Rectangle {
-            radius: 6
-            color: "#313244"
-            border.color: input.activeFocus ? "#89b4fa" : "#45475a"
+            radius: Theme.radiusMD
+            color: Theme.inputBg
+            border.color: input.activeFocus ? Theme.focusBorder : Theme.separatorColor
             border.width: 1
         }
         onTextChanged: {
@@ -44,7 +45,7 @@ RowLayout {
 
     Button {
         text: "浏览..."
-        font.pixelSize: 13
+        font.pixelSize: Theme.fontCaption
         onClicked: {
             folderDialog.open()
         }

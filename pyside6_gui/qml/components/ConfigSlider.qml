@@ -1,12 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ConfigSlider — Label + Slider + value display for numeric config
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 12
+    spacing: Theme.spacingSM
 
     property string labelText: ""
     property int sliderValue: 0
@@ -19,8 +20,8 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.preferredWidth: 120
     }
 
@@ -39,9 +40,9 @@ RowLayout {
 
     Text {
         text: Math.round(slider.value).toString()
-        font.pixelSize: 14
+        font.pixelSize: Theme.fontCaption
         font.bold: true
-        color: "#89b4fa"
+        color: Theme.accentColor
         Layout.preferredWidth: 30
         horizontalAlignment: Text.AlignRight
     }

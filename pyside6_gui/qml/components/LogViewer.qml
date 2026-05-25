@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // LogViewer — scrollable log display with level-based coloring
 ScrollView {
@@ -9,12 +10,6 @@ ScrollView {
 
     property var logEntries: []       // array of {timestamp, level, message}
     property string filterLevel: "all"  // all | error | warn | info | debug
-
-    readonly property color _colorError: "#f38ba8"    // Red
-    readonly property color _colorWarn: "#f9e2af"     // Yellow
-    readonly property color _colorInfo: "#cdd6f4"     // Text
-    readonly property color _colorDebug: "#6c7086"    // Overlay2
-    readonly property color _colorTimestamp: "#6c7086" // Overlay2
 
     ListView {
         id: logList
@@ -30,31 +25,31 @@ ScrollView {
 
         delegate: RowLayout {
             width: ListView.view.width
-            spacing: 8
+            spacing: Theme.spacingSM
 
             // Timestamp
             Text {
                 text: modelData.timestamp || ""
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontMini
                 font.family: "monospace"
-                color: root._colorTimestamp
+                color: Theme.tertiaryText
                 Layout.preferredWidth: 70
             }
 
             // Level badge
             Rectangle {
-                implicitWidth: levelText.implicitWidth + 8
+                implicitWidth: levelText.implicitWidth + Theme.spacingXS
                 implicitHeight: 18
-                radius: 4
+                radius: Theme.radiusSM
                 color: _levelBgColor
 
                 readonly property color _levelBgColor: {
                     switch (modelData.level) {
-                        case "ERROR": return "#f38ba8"  // Red
-                        case "WARN": return "#f9e2af"   // Yellow
-                        case "INFO": return "#45475a"   // Surface1
-                        case "DEBUG": return "#313244"  // Surface0
-                        default: return "#45475a"
+                        case "ERROR": return Theme.errorColor
+                        case "WARN": return Theme.warningColor
+                        case "INFO": return Theme.separatorColor
+                        case "DEBUG": return Theme.inputBg
+                        default: return Theme.separatorColor
                     }
                 }
 
@@ -62,16 +57,16 @@ ScrollView {
                     id: levelText
                     anchors.centerIn: parent
                     text: modelData.level || "INFO"
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontMini
                     font.bold: true
-                    color: (modelData.level === "ERROR" || modelData.level === "WARN") ? "#181825" : "#bac2de"
+                    color: (modelData.level === "ERROR" || modelData.level === "WARN") ? Theme.backgroundColor : Theme.secondaryText
                 }
             }
 
             // Message
             Text {
                 text: modelData.message || ""
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontCaption
                 font.family: "monospace"
                 color: _msgColor
                 Layout.fillWidth: true
@@ -80,10 +75,10 @@ ScrollView {
 
                 readonly property color _msgColor: {
                     switch (modelData.level) {
-                        case "ERROR": return root._colorError
-                        case "WARN": return root._colorWarn
-                        case "DEBUG": return root._colorDebug
-                        default: return root._colorInfo
+                        case "ERROR": return Theme.errorColor
+                        case "WARN": return Theme.warningColor
+                        case "DEBUG": return Theme.tertiaryText
+                        default: return Theme.textColor
                     }
                 }
             }

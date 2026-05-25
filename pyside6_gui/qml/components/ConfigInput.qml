@@ -1,12 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ConfigInput — Label + TextField for string config values
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 12
+    spacing: Theme.spacingSM
 
     property string labelText: ""
     property string textValue: ""
@@ -17,21 +18,21 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.preferredWidth: 120
     }
 
     TextField {
         id: input
         text: root.textValue
-        color: "#cdd6f4"
-        font.pixelSize: 14
+        color: Theme.textColor
+        font.pixelSize: Theme.fontBody
         Layout.fillWidth: true
         background: Rectangle {
-            radius: 6
-            color: "#313244"
-            border.color: input.activeFocus ? "#89b4fa" : "#45475a"
+            radius: Theme.radiusMD
+            color: Theme.inputBg
+            border.color: input.activeFocus ? Theme.focusBorder : Theme.separatorColor
             border.width: 1
         }
         onTextChanged: {

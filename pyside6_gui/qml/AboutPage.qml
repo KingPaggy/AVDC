@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // AboutPage — version info, dependencies, credits
 Item {
@@ -7,28 +8,28 @@ Item {
 
     Rectangle {
         anchors.centerIn: parent
-        color: "#1e1e2e"  // Mantle
-        radius: 12
+        color: Theme.cardBg
+        radius: Theme.radiusXL
         width: 400
         height: 320
 
         ColumnLayout {
             anchors.centerIn: parent
-            spacing: 8
+            spacing: Theme.spacingSM
 
             // Title
             Text {
                 text: "AVDC"
-                font.pixelSize: 32
+                font.pixelSize: Theme.fontPageTitle
                 font.bold: true
-                color: "#cdd6f4"  // Text
+                color: Theme.textColor
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
                 text: "PySide6 + QML 版"
-                font.pixelSize: 14
-                color: "#6c7086"  // Overlay2
+                font.pixelSize: Theme.fontBody
+                color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -37,28 +38,28 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 300
                 implicitHeight: 1
-                color: "#45475a"  // Surface1
+                color: Theme.separatorColor
             }
 
             // Info
             Text {
                 text: "版本: 0.1.0"
-                font.pixelSize: 14
-                color: "#bac2de"  // Subtext1
+                font.pixelSize: Theme.fontBody
+                color: Theme.secondaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
                 text: "Python 3.13"
-                font.pixelSize: 13
-                color: "#6c7086"  // Overlay2
+                font.pixelSize: Theme.fontCaption
+                color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
-                text: "Catppuccin Mocha 主题"
-                font.pixelSize: 13
-                color: "#6c7086"  // Overlay2
+                text: "Apple HIG 设计规范"
+                font.pixelSize: Theme.fontCaption
+                color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -67,14 +68,14 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 300
                 implicitHeight: 1
-                color: "#45475a"  // Surface1
+                color: Theme.separatorColor
             }
 
             // Tech stack
             Text {
                 text: "PySide6 · QML 2.15 · avdc-core"
-                font.pixelSize: 12
-                color: "#6c7086"  // Overlay2
+                font.pixelSize: Theme.fontMini
+                color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
         }

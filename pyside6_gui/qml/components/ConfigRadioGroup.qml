@@ -1,12 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ConfigRadioGroup — Label + horizontal radio buttons
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 12
+    spacing: Theme.spacingSM
 
     property string labelText: ""
     property var options: []          // [{value: int|string, text: string}, ...]
@@ -19,21 +20,21 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.preferredWidth: 120
     }
 
     RowLayout {
         Layout.fillWidth: true
-        spacing: 16
+        spacing: Theme.spacingLG
         Repeater {
             model: root.options
             RadioButton {
                 text: modelData.text
                 checked: modelData.value === root.selectedValue
-                palette.buttonText: "#cdd6f4"
-                palette.windowText: "#cdd6f4"
+                palette.buttonText: Theme.textColor
+                palette.windowText: Theme.textColor
                 onToggled: {
                     if (checked) root.selectedValue = modelData.value
                 }

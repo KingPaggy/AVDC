@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
+import AVDC 1.0
 
 // LogPage — real-time log output with filtering
 Item {
@@ -15,18 +16,18 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 44
-            color: "#1e1e2e"  // Mantle
+            color: Theme.cardBg
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 12
-                spacing: 8
+                anchors.leftMargin: Theme.spacingMD
+                anchors.rightMargin: Theme.spacingMD
+                spacing: Theme.spacingXS
 
                 Text {
                     text: "过滤:"
-                    font.pixelSize: 13
-                    color: "#bac2de"  // Subtext1
+                    font.pixelSize: Theme.fontCaption
+                    color: Theme.secondaryText
                 }
 
                 // Filter buttons
@@ -41,16 +42,12 @@ Item {
 
                     Button {
                         text: modelData.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontCaption
                         flat: true
-                        palette.buttonText: _filterBtnColor
-
-                        readonly property color _filterBtnColor: {
-                            (_logFilter === modelData.value) ? "#89b4fa" : "#6c7086"
-                        }
+                        palette.buttonText: logPage._logFilter === modelData.value ? Theme.accentColor : Theme.tertiaryText
 
                         onClicked: {
-                            _logFilter = modelData.value
+                            logPage._logFilter = modelData.value
                             logView.filterLevel = modelData.value
                         }
                     }
@@ -60,18 +57,17 @@ Item {
 
                 Button {
                     text: "清空"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontCaption
                     flat: true
-                    palette.buttonText: "#6c7086"
-                    onClicked: _logEntries = []
+                    palette.buttonText: Theme.tertiaryText
+                    onClicked: logPage._logEntries = []
                 }
 
                 Button {
                     text: "导出"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontCaption
                     flat: true
-                    palette.buttonText: "#6c7086"
-                    // TODO: wire up to export log to file
+                    palette.buttonText: Theme.tertiaryText
                     onClicked: toast.show("导出日志（待实现）")
                 }
             }
@@ -82,8 +78,8 @@ Item {
             id: logView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            logEntries: _logEntries
-            filterLevel: _logFilter
+            logEntries: logPage._logEntries
+            filterLevel: logPage._logFilter
         }
     }
 

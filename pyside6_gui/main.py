@@ -27,6 +27,10 @@ def main():
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("settings", settings)
 
+    # Register QML module path (for "import AVDC 1.0" — Theme singleton)
+    qml_dir = os.path.join(os.path.dirname(__file__), "qml")
+    engine.addImportPath(qml_dir)
+
     # Load main QML
     qml_file = os.path.join(os.path.dirname(__file__), "qml", "main.qml")
     engine.load(qml_file)

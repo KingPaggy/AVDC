@@ -1,35 +1,36 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
-// SectionCard — collapsible settings group with title
+// SectionCard — 分组容器，带标题和分割线
 Rectangle {
     id: root
-    radius: 8
-    color: "#1e1e2e"
+    radius: Theme.radiusLG
+    color: Theme.cardBg
     Layout.fillWidth: true
-    implicitHeight: column.implicitHeight + 32
+    implicitHeight: column.implicitHeight + Theme.spacingMD * 2
 
     property string sectionTitle: "Section"
 
     ColumnLayout {
         id: column
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 12
+        anchors.margins: Theme.spacingMD
+        spacing: Theme.spacingSM
 
         Text {
             text: root.sectionTitle
-            font.pixelSize: 16
+            font.pixelSize: Theme.fontHeading
             font.bold: true
-            color: "#cdd6f4"
+            color: Theme.textColor
             Layout.fillWidth: true
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 1
-            color: "#45475a"
+            color: Theme.separatorColor
         }
 
         Loader {

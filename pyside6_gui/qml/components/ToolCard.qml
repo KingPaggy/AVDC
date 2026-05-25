@@ -1,15 +1,16 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ToolCard — clickable card for tool items with title, description, and action
 Rectangle {
     id: root
     Layout.fillWidth: true
     implicitHeight: 100
-    radius: 8
-    color: mouseArea.containsMouse ? "#313244" : "#1e1e2e"  // Surface0 on hover, Mantle default
-    border.color: mouseArea.containsMouse ? "#89b4fa" : "#45475a"  // Blue on hover, Surface1 default
+    radius: Theme.radiusLG
+    color: mouseArea.containsMouse ? Theme.hoverBg : Theme.cardBg
+    border.color: mouseArea.containsMouse ? Theme.accentColor : Theme.separatorColor
     border.width: 1
 
     property string title: ""
@@ -19,10 +20,10 @@ Rectangle {
     signal clicked
 
     Behavior on color {
-        ColorAnimation { duration: 150 }
+        ColorAnimation { duration: Theme.animationFast }
     }
     Behavior on border.color {
-        ColorAnimation { duration: 150 }
+        ColorAnimation { duration: Theme.animationFast }
     }
 
     MouseArea {
@@ -35,22 +36,22 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 6
+        anchors.margins: Theme.spacingMD
+        spacing: Theme.spacingXS
 
         Text {
             text: root.title
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontBody
             font.bold: true
-            color: "#cdd6f4"  // Text
+            color: Theme.textColor
             Layout.fillWidth: true
             elide: Text.ElideRight
         }
 
         Text {
             text: root.description
-            font.pixelSize: 13
-            color: "#bac2de"  // Subtext1
+            font.pixelSize: Theme.fontCaption
+            color: Theme.secondaryText
             Layout.fillWidth: true
             elide: Text.ElideRight
             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
@@ -61,10 +62,10 @@ Rectangle {
 
         Text {
             text: root.actionLabel + " →"
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontCaption
             font.bold: true
-            color: mouseArea.containsMouse ? "#89b4fa" : "#6c7086"  // Blue on hover, Overlay2 default
-            Behavior on color { ColorAnimation { duration: 150 } }
+            color: mouseArea.containsMouse ? Theme.accentColor : Theme.tertiaryText
+            Behavior on color { ColorAnimation { duration: Theme.animationFast } }
         }
     }
 }

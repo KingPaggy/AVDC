@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
+import AVDC 1.0
 
 // ToolsPage — tool cards in a grid layout
 Item {
@@ -18,11 +19,11 @@ Item {
                 id: column
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: 16
+                anchors.topMargin: Theme.spacingXL
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 24
-                width: 680
-                spacing: 16
+                anchors.bottomMargin: Theme.spacingXL
+                width: Math.min(parent.width - Theme.spacingXL * 2, 680)
+                spacing: Theme.spacingLG
 
                 // ===== 文件工具 =====
                 SectionCard { sectionTitle: "文件工具" }
@@ -30,8 +31,8 @@ Item {
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 2
-                    columnSpacing: 12
-                    rowSpacing: 12
+                    columnSpacing: Theme.spacingMD
+                    rowSpacing: Theme.spacingMD
 
                     ToolCard {
                         title: "批量重命名"
@@ -72,8 +73,8 @@ Item {
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 2
-                    columnSpacing: 12
-                    rowSpacing: 12
+                    columnSpacing: Theme.spacingMD
+                    rowSpacing: Theme.spacingMD
 
                     ToolCard {
                         title: "Emby 同步"

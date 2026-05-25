@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
+import AVDC 1.0
 
 // SettingsPage — full settings form bound to SettingsModel
 Item {
@@ -20,11 +21,11 @@ Item {
                 id: column
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: 16
+                anchors.topMargin: Theme.spacingLG
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 24
-                width: 680
-                spacing: 16
+                anchors.bottomMargin: Theme.spacingXXL
+                width: Math.min(parent.width - Theme.spacingXL * 2, 680)
+                spacing: Theme.spacingLG
 
                 // ===== 通用 =====
                 SectionCard { sectionTitle: "通用" }
@@ -213,32 +214,32 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: Theme.spacingMD
                     Text {
                         text: "水印类型"
-                        font.pixelSize: 14
-                        color: "#bac2de"
+                        font.pixelSize: Theme.fontBody
+                        color: Theme.secondaryText
                         Layout.preferredWidth: 120
                     }
                     CheckBox {
                         id: markSub
                         text: "SUB"
                         checked: settings.markType.indexOf("SUB") >= 0
-                        palette.windowText: "#cdd6f4"
+                        palette.windowText: Theme.textColor
                         onCheckedChanged: _updateMarkType()
                     }
                     CheckBox {
                         id: markLeak
                         text: "LEAK"
                         checked: settings.markType.indexOf("LEAK") >= 0
-                        palette.windowText: "#cdd6f4"
+                        palette.windowText: Theme.textColor
                         onCheckedChanged: _updateMarkType()
                     }
                     CheckBox {
                         id: markUncensored
                         text: "UNCENSORED"
                         checked: settings.markType.indexOf("UNCENSORED") >= 0
-                        palette.windowText: "#cdd6f4"
+                        palette.windowText: Theme.textColor
                         onCheckedChanged: _updateMarkType()
                     }
                 }
@@ -352,20 +353,20 @@ Item {
                 // ===== Buttons =====
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.topMargin: 8
-                    spacing: 16
+                    Layout.topMargin: Theme.spacingSM
+                    spacing: Theme.spacingLG
 
                     Item { Layout.fillWidth: true }
 
                     Button {
                         text: "恢复默认"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontBody
                         onClicked: settings.resetToDefaults()
                     }
 
                     Button {
                         text: "保存配置"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontBody
                         highlighted: true
                         onClicked: settings.save()
                     }

@@ -1,12 +1,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ConfigCheckbox — CheckBox with label for boolean config
 RowLayout {
     id: root
     Layout.fillWidth: true
-    spacing: 12
+    spacing: Theme.spacingSM
 
     property string labelText: ""
     property bool checked: false
@@ -18,7 +19,7 @@ RowLayout {
     CheckBox {
         id: cb
         checked: root.checked
-        palette.windowText: "#cdd6f4"
+        palette.windowText: Theme.textColor
         onCheckedChanged: {
             if (root.checked !== checked) root.checked = checked
         }
@@ -26,8 +27,8 @@ RowLayout {
 
     Text {
         text: root.labelText
-        font.pixelSize: 14
-        color: "#bac2de"
+        font.pixelSize: Theme.fontBody
+        color: Theme.secondaryText
         Layout.fillWidth: true
     }
 }

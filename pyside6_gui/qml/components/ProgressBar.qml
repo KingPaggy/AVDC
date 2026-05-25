@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import AVDC 1.0
 
 // ProgressBar — progress indicator with percentage and status text
 Item {
@@ -14,24 +15,24 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 6
+        spacing: Theme.spacingSM
 
         // Bar
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 8
-            radius: 4
-            color: "#313244"  // Surface0
+            radius: Theme.radiusMD
+            color: Theme.inputBg
 
             Rectangle {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 width: parent.width * Math.min(Math.max(root.progressValue, 0), 1)
-                radius: 4
-                color: "#89b4fa"  // Blue
+                radius: Theme.radiusMD
+                color: Theme.accentColor
                 Behavior on width {
-                    NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
+                    NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutQuad }
                 }
             }
         }
@@ -39,12 +40,12 @@ Item {
         // Status text + percentage
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: Theme.spacingSM
 
             Text {
                 text: root.statusText
-                font.pixelSize: 13
-                color: "#bac2de"  // Subtext1
+                font.pixelSize: Theme.fontCaption
+                color: Theme.secondaryText
                 Layout.fillWidth: true
                 elide: Text.ElideRight
             }
@@ -52,9 +53,9 @@ Item {
             Text {
                 visible: root.showPercentage
                 text: Math.round(root.progressValue * 100) + "%"
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontCaption
                 font.bold: true
-                color: "#89b4fa"  // Blue
+                color: Theme.accentColor
             }
         }
     }
