@@ -17,7 +17,7 @@ uv sync                                        # Install all dependencies (works
 uv run python PyQt5-GUI/main.py                # Run PyQt5 GUI
 uv run python cli/cli.py --path /path/to/movies  # Run CLI
 uv run pytest core/test cli/test/ -v           # Run all tests
-uv run pytest core/test/test_core_engine.py -v # Single test file
+uv run pytest core/test/unit/test_core_engine.py -v # Single test file
 ```
 
 UI Development: Qt Designer `*.ui` files compile to `PyQt5-GUI/ui/main_window.py` via `pyuic5-tool`:
@@ -49,14 +49,14 @@ core/                     # ALL business logic (typed, no Qt)
   _media/                 #   image_processing (watermarks in _media/watermarks/)
   _net/                   #   networking
   _event/                 #   EventBus, events
-test/                     # Test suite (core)
 tui-go/                   # Go TUI frontend
 PyQt5-GUI/                # PyQt5 GUI frontend
   main.py                 #   UI layer: PyQt5 display + event handling
   ui/                     #   Compiled PyQt5 UI from Qt Designer
   resources/              #   GUI-only assets (icons, screenshots)
   docs/                   #   UI-specific documentation
-docs/                     # Documentation (shared)
+docs/                     # Documentation: architecture, requirements, scraping-flow
+resources/                # Project resources (icons, screenshots)
 
 ### CoreEngine (`core/_services/orchestrator.py`)
 
@@ -173,6 +173,8 @@ CLI tests are in `cli/test/` (workspace member).
 ## Reference Documents
 
 - `docs/requirements.md` — Core I/O contract (what the engine receives and produces), useful when modifying the scrape/organize pipeline.
+- `docs/architecture.md` — System architecture overview.
+- `docs/scraping-flow.md` — Scraping workflow and pipeline details.
 
 ## Entry Points
 
