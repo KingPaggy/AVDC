@@ -12,13 +12,14 @@ Rectangle {
     property string sectionTitle: "Section"
     default property alias contentData: contentColumn.children
 
-    Column {
+    ColumnLayout {
         id: contentColumn
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: Theme.spacingMD
         spacing: Theme.spacingSM
+        Layout.fillWidth: true
 
         Text {
             id: titleText
@@ -26,12 +27,12 @@ Rectangle {
             font.pixelSize: Theme.fontHeading
             font.bold: true
             color: Theme.textColor
-            width: parent.width
+            Layout.fillWidth: true
         }
 
         Rectangle {
             id: divider
-            width: parent.width
+            Layout.fillWidth: true
             implicitHeight: 1
             color: Theme.separatorColor
         }
