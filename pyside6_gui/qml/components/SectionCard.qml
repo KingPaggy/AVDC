@@ -8,13 +8,16 @@ Rectangle {
     radius: Theme.radiusLG
     color: Theme.cardBg
     Layout.fillWidth: true
+    implicitHeight: contentColumn.implicitHeight + Theme.spacingMD * 2
 
     property string sectionTitle: "Section"
-    default property alias contentData: column.children
+    default property alias contentData: contentColumn.children
 
-    ColumnLayout {
-        id: column
-        anchors.fill: parent
+    Column {
+        id: contentColumn
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
         anchors.margins: Theme.spacingMD
         spacing: Theme.spacingSM
 
@@ -23,14 +26,13 @@ Rectangle {
             font.pixelSize: Theme.fontHeading
             font.bold: true
             color: Theme.textColor
-            Layout.fillWidth: true
+            width: parent.width
         }
 
         Rectangle {
-            Layout.fillWidth: true
+            width: parent.width
             implicitHeight: 1
             color: Theme.separatorColor
         }
-
     }
 }
