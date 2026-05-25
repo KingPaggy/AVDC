@@ -9,7 +9,7 @@ dependencies = ["pyside6"]
 dev = ["pytest", "pytest-cov"]
 
 [dependency-groups]
-dev = ["pytest", "pytest-cov"]
+dev = ["pytest", "pytest-cov", "pytest-qt"]
 
 [build-system]
 requires = ["setuptools>=68.0"]
