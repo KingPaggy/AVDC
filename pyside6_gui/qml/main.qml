@@ -14,6 +14,10 @@ ApplicationWindow {
     minimumHeight: Theme.windowMinHeight
     color: Theme.backgroundColor
 
+    // Sidebar state — exposed for TitleBar to access
+    property bool sidebarCollapsed: false
+    property bool sidebarExpandable: true
+
     // ===== 自定义标题栏 =====
     TitleBar {
         id: titleBar
@@ -90,6 +94,7 @@ ApplicationWindow {
         // ===== 侧边栏 =====
         MacOSSidebar {
             id: sidebar
+            collapsed: appWindow.sidebarCollapsed
             Layout.fillHeight: true
             Layout.minimumWidth: sidebar.collapsed ? 0 : Theme.sidebarMin
             Layout.preferredWidth: sidebar.collapsed ? 0 : Theme.sidebarIdeal
@@ -130,7 +135,7 @@ ApplicationWindow {
                 }
 
                 // Default page
-                Component.onCompleted: currentPage = 0
+                Component.onCompleted: source = "HomePage.qml"
             }
         }
     }
@@ -178,6 +183,6 @@ ApplicationWindow {
     }
     Shortcut {
         sequences: ["Meta+Shift+S", "Ctrl+Shift+S"]
-        onActivated: sidebar.collapsed = !sidebar.collapsed
+        onActivated: appWindow.sidebarCollapsed = !appWindow.sidebarCollapsed
     }
 }

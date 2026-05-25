@@ -90,8 +90,9 @@ class SettingsModel(QObject):
         def getter(self):
             return self._fields.get(name)
         def setter(self, v):
-            self._fields[name] = v
-            getattr(self, signal).emit(v)
+            if self._fields.get(name) != v:
+                self._fields[name] = v
+                getattr(self, signal).emit(v)
         return getter, setter
 
     # [common]

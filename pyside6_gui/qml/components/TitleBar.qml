@@ -37,13 +37,24 @@ Rectangle {
         }
     }
 
-    // 标题文字（居中）
+    // Title text (centered)
     Text {
         anchors.centerIn: parent
+        anchors.leftMargin: 40  // make room for sidebar toggle
         font.pixelSize: Theme.fontBody
         font.bold: true
         color: Theme.textColor
         text: "AVDC"
+    }
+
+    // Sidebar toggle button (left side)
+    TitleBarButton {
+        anchors.left: parent.left
+        anchors.leftMargin: Theme.spacingSM
+        anchors.verticalCenter: parent.verticalCenter
+        icon: appWindow.sidebarCollapsed ? "expand" : "collapse"
+        buttonColor: Theme.accentColor
+        onClicked: appWindow.sidebarCollapsed = !appWindow.sidebarCollapsed
     }
 
     // 窗口控制按钮行（覆盖在拖拽区域上方）

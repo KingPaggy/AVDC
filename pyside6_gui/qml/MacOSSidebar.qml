@@ -30,15 +30,6 @@ Item {
         color: Theme.sidebarBg
     }
 
-    // Separator line on the right edge
-    Rectangle {
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        width: 1
-        color: Theme.separatorColor
-    }
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.spacingSM
@@ -91,9 +82,9 @@ Item {
                     anchors.rightMargin: Theme.spacingSM
                     spacing: Theme.spacingXS
 
-                    // Icon (SVG from resources)
+                    // Icon (QStyle standard icons via image provider)
                     Image {
-                        source: "../resources/icons/" + modelData.icon + ".svg"
+                        source: "image://styleIcons/" + modelData.icon
                         sourceSize.width: 16
                         sourceSize.height: 16
                         Layout.preferredWidth: 16
@@ -128,17 +119,5 @@ Item {
         }
 
         Item { Layout.fillHeight: true }
-
-        // Collapse/Expand toggle
-        Button {
-            text: root.collapsed ? "展开" : "折叠"
-            font.pixelSize: Theme.fontCaption
-            flat: true
-            visible: !root.collapsed
-            Layout.fillWidth: true
-            Layout.bottomMargin: Theme.spacingXS
-            palette.buttonText: Theme.tertiaryText
-            onClicked: root.collapsed = true
-        }
     }
 }

@@ -13,7 +13,7 @@ ScrollView {
     ListView {
         id: logList
         width: Math.max(root.width, 680)
-        height: Math.max(root.height, logColumn.implicitHeight)
+        height: Math.max(root.height, logList.contentHeight)
         model: _filteredEntries
         spacing: 2
 
@@ -30,7 +30,7 @@ ScrollView {
             Text {
                 text: modelData.timestamp || ""
                 font.pixelSize: Theme.fontMini
-                font.family: "monospace"
+                font.family: "SF Mono, Menlo, Monaco, Courier New, monospace"
                 color: Theme.tertiaryText
                 Layout.preferredWidth: 70
             }
@@ -66,7 +66,7 @@ ScrollView {
             Text {
                 text: modelData.message || ""
                 font.pixelSize: Theme.fontCaption
-                font.family: "monospace"
+                font.family: "SF Mono, Menlo, Monaco, Courier New, monospace"
                 color: _msgColor
                 Layout.fillWidth: true
                 elide: Text.ElideRight

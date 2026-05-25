@@ -10,11 +10,47 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from PySide6.QtCore import QObject, Property, Qt, Signal, Slot
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtQuick import QQuickWindow
+from PySide6.QtQuick import QQuickImageProvider, QQuickWindow
+from PySide6.QtWidgets import QApplication, QStyle
 
 from settings_model import SettingsModel
+
+
+class IconProvider(QQuickImageProvider):
+    """Serve QStyle standard icons as images for QML."""
+
+    def __init__(self, app):
+        super().__init__(QQuickImageProvider.Image)
+        self._app = app
+        self._style_map = {
+            "house": QStyle.SP_DirHomeIcon,
+            "doc": QStyle.SP_FileIcon,
+            "wrench": QStyle.SP_DialogApplyButton,
+            "gear": QStyle.SP_DialogHelpButton,
+            "info": QStyle.SP_MessageBoxInformation,
+            "expand": QStyle.SP_ArrowRight,
+            "collapse": QStyle.SP_ArrowLeft,
+        }
+
+    def requestImage(self, id, size, requestedSize):
+        import re
+        m = re.match(r"^(house|doc|wrench|gear|info|expand|collapse)", id)
+        if not m:
+            return QImage()
+        sp = self._style_map.get(m.group(1))
+        if sp is None:
+            return QImage()
+        style = self._app.style()
+        icon = style.standardIcon(QStyle.StandardPixmap(sp))
+        w = requestedSize.width() if requestedSize is not None else 16
+        h = requestedSize.height() if requestedSize is not None else 16
+        px = icon.pixmap(w, h)
+        if size is not None:
+            size.setWidth(px.width())
+            size.setHeight(px.height())
+        return px.toImage()
 
 
 # Theme constants — exposed to QML as context property "Theme"
@@ -92,15 +128,22 @@ THEME = {
 
 
 def main():
-    app = QGuiApplication(sys.argv)
+    # Use Basic style so we can customize TextField background, RadioButton, etc.
+    os.environ["QT_QUICK_CONTROLS_STYLE"] = "Basic"
+
+    app = QApplication(sys.argv)
     app.setOrganizationName("AVDC")
     app.setApplicationName("AVDC-QML")
 
-    # Load settings model (exposed to QML as "settings")
-    settings = SettingsModel()
-
     # Create QML engine
     engine = QQmlApplicationEngine()
+
+    # Register icon provider for QML
+    icon_provider = IconProvider(app)
+    engine.addImageProvider("styleicons", icon_provider)
+
+    # Load settings model (exposed to QML as "settings")
+    settings = SettingsModel()
     engine.rootContext().setContextProperty("settings", settings)
     engine.rootContext().setContextProperty("Theme", THEME)
 

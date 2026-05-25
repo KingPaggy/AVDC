@@ -13,7 +13,7 @@ RowLayout {
     property var selectedValue: null  // current selected value
 
     Component.onCompleted: {
-        if (options.length > 0 && selectedValue === null)
+        if (options.length > 0 && selectedValue === null && options[0] !== undefined)
             selectedValue = options[0].value
     }
 
