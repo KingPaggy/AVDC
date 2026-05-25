@@ -9,8 +9,10 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from PySide6.QtCore import QObject, Property, Qt, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuick import QQuickWindow
 
 from settings_model import SettingsModel
 
@@ -102,6 +104,60 @@ def main():
     engine.rootContext().setContextProperty("settings", settings)
     engine.rootContext().setContextProperty("Theme", THEME)
 
+    # WindowController must be registered BEFORE load() so QML can reference it
+    class WindowController(QObject):
+        """Bridge for QML to control the frameless window."""
+
+        isMaximizedChanged = Signal()
+
+        def __init__(self):
+            super().__init__()
+            self._win = None
+
+        def set_window(self, win: QQuickWindow):
+            self._win = win
+            self._win.visibilityChanged.connect(self._on_visibility_changed)
+
+        def _on_visibility_changed(self):
+            self.isMaximizedChanged.emit()
+
+        @Slot()
+        def startMove(self):
+            if self._win:
+                self._win.startSystemMove()
+
+        @Slot(int)
+        def startResize(self, edge: int):
+            if self._win:
+                self._win.startSystemResize(Qt.Edge(edge))
+
+        @Slot()
+        def minimize(self):
+            if self._win:
+                self._win.showMinimized()
+
+        @Slot()
+        def maximize(self):
+            if self._win:
+                if self._win.visibility() == QQuickWindow.Maximized:
+                    self._win.showNormal()
+                else:
+                    self._win.showMaximized()
+
+        @Slot()
+        def close(self):
+            if self._win:
+                self._win.close()
+
+        @Property(bool, notify=isMaximizedChanged)
+        def isMaximized(self):
+            if self._win:
+                return self._win.visibility() == QQuickWindow.Maximized
+            return False
+
+    controller = WindowController()
+    engine.rootContext().setContextProperty("windowController", controller)
+
     # Load main QML
     qml_file = os.path.join(os.path.dirname(__file__), "qml", "main.qml")
     engine.load(qml_file)
@@ -109,6 +165,16 @@ def main():
     if not engine.rootObjects():
         print(f"Failed to load QML: {qml_file}")
         sys.exit(-1)
+
+    # Make window frameless and wire up WindowController
+    window = engine.rootObjects()[0]
+    if isinstance(window, QQuickWindow):
+        window.setFlags(
+            Qt.FramelessWindowHint
+            | Qt.WindowSystemMenuHint
+            | Qt.WindowMinMaxButtonsHint
+        )
+        controller.set_window(window)
 
     sys.exit(app.exec())
 

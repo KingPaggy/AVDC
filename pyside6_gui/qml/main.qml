@@ -1,9 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import "components"
 
-// AVDC 主窗口 — Apple HIG 桌面架构
-// SplitView + 侧边栏 + Loader 按需加载页面 + MenuBar + 快捷键
+// AVDC 主窗口 — Apple HIG 无边框风格
+// TitleBar + SplitView + 侧边栏 + Loader 按需加载页面 + 快捷键
 ApplicationWindow {
     id: appWindow
     visible: true
@@ -11,43 +12,15 @@ ApplicationWindow {
     height: Theme.windowDefaultHeight
     minimumWidth: Theme.windowMinWidth
     minimumHeight: Theme.windowMinHeight
-    title: "AVDC — PySide6 QML"
     color: Theme.backgroundColor
 
-    // ===== MenuBar =====
-    menuBar: MenuBar {
-        Menu {
-            title: "文件"
-            MenuItem { text: "新建窗口\tCtrl+N"; onTriggered: toast.show("新建窗口（待实现）") }
-            MenuItem { text: "打开...\tCtrl+O"; onTriggered: toast.show("打开文件（待实现）") }
-            MenuSeparator {}
-            MenuItem { text: "关闭窗口\tCtrl+W"; onTriggered: appWindow.close() }
-        }
-        Menu {
-            title: "编辑"
-            MenuItem { text: "撤销\tCtrl+Z"; onTriggered: toast.show("撤销（待实现）") }
-            MenuItem { text: "重做\tCtrl+Shift+Z"; onTriggered: toast.show("重做（待实现）") }
-            MenuSeparator {}
-            MenuItem { text: "复制\tCtrl+C" }
-            MenuItem { text: "粘贴\tCtrl+V" }
-            MenuItem { text: "全选\tCtrl+A" }
-        }
-        Menu {
-            title: "视图"
-            MenuItem {
-                text: sidebar.collapsed ? "显示侧边栏\tCtrl+Shift+S" : "隐藏侧边栏\tCtrl+Shift+S"
-                onTriggered: sidebar.collapsed = !sidebar.collapsed
-            }
-        }
-        Menu {
-            title: "工具"
-            MenuItem { text: "开始处理\tCtrl+Return"; onTriggered: toast.show("开始处理（待实现）") }
-            MenuItem { text: "停止\tEsc"; onTriggered: toast.show("已停止（待实现）") }
-        }
-        Menu {
-            title: "帮助"
-            MenuItem { text: "关于 AVDC"; onTriggered: sidebar.currentIndex = 4 }
-        }
+    // ===== 自定义标题栏 =====
+    TitleBar {
+        id: titleBar
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        z: 20
     }
 
     // ===== Toast 通知 =====
@@ -107,9 +80,11 @@ ApplicationWindow {
         function onErrorOccurred(msg: string) { toast.showError(msg) }
     }
 
-    // ===== SplitView 主布局 =====
+    // ===== SplitView 主布局（标题栏下方） =====
     SplitView {
+        id: mainSplitView
         anchors.fill: parent
+        anchors.topMargin: titleBar.height
         orientation: Qt.Horizontal
 
         // ===== 侧边栏 =====
@@ -132,6 +107,7 @@ ApplicationWindow {
 
         // ===== 内容区域 =====
         Item {
+            id: contentArea
             SplitView.fillWidth: true
             SplitView.fillHeight: true
 
@@ -158,6 +134,14 @@ ApplicationWindow {
             }
         }
     }
+
+    // ===== 边缘调整大小区域 =====
+    property int resizeHandleSize: 8
+
+    ResizeHandle { edge: Qt.TopEdge; x: resizeHandleSize; y: 0; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
+    ResizeHandle { edge: Qt.BottomEdge; x: resizeHandleSize; y: parent.height - resizeHandleSize; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
+    ResizeHandle { edge: Qt.LeftEdge; x: 0; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
+    ResizeHandle { edge: Qt.RightEdge; x: parent.width - resizeHandleSize; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
 
     // ===== 快捷键 =====
     Shortcut {

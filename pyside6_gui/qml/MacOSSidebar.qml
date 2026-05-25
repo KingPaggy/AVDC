@@ -91,13 +91,17 @@ Item {
                     anchors.rightMargin: Theme.spacingSM
                     spacing: Theme.spacingXS
 
-                    // Icon placeholder (text-based until SF Symbols integration)
-                    Text {
-                        text: modelData.icon
-                        font.pixelSize: 14
-                        color: root.currentIndex === index ? Theme.accentColor : Theme.textColor
+                    // Icon (SVG from resources)
+                    Image {
+                        source: "../resources/icons/" + modelData.icon + ".svg"
+                        sourceSize.width: 16
+                        sourceSize.height: 16
                         Layout.preferredWidth: 16
-                        horizontalAlignment: Text.AlignHCenter
+                        Layout.preferredHeight: 16
+                        fillMode: Image.PreserveAspectFit
+                        mipmap: true
+                        opacity: root.currentIndex === index ? 1.0 : 0.7
+                        Layout.leftMargin: Theme.spacingXS
                     }
 
                     // Label
