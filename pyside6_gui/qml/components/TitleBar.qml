@@ -1,12 +1,12 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick.Layouts 2.15
 
 // TitleBar — 自定义标题栏，用于无边框窗口
 // 包含拖拽区域、标题文字、窗口控制按钮
 Rectangle {
     id: root
-    implicitHeight: 38
+    implicitHeight: Theme.titleBarHeight
     color: Qt.darker(Theme.sidebarBg, 1.05)
 
     // 拖拽区域（最底层 z: 0，只覆盖空白区域）

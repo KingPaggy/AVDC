@@ -14,7 +14,7 @@ Item {
         // ===== Filter bar =====
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 44
+            implicitHeight: Theme.logFilterBarHeight
             color: Theme.cardBg
 
             RowLayout {
@@ -84,6 +84,7 @@ Item {
 
     // Log state
     property string _logFilter: "all"
+    property int _maxLogEntries: 1000
     property var _logEntries: [
         {timestamp: "10:23:01", level: "INFO", message: "AVDC 启动"},
         {timestamp: "10:23:02", level: "INFO", message: "加载配置: config.ini"},
@@ -97,4 +98,11 @@ Item {
         {timestamp: "10:23:30", level: "INFO", message: "处理: IPX-789.mp4 → javbus"},
         {timestamp: "10:23:35", level: "INFO", message: "IPX-789: 刮削成功"},
     ]
+
+    function addLogEntry(entry) {
+        _logEntries.push(entry)
+        if (_logEntries.length > _maxLogEntries) {
+            _logEntries = _logEntries.slice(_logEntries.length - _maxLogEntries)
+        }
+    }
 }

@@ -33,7 +33,7 @@ ApplicationWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         y: -50
         width: Math.max(toastText.implicitWidth + Theme.spacingXL * 2, 160)
-        height: 40
+        height: Theme.toastHeight
         radius: Theme.radiusLG
         color: Theme.successColor
         z: 100
@@ -65,13 +65,13 @@ ApplicationWindow {
 
         Timer {
             id: timer
-            interval: 2000
+            interval: Theme.toastDuration
             onTriggered: toast.y = -50
         }
 
         Timer {
             id: errorTimer
-            interval: 3000
+            interval: Theme.toastErrorDuration
             onTriggered: toast.y = -50
         }
     }
@@ -110,38 +110,34 @@ ApplicationWindow {
             }
         }
 
-        // ===== 内容区域 =====
+        // ===== Content area =====
         Item {
             id: contentArea
             SplitView.fillWidth: true
             SplitView.fillHeight: true
 
-            // Page loader with index-based switching
+            // Page components — cached as Components so instances persist
+            Component { id: homePageComponent; HomePage {} }
+            Component { id: logPageComponent; LogPage {} }
+            Component { id: toolsPageComponent; ToolsPage {} }
+            Component { id: settingsPageComponent; SettingsPage {} }
+            Component { id: aboutPageComponent; AboutPage {} }
+
             Loader {
                 id: pageLoader
                 anchors.fill: parent
-
                 property int currentPage: 0
+                property var _components: [homePageComponent, logPageComponent, toolsPageComponent, settingsPageComponent, aboutPageComponent]
 
-                onCurrentPageChanged: {
-                    switch (currentPage) {
-                        case 0: source = "HomePage.qml"; break
-                        case 1: source = "LogPage.qml"; break
-                        case 2: source = "ToolsPage.qml"; break
-                        case 3: source = "SettingsPage.qml"; break
-                        case 4: source = "AboutPage.qml"; break
-                        default: source = "HomePage.qml"
-                    }
-                }
+                onCurrentPageChanged: sourceComponent = _components[currentPage]
 
-                // Default page
-                Component.onCompleted: source = "HomePage.qml"
+                Component.onCompleted: sourceComponent = _components[0]
             }
         }
     }
 
     // ===== 边缘调整大小区域 =====
-    property int resizeHandleSize: 8
+    property int resizeHandleSize: Theme.resizeHandleSize
 
     ResizeHandle { edge: Qt.TopEdge; x: resizeHandleSize; y: 0; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
     ResizeHandle { edge: Qt.BottomEdge; x: resizeHandleSize; y: parent.height - resizeHandleSize; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }

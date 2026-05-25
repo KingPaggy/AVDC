@@ -10,16 +10,21 @@ RowLayout {
 
     property string labelText: ""
     property string textValue: ""
+    property bool _suppressUpdate: false
 
     onTextValueChanged: {
-        if (input.text !== textValue) input.text = textValue
+        if (!_suppressUpdate && input.text !== textValue) {
+            _suppressUpdate = true
+            input.text = textValue
+            _suppressUpdate = false
+        }
     }
 
     Text {
         text: root.labelText
         font.pixelSize: Theme.fontBody
         color: Theme.secondaryText
-        Layout.preferredWidth: 120
+        Layout.preferredWidth: Theme.labelWidthWide
     }
 
     TextField {

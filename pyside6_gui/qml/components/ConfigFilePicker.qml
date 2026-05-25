@@ -11,18 +11,21 @@ RowLayout {
 
     property string labelText: ""
     property string textValue: ""
+    property bool _suppressUpdate: false
 
     onTextValueChanged: {
-        if (input.text !== textValue) input.text = textValue
+        if (!_suppressUpdate && input.text !== textValue) {
+            _suppressUpdate = true
+            input.text = textValue
+            _suppressUpdate = false
+        }
     }
-
-    signal folderSelected(string path)
 
     Text {
         text: root.labelText
         font.pixelSize: Theme.fontBody
         color: Theme.secondaryText
-        Layout.preferredWidth: 100
+        Layout.preferredWidth: Theme.labelWidthWide
     }
 
     TextField {
@@ -54,7 +57,6 @@ RowLayout {
         id: folderDialog
         onAccepted: {
             root.textValue = folder.toString().replace("file://", "")
-            root.folderSelected(root.textValue)
         }
     }
 }

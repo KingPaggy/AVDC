@@ -10,9 +10,14 @@ RowLayout {
 
     property string labelText: ""
     property bool checked: false
+    property bool _suppressUpdate: false
 
     onCheckedChanged: {
-        if (cb.checked !== checked) cb.checked = checked
+        if (!_suppressUpdate && cb.checked !== checked) {
+            _suppressUpdate = true
+            cb.checked = checked
+            _suppressUpdate = false
+        }
     }
 
     CheckBox {

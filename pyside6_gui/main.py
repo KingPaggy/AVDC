@@ -124,6 +124,20 @@ THEME = {
     "animationFast": 150,
     "animationNormal": 300,
     "animationSlow": 500,
+    # 组件尺寸
+    "titleBarHeight": 38,
+    "navItemHeight": 32,
+    "toastHeight": 40,
+    "iconSize": 16,
+    "labelWidthWide": 120,
+    "labelWidthNarrow": 100,
+    "logFilterBarHeight": 44,
+    "resizeHandleSize": 8,
+    # Toast 时长
+    "toastDuration": 2000,
+    "toastErrorDuration": 3000,
+    # 字体
+    "fontMonospace": "SF Mono, Menlo, Monaco, Courier New, monospace",
 }
 
 

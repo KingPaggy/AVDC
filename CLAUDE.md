@@ -236,6 +236,29 @@ Root `pyproject.toml` declares a workspace with four members:
 
 All dependencies are installed via `uv sync` into a single `.venv` at root. **Only run `uv sync` from the project root**, never from subdirectories — workspace members share one `.venv`, subdirectory `uv sync` will overwrite conflicting packages.
 
+## 工作流规范：主 Agent 审查 + 子 Agent 编辑
+
+**原则**：主 Agent 只负责规划、审查和决策，所有代码编辑任务交给子 Agent 执行。
+
+### 执行流程
+
+1. **主 Agent**：制定计划，明确每个文件的改动内容
+2. **主 Agent**：启动子 Agent（`subagent_type: "claude"`），给出精确的编辑指令（包含文件路径、行号、旧代码/新代码）
+3. **子 Agent**：读取文件 → 执行 Edit → 运行测试 → 报告结果
+4. **主 Agent**：审查子 Agent 的改动结果（Read 关键文件确认），确认测试通过
+
+### 适用场景
+
+- 任何涉及文件编辑的任务（代码修改、新增文件、删除代码）
+- 多文件批量改动（按阶段分别启动子 Agent）
+- 重构、优化、Bug 修复
+
+### 不适用场景
+
+- 纯信息查询（直接用 Bash/grep/Read）
+- 运行测试、构建、启动服务（直接用 Bash）
+- 制定计划、设计方案（主 Agent 自己完成）
+
 ## Git Commit Convention
 
 采用 Emoji + Conventional Commits 风格。格式：`emoji type(scope): description`

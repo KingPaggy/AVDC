@@ -10,17 +10,29 @@ ScrollView {
     property var logEntries: []       // array of {timestamp, level, message}
     property string filterLevel: "all"  // all | error | warn | info | debug
 
+    // Cached filtered entries — updated via Connections instead of computed property
+    property var _filteredEntries: []
+
+    function _updateFilter() {
+        if (root.filterLevel === "all") {
+            _filteredEntries = root.logEntries
+        } else {
+            _filteredEntries = root.logEntries.filter(function(e) { return e.level === root.filterLevel })
+        }
+    }
+
+    Connections {
+        target: root
+        function onLogEntriesChanged() { _updateFilter() }
+        function onFilterLevelChanged() { _updateFilter() }
+    }
+
     ListView {
         id: logList
         width: Math.max(root.width, 680)
         height: Math.max(root.height, logList.contentHeight)
         model: _filteredEntries
         spacing: 2
-
-        readonly property var _filteredEntries: {
-            if (root.filterLevel === "all") return root.logEntries
-            return root.logEntries.filter(function(e) { return e.level === root.filterLevel })
-        }
 
         delegate: RowLayout {
             width: ListView.view.width
@@ -30,7 +42,7 @@ ScrollView {
             Text {
                 text: modelData.timestamp || ""
                 font.pixelSize: Theme.fontMini
-                font.family: "SF Mono, Menlo, Monaco, Courier New, monospace"
+                font.family: Theme.fontMonospace
                 color: Theme.tertiaryText
                 Layout.preferredWidth: 70
             }
@@ -66,7 +78,7 @@ ScrollView {
             Text {
                 text: modelData.message || ""
                 font.pixelSize: Theme.fontCaption
-                font.family: "SF Mono, Menlo, Monaco, Courier New, monospace"
+                font.family: Theme.fontMonospace
                 color: _msgColor
                 Layout.fillWidth: true
                 elide: Text.ElideRight
@@ -90,4 +102,6 @@ ScrollView {
             }
         }
     }
+
+    Component.onCompleted: _updateFilter()
 }

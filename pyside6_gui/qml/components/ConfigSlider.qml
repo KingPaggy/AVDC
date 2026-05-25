@@ -12,9 +12,14 @@ RowLayout {
     property int sliderValue: 0
     property int fromValue: 0
     property int toValue: 100
+    property bool _suppressUpdate: false
 
     onSliderValueChanged: {
-        if (slider.value !== sliderValue) slider.value = sliderValue
+        if (!_suppressUpdate && slider.value !== sliderValue) {
+            _suppressUpdate = true
+            slider.value = sliderValue
+            _suppressUpdate = false
+        }
     }
 
     Text {

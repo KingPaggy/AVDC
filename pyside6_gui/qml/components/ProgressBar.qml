@@ -30,9 +30,6 @@ Item {
                 width: parent.width * Math.min(Math.max(root.progressValue, 0), 1)
                 radius: Theme.radiusMD
                 color: Theme.accentColor
-                Behavior on width {
-                    NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutQuad }
-                }
             }
         }
 

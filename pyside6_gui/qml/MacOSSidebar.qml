@@ -55,7 +55,7 @@ Item {
             Rectangle {
                 id: navItem
                 Layout.fillWidth: true
-                implicitHeight: 32
+                implicitHeight: Theme.navItemHeight
                 radius: Theme.radiusSM
                 color: mouseArea.containsMouse ? Theme.hoverBg : "transparent"
                 visible: !root.collapsed
@@ -85,10 +85,10 @@ Item {
                     // Icon (QStyle standard icons via image provider)
                     Image {
                         source: "image://styleIcons/" + modelData.icon
-                        sourceSize.width: 16
-                        sourceSize.height: 16
-                        Layout.preferredWidth: 16
-                        Layout.preferredHeight: 16
+                        sourceSize.width: Theme.iconSize
+                        sourceSize.height: Theme.iconSize
+                        Layout.preferredWidth: Theme.iconSize
+                        Layout.preferredHeight: Theme.iconSize
                         fillMode: Image.PreserveAspectFit
                         mipmap: true
                         opacity: root.currentIndex === index ? 1.0 : 0.7

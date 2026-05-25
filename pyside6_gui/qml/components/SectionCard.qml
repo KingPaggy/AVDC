@@ -32,9 +32,5 @@ Rectangle {
             color: Theme.separatorColor
         }
 
-        Loader {
-            id: contentLoader
-            Layout.fillWidth: true
-        }
     }
 }
