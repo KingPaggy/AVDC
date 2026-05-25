@@ -161,31 +161,31 @@ ApplicationWindow {
 
     // ===== 快捷键 =====
     Shortcut {
-        sequence: StandardKey.New
+        sequences: [StandardKey.New]
         onActivated: toast.show("新建窗口（待实现）")
     }
     Shortcut {
-        sequence: StandardKey.Open
+        sequences: [StandardKey.Open]
         onActivated: toast.show("打开文件（待实现）")
     }
     Shortcut {
-        sequence: StandardKey.Close
+        sequences: [StandardKey.Close]
         onActivated: appWindow.close()
     }
     Shortcut {
-        sequence: StandardKey.Quit
+        sequences: [StandardKey.Quit]
         onActivated: Qt.quit()
     }
     Shortcut {
-        sequence: StandardKey.Undo
+        sequences: [StandardKey.Undo]
         onActivated: toast.show("撤销（待实现）")
     }
     Shortcut {
-        sequence: StandardKey.Redo
+        sequences: [StandardKey.Redo]
         onActivated: toast.show("重做（待实现）")
     }
     Shortcut {
-        sequence: StandardKey.Save
+        sequences: [StandardKey.Save]
         onActivated: settings.save()
     }
     Shortcut {
@@ -193,7 +193,7 @@ ApplicationWindow {
         onActivated: sidebar.currentIndex = 3
     }
     Shortcut {
-        sequence: "Meta+Shift+S"
+        sequences: ["Meta+Shift+S", "Ctrl+Shift+S"]
         onActivated: sidebar.collapsed = !sidebar.collapsed
     }
 }
