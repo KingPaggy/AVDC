@@ -15,14 +15,21 @@ AVDC (AV Data Capture) is a Python GUI application for scraping JAV website meta
 ```bash
 uv sync                                        # Install all dependencies (workspace)
 uv run python PyQt5-GUI/main.py                # Run PyQt5 GUI
+uv run python pyside6_gui/main.py              # Run PySide6 + QML GUI
 uv run python cli/cli.py --path /path/to/movies  # Run CLI
-uv run pytest core/test cli/test/ -v           # Run all tests
-uv run pytest core/test/unit/test_core_engine.py -v # Single test file
+uv run pytest core/test cli/test/ -v           # Run all core/CLI tests
+uv run pytest pyside6_gui/test/ -v             # Run PySide6 QML tests
+uv run pytest pyside6_gui/test/test_theme.py -v  # Single test file
 ```
 
 UI Development: Qt Designer `*.ui` files compile to `PyQt5-GUI/ui/main_window.py` via `pyuic5-tool`:
 ```bash
 uv run pyuic5 PyQt5-GUI/ui/main_window.ui -o PyQt5-GUI/ui/main_window.py
+```
+
+QML lint:
+```bash
+.venv/bin/pyside6-qmllint pyside6_gui/qml/main.qml
 ```
 
 ## Architecture
@@ -37,26 +44,70 @@ cli/                      # CLI frontend (no Qt dependency)
 core/                     # ALL business logic (typed, no Qt)
   pyproject.toml          #   Workspace member: avdc-core
   test/                   #   Core test suite (unit, integration, live)
-    conftest.py           #   Shared fixtures
   __init__.py             #   Package docstring only
   _config/                #   AppConfig, logging, errors, settings
   _models/                #   Movie, Actor, ProcessResult
   _scraper/               #   Base, dispatcher, adapter, pipeline
     scrapers/             #   7 scraper implementations
-      avsox.py, dmm.py, jav321.py, javbus.py, javdb.py, mgstage.py, xcity.py
   _services/              #   CoreEngine, metadata, naming, emby_client
   _files/                 #   file_utils, file_operations
   _media/                 #   image_processing (watermarks in _media/watermarks/)
   _net/                   #   networking
   _event/                 #   EventBus, events
 tui-go/                   # Go TUI frontend
-PyQt5-GUI/                # PyQt5 GUI frontend
-  main.py                 #   UI layer: PyQt5 display + event handling
-  ui/                     #   Compiled PyQt5 UI from Qt Designer
-  resources/              #   GUI-only assets (icons, screenshots)
-  docs/                   #   UI-specific documentation
-docs/                     # Documentation: architecture, requirements, scraping-flow
+PyQt5-GUI/                # PyQt5 GUI frontend (legacy)
+pyside6_gui/              # PySide6 + QML GUI (new)
+  main.py                 #   Entry point: QGuiApplication + QQmlApplicationEngine
+  settings_model.py       #   Python data model for QML bindings
+  test/                   #   QML test suite
+    conftest.py           #     Shared fixtures (qt_app, settings, qml_engine)
+    test_theme.py         #     Theme constants validation
+    test_settings_model.py # SettingsModel tests
+    test_qml_loading.py   #     QML engine loading tests
+  qml/                    #   QML files
+    main.qml              #     Main window: SplitView + Sidebar + MenuBar
+    MacOSSidebar.qml      #     Sidebar navigation component
+    HomePage.qml          #     Workspace: file selection + processing
+    LogPage.qml           #     Log viewer with filtering
+    ToolsPage.qml         #     Tool cards grid
+    SettingsPage.qml      #     Settings form
+    AboutPage.qml         #     About page
+    components/           #     Reusable components
+      SectionCard.qml     #       Grouped section container
+      ConfigInput.qml     #       Label + TextField
+      ConfigSwitch.qml    #       Label + Switch
+      ConfigRadioGroup.qml#       Label + Radio buttons
+      ConfigSlider.qml    #       Label + Slider + value
+      ConfigCheckbox.qml  #       CheckBox + Label
+      ConfigFilePicker.qml#       Label + TextField + Browse
+      ProgressBar.qml     #       Progress bar + percentage
+      StatusBadge.qml     #       Status badge (success/error/warning/info)
+      ToolCard.qml        #       Clickable tool card
+      LogViewer.qml       #       Scrollable log with level coloring
+docs/                     # Documentation
 resources/                # Project resources (icons, screenshots)
+```
+
+### PySide6 + QML GUI Architecture
+
+**Theme** — Apple HIG 平台无关主题常量，定义在 `pyside6_gui/main.py` 的 `THEME` 字典中，通过 `setContextProperty("Theme", THEME)` 注入 QML。包含：
+- Apple HIG 语义化颜色（Dark Mode 默认）
+- 8pt 网格间距（spacingXS=4 到 spacingXXXL=32）
+- Apple HIG 字号层级（fontMini=10 到 fontStat=28）
+- 圆角四级标准（radiusSM=4 到 radiusXL=12）
+- 窗口规格、响应式断点、动画时长
+
+**SettingsModel** (`pyside6_gui/settings_model.py`) — Python 数据绑定层，将 `config.ini` 字段暴露为 Qt Properties，支持 QML 双向绑定。每个属性有 `notify` signal，`load()`/`save()`/`resetToDefaults()` 为 `@Slot`。
+
+**数据流**：
+```
+Python THEME dict ──→ setContextProperty("Theme") ──→ QML 读取
+Python SettingsModel ──→ setContextProperty("settings") ──→ QML 双向绑定
+```
+
+**导航架构**：`SplitView`（水平分割）+ `MacOSSidebar`（侧边栏导航）+ `Loader`（按需加载页面）。侧边栏理想宽度 240pt，可折叠。
+
+**QML 文件规范**：文件名 PascalCase，类型名与文件名一致。组件文件放在 `qml/components/` 下，通过 `import "components"` 引入。
 
 ### CoreEngine (`core/_services/orchestrator.py`)
 
@@ -67,19 +118,7 @@ The main orchestrator for the scrape/organize workflow. Qt-free — accepts `App
 
 `AppConfig.main_mode` controls scrape vs organize mode. `scraper_mode` controls the scraper/site chain (`1=all`, `2=mgstage`, `3=javbus`, `4=jav321`, `5=javdb/fc2`, `6=avsox`, `7=xcity`, `8=dmm`).
 
-### core/ Package Structure
-
-```
-core/
-  _config/     — AppConfig, config_io, logger, errors, settings_provider
-  _models/     — Movie, Actor, ProcessResult dataclasses
-  _scraper/    — ScraperBase ABC, ScraperRegistry, ScraperDispatcher, pipeline, adapter, scrapers/
-  _services/   — CoreEngine (orchestrator), metadata, naming_service, emby_client
-  _files/      — file_utils (getNumber, movie_lists), file_operations (downloads, NFO, moves)
-  _media/      — image_processing (watermark, crop, face-detect)
-  _net/        — networking (get_html, get_html_javdb, post_html)
-  _event/      — EventBus, Event, EventType (pub/sub communication)
-```
+### Import Paths
 
 Import from full subpackage module paths:
 ```python
@@ -128,29 +167,32 @@ All scrapers discovered via `ScraperRegistry` + `@register_scraper`, dispatched 
 
 ### Testing
 
-Tests in `core/test/` use pytest, organized into three categories:
+Tests use pytest, organized into three areas:
 
 | Directory | Purpose |
 |-----------|---------|
-| `core/test/unit/` | Unit tests (isolated modules) |
+| `core/test/unit/` | Core unit tests (isolated modules) |
 | `core/test/integration/` | Integration tests (component interaction) |
 | `core/test/live/` | Live scraper tests (require network + video files) |
+| `cli/test/` | CLI tests |
+| `pyside6_gui/test/` | PySide6 QML tests (40 tests) |
 
 Key test files:
 - `core/test/unit/test_core.py` — Core logic tests (largest file)
 - `core/test/unit/test_core_engine.py` — CoreEngine batch/single processing
-- `core/test/unit/test_file_ops.py`, `core/test/unit/test_image_ops.py` — File and image operations
-- `core/test/unit/test_logger.py`, `core/test/unit/test_config_provider.py` — Infrastructure
-- `core/test/unit/test_emby_client.py` — Emby API client
 - `core/test/unit/test_scraper_dispatcher.py` — Scraper dispatch logic
-- `core/test/unit/test_image_processing.py`, `core/test/unit/test_infrastructure.py` — core/ package
-- `core/test/integration/test_event_bus_integration.py` — EventBus integration
 - `core/test/live/scrape_test.py`, `core/test/live/test_real_scrape.py` — Live scraper tests
-- `core/test/unit/test_errors.py`, `core/test/unit/test_models.py`, `core/test/unit/test_networking.py` — Additional coverage
-- `core/test/unit/test_scraper_base.py`, `core/test/unit/test_scraper_adapter.py` — Scraper infrastructure
-- `conftest.py` — Shared fixtures: `tmp_dir`, `tmp_log_dir`, `tmp_config_ini`
+- `pyside6_gui/test/test_theme.py` — Theme constants (16 tests, no Qt needed)
+- `pyside6_gui/test/test_settings_model.py` — SettingsModel Properties/Signals/Slots (20 tests)
+- `pyside6_gui/test/test_qml_loading.py` — QML engine loading (4 tests, needs Qt)
 
-CLI tests are in `cli/test/` (workspace member).
+PySide6 tests auto-set `QT_QPA_PLATFORM=offscreen` via `conftest.py`. Run with:
+```bash
+uv run pytest pyside6_gui/test/ -v
+```
+
+Shared fixtures in `core/test/conftest.py`: `tmp_dir`, `tmp_log_dir`, `tmp_config_ini`.
+Shared fixtures in `pyside6_gui/test/conftest.py`: `qt_app`, `tmp_config_ini`, `settings`, `qml_engine`.
 
 ### Proxy Requirements
 
@@ -172,9 +214,11 @@ CLI tests are in `cli/test/` (workspace member).
 
 ## Reference Documents
 
-- `docs/requirements.md` — Core I/O contract (what the engine receives and produces), useful when modifying the scrape/organize pipeline.
-- `docs/architecture.md` — System architecture overview.
-- `docs/scraping-flow.md` — Scraping workflow and pipeline details.
+- `docs/requirements.md` — Core I/O contract (what the engine receives and produces)
+- `docs/architecture.md` — System architecture overview
+- `docs/scraping-flow.md` — Scraping workflow and pipeline details
+- `docs/qml-ui-design.md` — QML UI design manual (colors, typography, components, interaction)
+- `/Users/pageking/Development/24-MacOS26-设计规范/设计原则-平台无关/` — Apple HIG platform-independent design principles
 
 ## Entry Points
 
@@ -192,13 +236,15 @@ Root `pyproject.toml` declares a workspace with four members:
 
 All dependencies are installed via `uv sync` into a single `.venv` at root. **Only run `uv sync` from the project root**, never from subdirectories — workspace members share one `.venv`, subdirectory `uv sync` will overwrite conflicting packages.
 
-### QML Development
+## Git Commit Convention
 
-QML files live in `pyside6_gui/qml/`. Use `pyside6-qmllint` (shipped with PySide6) for syntax checking:
+采用 Emoji + Conventional Commits 风格。格式：`emoji type(scope): description`
 
-```bash
-.venv/bin/pyside6-qmllint pyside6_gui/qml/             # Lint all QML files
-.venv/bin/pyside6-qmllint --ignore unqualified <file>  # Ignore context-property warnings
+常用 emoji：`🐛 fix` `♻️ refactor` `✨ feat` `📦 chore` `📝 docs` `🚚 refactor` `🔧 chore` `🧪 test`
+
+示例：`🐛 fix(pyside6-gui): 修复 Theme 单例注册`
+
+Co-Authored-By 行格式：
 ```
-
-The `unqualified` warning is expected for Python-injected context properties (e.g. `settings.mainMode`). QML filenames must be PascalCase (e.g. `SettingsPage.qml`), and the type name must match exactly.
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
