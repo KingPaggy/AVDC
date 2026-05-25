@@ -28,7 +28,7 @@ Item {
                 SectionCard {
                     sectionTitle: "文件工具"
                     GridLayout {
-                        Layout.fillWidth: true
+                        width: parent.width
                         columns: 2
                         columnSpacing: Theme.spacingMD
                         rowSpacing: Theme.spacingMD
@@ -71,7 +71,7 @@ Item {
                 SectionCard {
                     sectionTitle: "媒体库工具"
                     GridLayout {
-                        Layout.fillWidth: true
+                        width: parent.width
                         columns: 2
                         columnSpacing: Theme.spacingMD
                         rowSpacing: Theme.spacingMD

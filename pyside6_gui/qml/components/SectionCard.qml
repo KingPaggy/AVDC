@@ -40,15 +40,15 @@ Rectangle {
     // implicitHeight: sum of all children heights + spacing + margins
     implicitHeight: {
         var h = Theme.spacingMD * 2  // top + bottom margin
-        if (titleText.implicitHeight > 0) h += titleText.implicitHeight
-        if (divider.implicitHeight > 0) h += divider.implicitHeight
+        h += titleText.implicitHeight
+        h += divider.implicitHeight
         for (var i = 0; i < contentColumn.children.length; i++) {
             var c = contentColumn.children[i]
-            var ch = c.implicitHeight || c.Layout.preferredHeight || 0
+            var ch = c.implicitHeight || 0
             if (ch > 0) h += ch
         }
-        // spacing between items
-        var n = 1 + 1 + contentColumn.children.length  // title + divider + children
+        // spacing: title + divider + children
+        var n = 2 + contentColumn.children.length
         if (n > 1) h += contentColumn.spacing * (n - 1)
         return h
     }
