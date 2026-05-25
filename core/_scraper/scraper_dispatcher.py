@@ -5,6 +5,30 @@ from core._scraper.scraper_adapter import ScraperAdapter, cache_key, get_cached
 from core._config.errors import ScrapingError
 
 
+SCRAPER_SITE_MODES = {
+    "all": 1,
+    "allwebsites": 1,
+    "mgstage": 2,
+    "javbus": 3,
+    "jav321": 4,
+    "javdb": 5,
+    "fc2": 5,
+    "avsox": 6,
+    "xcity": 7,
+    "dmm": 8,
+}
+
+
+def normalize_site_name(site: str) -> str:
+    """Normalize UI/config scraper site labels to a stable key."""
+    return site.lower().replace(" ", "").replace("_", "").replace("-", "")
+
+
+def site_to_scraper_mode(site: str, default: int = 1) -> int:
+    """Return ScraperDispatcher mode for a site key or UI label."""
+    return SCRAPER_SITE_MODES.get(normalize_site_name(site), default)
+
+
 class ScraperDispatcher:
     """Handles scraper dispatch logic based on video number patterns."""
 

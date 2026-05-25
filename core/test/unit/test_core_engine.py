@@ -149,7 +149,7 @@ class TestProcessSingleCoreBranches:
             with pytest.raises(Exception, match="Cover Url"):
                 engine._process_single_core(
                     filepath=os.path.join(tmp_dir, "test.mp4"),
-                    number="SSNI-123", mode=1, count=1,
+                    number="SSNI-123", scraper_mode=1, count=1,
                     success_folder=os.path.join(tmp_dir, "out"),
                     failed_folder=os.path.join(tmp_dir, "fail"),
                 )
@@ -168,7 +168,7 @@ class TestProcessSingleCoreBranches:
             with pytest.raises(Exception, match="Cover_small Url"):
                 engine._process_single_core(
                     filepath=os.path.join(tmp_dir, "test.mp4"),
-                    number="SSNI-123", mode=1, count=1,
+                    number="SSNI-123", scraper_mode=1, count=1,
                     success_folder=os.path.join(tmp_dir, "out"),
                     failed_folder=os.path.join(tmp_dir, "fail"),
                 )
@@ -195,7 +195,7 @@ class TestProcessSingleCoreBranches:
                 with patch("core._services.orchestrator.paste_file_to_folder", return_value=False) as mock_paste:
                     result = engine._process_single_core(
                         filepath=os.path.join(tmp_dir, "ORG-001.mp4"),
-                        number="ORG-001", mode=1, count=1,
+                        number="ORG-001", scraper_mode=1, count=1,
                         success_folder=os.path.join(tmp_dir, "out"),
                         failed_folder=os.path.join(tmp_dir, "fail"),
                     )
@@ -203,6 +203,35 @@ class TestProcessSingleCoreBranches:
         mock_paste.assert_called_once()
         # No download_thumb, no cut_poster, no watermarks
         assert result == ""
+
+    def test_organize_mode_keeps_selected_scraper_mode(self, tmp_dir):
+        """main_mode controls file work; scraper_mode controls site dispatch."""
+        config = _make_config(media_path=tmp_dir, main_mode=2)
+        engine = CoreEngine(config)
+        json_response = {
+            "title": "Organized Movie", "number": "ORG-001",
+            "website": "javbus", "cover": "http://example.com/c.jpg",
+            "cover_small": "", "imagecut": 1,
+            "series": "", "actor_photo": {}, "extrafanart": [],
+            "naming_media": "number", "naming_file": "number",
+            "folder_name": "number", "actor": "", "tag": [],
+            "score": "", "studio": "", "publisher": "", "year": "",
+            "outline": "", "runtime": "", "director": "", "release": "",
+            "source": "",
+        }
+
+        with patch("core._services.orchestrator.getDataFromJSON", return_value=json_response) as mock_get:
+            with patch("core._services.orchestrator.create_output_folder", return_value=tmp_dir):
+                with patch("core._services.orchestrator.paste_file_to_folder", return_value=False):
+                    result = engine.process_single(
+                        filepath=os.path.join(tmp_dir, "ORG-001.mp4"),
+                        number="ORG-001",
+                        scraper_mode=3,
+                    )
+
+        assert result == ""
+        mock_get.assert_called_once()
+        assert mock_get.call_args.args[2] == 3
 
     def test_leak_detection_adds_suffix(self, tmp_dir):
         """File with '流出' in name should add suffix."""
@@ -226,7 +255,7 @@ class TestProcessSingleCoreBranches:
                     with patch("core._services.orchestrator.paste_file_to_folder", return_value=False):
                         result = engine._process_single_core(
                             filepath=os.path.join(tmp_dir, "流出-LEAK-001.mp4"),
-                            number="LEAK-001", mode=1, count=1,
+                            number="LEAK-001", scraper_mode=1, count=1,
                             success_folder=tmp_dir,
                             failed_folder=os.path.join(tmp_dir, "fail"),
                         )
@@ -256,7 +285,7 @@ class TestProcessSingleCoreBranches:
                             with patch("core._services.orchestrator.delete_thumb"):
                                 result = engine._process_single_core(
                                     filepath=os.path.join(tmp_dir, "MULTI-001-CD1.mp4"),
-                                    number="MULTI-001", mode=1, count=1,
+                                    number="MULTI-001", scraper_mode=1, count=1,
                                     success_folder=tmp_dir,
                                     failed_folder=os.path.join(tmp_dir, "fail"),
                                 )
@@ -286,7 +315,7 @@ class TestProcessSingleCoreBranches:
                             with patch("core._services.orchestrator.delete_thumb"):
                                 result = engine._process_single_core(
                                     filepath=os.path.join(tmp_dir, "SUB-001-C.mp4"),
-                                    number="SUB-001", mode=1, count=1,
+                                    number="SUB-001", scraper_mode=1, count=1,
                                     success_folder=tmp_dir,
                                     failed_folder=os.path.join(tmp_dir, "fail"),
                                 )
@@ -321,7 +350,7 @@ class TestProcessSingleCoreBranches:
                                         with patch("core._services.orchestrator.paste_file_to_folder", return_value=False):
                                             engine._process_single_core(
                                                 filepath=os.path.join(tmp_dir, "UNC-001.mp4"),
-                                                number="UNC-001", mode=1, count=1,
+                                                number="UNC-001", scraper_mode=1, count=1,
                                                 success_folder=tmp_dir,
                                                 failed_folder=os.path.join(tmp_dir, "fail"),
                                             )

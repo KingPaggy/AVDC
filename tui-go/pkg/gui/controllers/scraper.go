@@ -126,7 +126,7 @@ func (s *Scraper) runScrape(dir string, mode int) {
 		"uv", "run", "python",
 		filepath.Join(projectRoot, "cli", "cli.py"),
 		"--path", dir,
-		"--mode", fmt.Sprint(mode),
+		"--main-mode", fmt.Sprint(mode),
 		"--json-output",
 	)
 	cmd.Dir = projectRoot

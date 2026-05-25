@@ -70,8 +70,10 @@ def AVDC_Main(self):
         on_success=safe_success, on_failure=safe_failure,
     )
     result = engine.process_batch(movie_path=movie_path,
-        escape_folder=config.folders, mode=config.main_mode)
+        escape_folder=config.folders, scraper_mode=scraper_mode)
 ```
+
+`config.main_mode` 只控制刮削/整理模式；`scraper_mode` 单独控制 All/javbus/javdb 等站点链。
 
 ### 单文件刮削
 

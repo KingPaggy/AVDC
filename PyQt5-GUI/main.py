@@ -20,6 +20,7 @@ from core._config.config_io import save_config
 from core._files.file_utils import movie_lists, escapePath, getNumber, check_pic
 from core._services.metadata import get_info
 from core._scraper.scrape_pipeline import getDataFromJSON
+from core._scraper.scraper_dispatcher import normalize_site_name, site_to_scraper_mode
 from core._config.logger import logger as avdc_logger, get_log_file_path
 from core._media.image_processing import crop_by_face_detection as image_ops_crop
 from core._services.emby_client import (
@@ -704,7 +705,7 @@ class AVDC_Main_UI(QMainWindow):
             file_name.replace(file_root, ".").replace("\\\\", "/").replace("\\", "/")
         )
         file_name_base = os.path.splitext(file_name.split("/")[-1])[0]
-        mode = self.Ui.comboBox_ScrapWeb_2.currentIndex() + 1
+        scraper_mode = self._selected_single_scraper_mode()
         appoint_url = self.Ui.lineEdit_ScrapWeb_1.text()
         appoint_number = self.Ui.lineEdit_SerialNumber_2.text()
         try:
@@ -719,7 +720,12 @@ class AVDC_Main_UI(QMainWindow):
                     file_name_base = file_name_base[:-2]
             config = self._get_app_config()
             engine = CoreEngine(config)
-            result = engine.process_single(file_path, file_name_base, mode, appoint_url)
+            result = engine.process_single(
+                file_path,
+                file_name_base,
+                scraper_mode=scraper_mode,
+                appoint_url=appoint_url,
+            )
             self.logger.info(f"[+]Single file result: {result}")
         except Exception as error_info:
             self.logger.info(f"[-]Error in select_file_thread: {error_info}")
@@ -909,6 +915,17 @@ class AVDC_Main_UI(QMainWindow):
     def get_naming_rule(self, json_data):
         return file_ops_resolve_naming_rule(json_data)
 
+    def _selected_batch_site(self) -> str:
+        """Return the configured batch scraper site key from the UI."""
+        site = normalize_site_name(self.Ui.comboBox_2.currentText())
+        return "all" if site == "allwebsites" else site
+
+    def _selected_batch_scraper_mode(self) -> int:
+        return site_to_scraper_mode(self._selected_batch_site())
+
+    def _selected_single_scraper_mode(self) -> int:
+        return site_to_scraper_mode(self.Ui.comboBox_ScrapWeb_2.currentText())
+
     # ========================================================================从 UI 控件构建 AppConfig（过渡用，后续阶段会替换）
     def _get_app_config(self) -> AppConfig:
         """Read current UI state into an AppConfig object."""
@@ -916,7 +933,7 @@ class AVDC_Main_UI(QMainWindow):
             main_mode=1 if self.Ui.radioButton.isChecked() else 2,
             soft_link=1 if self.Ui.radioButton_3.isChecked() else 0,
             failed_file_move=1 if self.Ui.radioButton_11.isChecked() else 0,
-            website=self.Ui.comboBox_2.currentText().lower().replace(" ", ""),
+            website=self._selected_batch_site(),
             success_output_folder=self.Ui.lineEdit_8.text(),
             failed_output_folder=self.Ui.lineEdit_9.text(),
             proxy_type="http" if self.Ui.radioButton_19.isChecked() else ("socks5" if self.Ui.radioButton_20.isChecked() else "no"),
@@ -1000,7 +1017,7 @@ class AVDC_Main_UI(QMainWindow):
         result = engine.process_batch(
             movie_path=movie_path,
             escape_folder=config.folders,
-            mode=config.main_mode,
+            scraper_mode=self._selected_batch_scraper_mode(),
         )
 
         if result["total"] == 0:

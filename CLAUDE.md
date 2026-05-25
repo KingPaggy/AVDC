@@ -62,8 +62,10 @@ docs/                     # Documentation (shared)
 
 The main orchestrator for the scrape/organize workflow. Qt-free — accepts `AppConfig` and reports via callbacks (`on_log`, `on_progress`, `on_success`, `on_failure`). Two entry points:
 
-- `process_batch(movie_path, escape_folder, mode)` — scan directory, process all files
-- `process_single(filepath, number, mode, appoint_url)` — single file
+- `process_batch(movie_path, escape_folder, scraper_mode)` — scan directory, process all files
+- `process_single(filepath, number, scraper_mode, appoint_url)` — single file
+
+`AppConfig.main_mode` controls scrape vs organize mode. `scraper_mode` controls the scraper/site chain (`1=all`, `2=mgstage`, `3=javbus`, `4=jav321`, `5=javdb/fc2`, `6=avsox`, `7=xcity`, `8=dmm`).
 
 ### core/ Package Structure
 

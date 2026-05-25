@@ -3,7 +3,8 @@
 
 Usage:
     uv run python cli.py --path /path/to/movies
-    uv run python cli.py --path /path/to/movies --mode 2
+    uv run python cli.py --path /path/to/movies --main-mode organize
+    uv run python cli.py --path /path/to/movies --site javbus
     uv run python cli.py --single /path/to/movie.mp4 --number ABC-123
     uv run python cli.py --path /path/to/movies --json-output
 """
@@ -14,6 +15,17 @@ import sys
 from core._services.orchestrator import CoreEngine
 from core._config.config import AppConfig
 from core._config.logger import logger
+from core._scraper.scraper_dispatcher import site_to_scraper_mode
+
+
+MAIN_MODE_MAP = {
+    "1": 1,
+    "scrape": 1,
+    "2": 2,
+    "organize": 2,
+}
+
+SITE_CHOICES = ["all", "mgstage", "javbus", "jav321", "javdb", "fc2", "avsox", "xcity", "dmm"]
 
 
 def main():
@@ -37,8 +49,18 @@ def main():
         help="Movie number override (for --single mode)",
     )
     parser.add_argument(
-        "--mode", type=int, default=1, choices=[1, 2],
-        help="1=scrape mode, 2=organize mode (default: 1)",
+        "--main-mode",
+        choices=sorted(MAIN_MODE_MAP.keys()),
+        help="Processing mode: scrape/1 or organize/2 (default: config.ini)",
+    )
+    parser.add_argument(
+        "--site",
+        choices=SITE_CHOICES,
+        help="Scraper site: all, mgstage, javbus, jav321, javdb, fc2, avsox, xcity, dmm",
+    )
+    parser.add_argument(
+        "--mode", type=int, choices=[1, 2],
+        help="Deprecated alias for --main-mode 1/2",
     )
     parser.add_argument(
         "--json-output", action="store_true",
@@ -47,6 +69,12 @@ def main():
     args = parser.parse_args()
 
     config = AppConfig.from_ini(args.config)
+    if args.main_mode:
+        config.main_mode = MAIN_MODE_MAP[args.main_mode]
+    elif args.mode is not None:
+        config.main_mode = args.mode
+
+    scraper_mode = site_to_scraper_mode(args.site or config.website)
 
     def _emit(event_type: str, **kwargs):
         """Emit a JSON line to stdout."""
@@ -88,13 +116,17 @@ def main():
     )
 
     if args.single:
-        result = engine.process_single(args.single, args.number, args.mode)
+        result = engine.process_single(
+            args.single,
+            args.number,
+            scraper_mode=scraper_mode,
+        )
         if args.json_output:
             _emit("done", result=str(result))
         else:
             print(f"\nResult: {result}")
     else:
-        result = engine.process_batch(args.path, mode=args.mode)
+        result = engine.process_batch(args.path, scraper_mode=scraper_mode)
         if args.json_output:
             _emit("done", total=result["total"],
                   success=result["success"], failed=result["failed"])

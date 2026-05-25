@@ -62,9 +62,17 @@ class CoreEngine:
         self,
         movie_path: str,
         escape_folder: str = "",
-        mode: int = 1,
+        scraper_mode: int = 1,
+        mode: Optional[int] = None,
     ) -> dict:
-        """Process all movies in movie_path. Returns summary dict."""
+        """Process all movies in movie_path. Returns summary dict.
+
+        scraper_mode selects the scraper/site chain. mode is kept as a
+        compatibility alias for older callers.
+        """
+        if mode is not None:
+            scraper_mode = mode
+
         self.on_log(f"[+]Find movies in: {movie_path}")
 
         failed_folder = os.path.join(movie_path, self.config.failed_output_folder)
@@ -107,7 +115,7 @@ class CoreEngine:
                 suffix = self._process_single_core(
                     filepath=filepath,
                     number=movie_number,
-                    mode=mode,
+                    scraper_mode=scraper_mode,
                     count=count,
                     success_folder=success_folder,
                     failed_folder=failed_folder,
@@ -143,10 +151,14 @@ class CoreEngine:
         self,
         filepath: str,
         number: str,
-        mode: int = 1,
+        scraper_mode: int = 1,
         appoint_url: str = "",
+        mode: Optional[int] = None,
     ) -> str:
         """Process a single file. Returns result suffix or 'not found'/'error'."""
+        if mode is not None:
+            scraper_mode = mode
+
         success_folder = os.path.join(
             os.path.dirname(filepath),
             self.config.success_output_folder,
@@ -158,7 +170,7 @@ class CoreEngine:
         return self._process_single_core(
             filepath=filepath,
             number=number,
-            mode=mode,
+            scraper_mode=scraper_mode,
             count=1,
             success_folder=success_folder,
             failed_folder=failed_folder,
@@ -169,7 +181,7 @@ class CoreEngine:
         self,
         filepath: str,
         number: str,
-        mode: int,
+        scraper_mode: int,
         count: int,
         success_folder: str,
         failed_folder: str,
@@ -185,7 +197,7 @@ class CoreEngine:
         program_mode = self.config.main_mode  # 1=scrape, 2=organize
 
         # =================================================================== Fetch metadata
-        json_data = getDataFromJSON(number, self.config, mode, appoint_url)
+        json_data = getDataFromJSON(number, self.config, scraper_mode, appoint_url)
 
         # =================================================================== Check results
         if json_data.get("website") == "timeout":

@@ -122,3 +122,12 @@ class TestScraperDispatcher:
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=2) == [("mgstage.main", 5)]
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=6) == [("avsox.main", 50)]
         assert ScraperDispatcher.get_scraper_chain("SSNI-123", mode=8) == [("dmm.main", 70)]
+
+    def test_site_to_scraper_mode(self):
+        from core._scraper.scraper_dispatcher import site_to_scraper_mode
+
+        assert site_to_scraper_mode("All websites") == 1
+        assert site_to_scraper_mode("javbus") == 3
+        assert site_to_scraper_mode("javdb") == 5
+        assert site_to_scraper_mode("fc2") == 5
+        assert site_to_scraper_mode("unknown") == 1

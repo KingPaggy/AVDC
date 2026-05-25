@@ -1,9 +1,16 @@
 """Tests for cli.py — standalone CLI entry point (no PyQt5)."""
 import sys
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from cli.cli import main
+from core._config.config import AppConfig
+
+
+def _mock_config(**overrides):
+    return AppConfig(**overrides)
+
+
 # ========================================================================
 # Argument parsing
 # ========================================================================
@@ -11,29 +18,69 @@ from cli.cli import main
 class TestArgumentParsing:
     """Test that argparse handles arguments correctly."""
 
-    def test_default_mode_is_scrape(self):
-        """When --mode is not specified, default should be 1 (scrape)."""
+    def test_default_config_is_loaded(self):
+        """When no mode/site flags are specified, config should be loaded."""
         test_args = ["cli.py", "--path", "/tmp/movies"]
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     main()
         engine_kwargs = MockEngine.call_args.kwargs
         assert engine_kwargs["config"] is not None
 
-    def test_mode_2_is_organize(self):
-        """--mode 2 should pass organize mode to process_batch."""
-        test_args = ["cli.py", "--path", "/tmp/movies", "--mode", "2"]
+    def test_main_mode_organize_updates_config_not_scraper_mode(self):
+        """--main-mode organize should update config.main_mode only."""
+        test_args = ["cli.py", "--path", "/tmp/movies", "--main-mode", "organize"]
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    config = _mock_config()
+                    MockConfig.from_ini.return_value = config
                     instance = MockEngine.return_value
                     main()
         instance.process_batch.assert_called_once()
         _, kwargs = instance.process_batch.call_args
-        assert kwargs["mode"] == 2
+        assert kwargs["scraper_mode"] == 1
+        assert config.main_mode == 2
+
+    def test_deprecated_mode_2_updates_main_mode_only(self):
+        """--mode 2 remains a compatibility alias for organize mode."""
+        test_args = ["cli.py", "--path", "/tmp/movies", "--mode", "2"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
+                    config = _mock_config()
+                    MockConfig.from_ini.return_value = config
+                    instance = MockEngine.return_value
+                    main()
+        _, kwargs = instance.process_batch.call_args
+        assert kwargs["scraper_mode"] == 1
+        assert config.main_mode == 2
+
+    def test_site_flag_selects_scraper_mode(self):
+        """--site should select the scraper chain independently of main_mode."""
+        test_args = ["cli.py", "--path", "/tmp/movies", "--site", "javbus"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
+                    MockConfig.from_ini.return_value = _mock_config()
+                    instance = MockEngine.return_value
+                    main()
+        _, kwargs = instance.process_batch.call_args
+        assert kwargs["scraper_mode"] == 3
+
+    def test_config_website_selects_default_scraper_mode(self):
+        """Config website is used when --site is omitted."""
+        test_args = ["cli.py", "--path", "/tmp/movies"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.CoreEngine") as MockEngine:
+                with patch("cli.cli.AppConfig") as MockConfig:
+                    MockConfig.from_ini.return_value = _mock_config(website="javdb")
+                    instance = MockEngine.return_value
+                    main()
+        _, kwargs = instance.process_batch.call_args
+        assert kwargs["scraper_mode"] == 5
 
     def test_single_mode_calls_process_single(self):
         """--single should call process_single instead of process_batch."""
@@ -41,7 +88,7 @@ class TestArgumentParsing:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     main()
         instance.process_single.assert_called_once()
@@ -53,7 +100,7 @@ class TestArgumentParsing:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine"):
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     main()
         MockConfig.from_ini.assert_called_once_with("/custom/config.ini")
 
@@ -66,10 +113,14 @@ class TestArgumentParsing:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     main()
-        instance.process_single.assert_called_once_with("/tmp/v.mp4", "ABC-123", 1)
+        instance.process_single.assert_called_once_with(
+            "/tmp/v.mp4",
+            "ABC-123",
+            scraper_mode=1,
+        )
 
 
 # ========================================================================
@@ -85,7 +136,7 @@ class TestCallbacks:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     # Capture the on_progress callback and call it directly
                     main()
@@ -101,7 +152,7 @@ class TestCallbacks:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     main()
                     on_success = MockEngine.call_args.kwargs["on_success"]
@@ -116,7 +167,7 @@ class TestCallbacks:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     main()
                     on_failure = MockEngine.call_args.kwargs["on_failure"]
@@ -131,7 +182,7 @@ class TestCallbacks:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
                     main()
                     on_log = MockEngine.call_args.kwargs["on_log"]
@@ -153,7 +204,7 @@ class TestErrorHandling:
         with patch("sys.argv", test_args):
             with patch("cli.cli.CoreEngine"):
                 with patch("cli.cli.AppConfig") as MockConfig:
-                    MockConfig.from_ini.return_value = MagicMock()
+                    MockConfig.from_ini.return_value = _mock_config()
                     # Invoke via __main__ path simulation
                     main()
 

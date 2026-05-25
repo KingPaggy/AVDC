@@ -67,6 +67,7 @@ uv run python PyQt5-GUI/main.py
 
 # 运行命令行
 uv run python cli/cli.py --path /path/to/movies
+uv run python cli/cli.py --path /path/to/movies --main-mode organize --site javbus
 
 # 运行全部测试
 uv run pytest core/test cli/test/ -v
