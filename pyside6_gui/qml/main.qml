@@ -70,52 +70,19 @@ ApplicationWindow {
             Layout.fillHeight: true
             currentIndex: tabBar.currentIndex
 
-            // Placeholder: Home
-            Item {
-                Rectangle {
-                    anchors.centerIn: parent
-                    color: "#1e1e2e"
-                    radius: 12
-                    width: 300; height: 100
-                    Text {
-                        anchors.centerIn: parent
-                        text: "主页 — 工作台（待实现）"
-                        color: "#6c7086"
-                        font.pixelSize: 16
-                    }
-                }
+            // Home
+            HomePage {
+                id: homePage
             }
 
-            // Placeholder: Log
-            Item {
-                Rectangle {
-                    anchors.centerIn: parent
-                    color: "#1e1e2e"
-                    radius: 12
-                    width: 300; height: 100
-                    Text {
-                        anchors.centerIn: parent
-                        text: "日志 — 输出（待实现）"
-                        color: "#6c7086"
-                        font.pixelSize: 16
-                    }
-                }
+            // Log
+            LogPage {
+                id: logPage
             }
 
-            // Placeholder: Tools
-            Item {
-                Rectangle {
-                    anchors.centerIn: parent
-                    color: "#1e1e2e"
-                    radius: 12
-                    width: 300; height: 100
-                    Text {
-                        anchors.centerIn: parent
-                        text: "工具 — 小工具集（待实现）"
-                        color: "#6c7086"
-                        font.pixelSize: 16
-                    }
-                }
+            // Tools
+            ToolsPage {
+                id: toolsPage
             }
 
             // Settings page
@@ -123,31 +90,9 @@ ApplicationWindow {
                 id: settingsPage
             }
 
-            // Placeholder: About
-            Item {
-                Rectangle {
-                    anchors.centerIn: parent
-                    color: "#1e1e2e"
-                    radius: 12
-                    width: 300; height: 100
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 8
-                        Text {
-                            text: "AVDC"
-                            font.pixelSize: 24
-                            font.bold: true
-                            color: "#cdd6f4"
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        Text {
-                            text: "PySide6 + QML 版"
-                            font.pixelSize: 14
-                            color: "#6c7086"
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                    }
-                }
+            // About
+            AboutPage {
+                id: aboutPage
             }
         }
 
