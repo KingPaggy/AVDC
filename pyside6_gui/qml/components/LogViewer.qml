@@ -17,7 +17,8 @@ ScrollView {
         if (root.filterLevel === "all") {
             _filteredEntries = root.logEntries
         } else {
-            _filteredEntries = root.logEntries.filter(function(e) { return e.level === root.filterLevel })
+            var targetLevel = root.filterLevel.toUpperCase()
+            _filteredEntries = root.logEntries.filter(function(e) { return e.level === targetLevel })
         }
     }
 
