@@ -10,7 +10,7 @@ ScrollView {
     property var logEntries: []       // array of {timestamp, level, message}
     property string filterLevel: "all"  // all | error | warn | info | debug
 
-    // Cached filtered entries — updated via Connections instead of computed property
+    // Cached filtered entries — updated via direct property change handlers
     property var _filteredEntries: []
 
     function _updateFilter() {
@@ -21,11 +21,8 @@ ScrollView {
         }
     }
 
-    Connections {
-        target: root
-        function onLogEntriesChanged() { _updateFilter() }
-        function onFilterLevelChanged() { _updateFilter() }
-    }
+    onLogEntriesChanged: _updateFilter()
+    onFilterLevelChanged: _updateFilter()
 
     ListView {
         id: logList
