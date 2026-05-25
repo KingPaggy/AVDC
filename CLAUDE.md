@@ -179,13 +179,26 @@ CLI tests are in `cli/test/` (workspace member).
 ## Entry Points
 
 - `PyQt5-GUI/main.py` — PyQt5 GUI: `uv run python PyQt5-GUI/main.py`
+- `pyside6_gui/main.py` — PySide6 + QML GUI: `uv run python pyside6_gui/main.py`
 - `cli/cli.py` — Standalone CLI (no Qt dependency): `uv run python cli/cli.py --path /path/to/movies`
 
 ## Dependency Management (uv workspace)
 
-Root `pyproject.toml` declares a workspace with three members:
+Root `pyproject.toml` declares a workspace with four members:
 - **core/** (`avdc-core`) — core business logic dependencies
 - **cli/** (`avdc-cli`) — depends on avdc-core, no additional deps
 - **PyQt5-GUI/** (`avdc-pyqt5-gui`) — depends on avdc-core + pyqt5/pyuic5-tool
+- **pyside6_gui/** (`avdc-pyside6-gui`) — depends on pyside6 + avdc-core
 
-All dependencies are installed via `uv sync` into a single `.venv` at root.
+All dependencies are installed via `uv sync` into a single `.venv` at root. **Only run `uv sync` from the project root**, never from subdirectories — workspace members share one `.venv`, subdirectory `uv sync` will overwrite conflicting packages.
+
+### QML Development
+
+QML files live in `pyside6_gui/qml/`. Use `pyside6-qmllint` (shipped with PySide6) for syntax checking:
+
+```bash
+.venv/bin/pyside6-qmllint pyside6_gui/qml/             # Lint all QML files
+.venv/bin/pyside6-qmllint --ignore unqualified <file>  # Ignore context-property warnings
+```
+
+The `unqualified` warning is expected for Python-injected context properties (e.g. `settings.mainMode`). QML filenames must be PascalCase (e.g. `SettingsPage.qml`), and the type name must match exactly.

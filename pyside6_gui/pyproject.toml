@@ -1,0 +1,19 @@
+[project]
+name = "avdc-pyside6-gui"
+version = "0.1.0"
+description = "AVDC: PySide6 + QML GUI frontend"
+requires-python = ">=3.13"
+dependencies = ["pyside6"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pyside6_gui*"]
