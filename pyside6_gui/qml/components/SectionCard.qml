@@ -8,7 +8,6 @@ Rectangle {
     radius: Theme.radiusLG
     color: Theme.cardBg
     Layout.fillWidth: true
-    implicitHeight: contentColumn.implicitHeight + Theme.spacingMD * 2
 
     property string sectionTitle: "Section"
     default property alias contentData: contentColumn.children
@@ -22,6 +21,7 @@ Rectangle {
         spacing: Theme.spacingSM
 
         Text {
+            id: titleText
             text: root.sectionTitle
             font.pixelSize: Theme.fontHeading
             font.bold: true
@@ -30,9 +30,26 @@ Rectangle {
         }
 
         Rectangle {
+            id: divider
             width: parent.width
             implicitHeight: 1
             color: Theme.separatorColor
         }
+    }
+
+    // implicitHeight: sum of all children heights + spacing + margins
+    implicitHeight: {
+        var h = Theme.spacingMD * 2  // top + bottom margin
+        if (titleText.implicitHeight > 0) h += titleText.implicitHeight
+        if (divider.implicitHeight > 0) h += divider.implicitHeight
+        for (var i = 0; i < contentColumn.children.length; i++) {
+            var c = contentColumn.children[i]
+            var ch = c.implicitHeight || c.Layout.preferredHeight || 0
+            if (ch > 0) h += ch
+        }
+        // spacing between items
+        var n = 1 + 1 + contentColumn.children.length  // title + divider + children
+        if (n > 1) h += contentColumn.spacing * (n - 1)
+        return h
     }
 }
