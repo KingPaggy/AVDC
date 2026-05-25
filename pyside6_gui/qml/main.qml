@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
-import AVDC 1.0
 
 // AVDC 主窗口 — Apple HIG 桌面架构
 // SplitView + 侧边栏 + Loader 按需加载页面 + MenuBar + 快捷键

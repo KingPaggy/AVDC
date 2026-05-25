@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import Qt.labs.platform 1.1 as LabPlatform
-import AVDC 1.0
 
 // ConfigFilePicker — Label + TextField + Browse button for directory paths
 RowLayout {

@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
-import AVDC 1.0
 
 // ProgressBar — progress indicator with percentage and status text
 Item {

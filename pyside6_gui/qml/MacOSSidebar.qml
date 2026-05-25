@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
-import AVDC 1.0
 
 // MacOSSidebar — Apple HIG 风格侧边栏
 // 宽度理想 240pt，可拖拽调整（200-320pt），支持折叠

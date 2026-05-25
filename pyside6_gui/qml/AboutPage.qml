@@ -1,6 +1,5 @@
 import QtQuick 2.15
 import QtQuick.Layouts 2.15
-import AVDC 1.0
 
 // AboutPage — version info, dependencies, credits
 Item {

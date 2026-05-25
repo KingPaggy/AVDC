@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
-import AVDC 1.0
 
 // ToolsPage — tool cards in a grid layout
 Item {
