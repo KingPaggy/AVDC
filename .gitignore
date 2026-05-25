@@ -7,6 +7,8 @@ __pycache__/
 .DS_Store
 session/
 _trash/
+# Python build artifacts
+*.egg-info/
 build
 dist
 
