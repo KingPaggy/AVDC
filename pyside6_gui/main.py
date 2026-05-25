@@ -231,6 +231,8 @@ def main():
             | Qt.WindowSystemMenuHint
             | Qt.WindowMinMaxButtonsHint
         )
+        # Enable per-pixel alpha so QML transparent corners render smoothly
+        window.setColor(Qt.transparent)
         controller.set_window(window)
 
     sys.exit(app.exec())

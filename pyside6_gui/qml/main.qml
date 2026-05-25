@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
+import Qt5Compat.GraphicalEffects 1.0
 import "components"
 
 // AVDC 主窗口 — Apple HIG 无边框风格
@@ -12,68 +13,146 @@ ApplicationWindow {
     height: Theme.windowDefaultHeight
     minimumWidth: Theme.windowMinWidth
     minimumHeight: Theme.windowMinHeight
-    color: Theme.backgroundColor
+    color: "transparent"
 
     // Sidebar state — exposed for TitleBar to access
     property bool sidebarCollapsed: false
     property bool sidebarExpandable: true
+    property int resizeHandleSize: Theme.resizeHandleSize
 
-    // ===== 自定义标题栏 =====
-    TitleBar {
-        id: titleBar
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        z: 20
-    }
-
-    // ===== Toast 通知 =====
-    Rectangle {
-        id: toast
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: -50
-        width: Math.max(toastText.implicitWidth + Theme.spacingXL * 2, 160)
-        height: Theme.toastHeight
-        radius: Theme.radiusLG
-        color: Theme.successColor
-        z: 100
-        Behavior on y {
-            NumberAnimation { duration: Theme.animationNormal; easing.type: Easing.OutCubic }
+    // 窗口圆角裁剪容器（所有可见元素必须在此内，通过 OpacityMask 裁剪到圆角）
+    Item {
+        id: roundedContainer
+        anchors.fill: parent
+        layer.enabled: true
+        layer.effect: OpacityMask {
+            maskSource: Rectangle {
+                width: roundedContainer.width
+                height: roundedContainer.height
+                radius: Theme.radiusXL
+            }
         }
 
-        Text {
-            id: toastText
-            anchors.centerIn: parent
-            font.pixelSize: Theme.fontBody
-            font.bold: true
+        // 背景色
+        Rectangle {
+            anchors.fill: parent
             color: Theme.backgroundColor
         }
 
-        function show(message: string) {
-            toastText.text = message
-            toast.color = Theme.successColor
-            y = Theme.spacingXL
-            timer.restart()
+        // ===== 自定义标题栏 =====
+        TitleBar {
+            id: titleBar
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            z: 20
         }
 
-        function showError(message: string) {
-            toastText.text = message
-            toast.color = Theme.errorColor
-            y = Theme.spacingXL
-            errorTimer.restart()
+        // ===== SplitView 主布局（标题栏下方） =====
+        SplitView {
+            id: mainSplitView
+            anchors.fill: parent
+            anchors.topMargin: titleBar.height
+            orientation: Qt.Horizontal
+
+            // ===== 侧边栏 =====
+            MacOSSidebar {
+                id: sidebar
+                collapsed: appWindow.sidebarCollapsed
+                Layout.fillHeight: true
+                Layout.minimumWidth: sidebar.collapsed ? 0 : Theme.sidebarMin
+                Layout.preferredWidth: sidebar.collapsed ? 0 : Theme.sidebarIdeal
+                Layout.maximumWidth: Theme.sidebarMax
+
+                SplitView.minimumWidth: sidebar.collapsed ? 0 : Theme.sidebarMin
+                SplitView.preferredWidth: sidebar.collapsed ? 0 : Theme.sidebarIdeal
+
+                visible: !sidebar.collapsed
+
+                onItemClicked: function(index) {
+                    pageLoader.currentPage = index
+                }
+            }
+
+            // ===== Content area =====
+            Item {
+                id: contentArea
+                SplitView.fillWidth: true
+                SplitView.fillHeight: true
+
+                Component { id: homePageComponent; HomePage {} }
+                Component { id: logPageComponent; LogPage {} }
+                Component { id: toolsPageComponent; ToolsPage {} }
+                Component { id: settingsPageComponent; SettingsPage {} }
+                Component { id: aboutPageComponent; AboutPage {} }
+
+                Loader {
+                    id: pageLoader
+                    anchors.fill: parent
+                    property int currentPage: 0
+                    property var _components: [homePageComponent, logPageComponent, toolsPageComponent, settingsPageComponent, aboutPageComponent]
+
+                    onCurrentPageChanged: sourceComponent = _components[currentPage]
+
+                    Component.onCompleted: sourceComponent = _components[0]
+                }
+            }
         }
 
-        Timer {
-            id: timer
-            interval: Theme.toastDuration
-            onTriggered: toast.y = -50
+        // ===== Toast 通知 =====
+        Rectangle {
+            id: toast
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: -50
+            width: Math.max(toastText.implicitWidth + Theme.spacingXL * 2, 160)
+            height: Theme.toastHeight
+            radius: Theme.radiusLG
+            color: Theme.successColor
+            z: 100
+            Behavior on y {
+                NumberAnimation { duration: Theme.animationNormal; easing.type: Easing.OutCubic }
+            }
+
+            Text {
+                id: toastText
+                anchors.centerIn: parent
+                font.pixelSize: Theme.fontBody
+                font.bold: true
+                color: Theme.backgroundColor
+            }
+
+            function show(message: string) {
+                toastText.text = message
+                toast.color = Theme.successColor
+                y = Theme.spacingXL
+                timer.restart()
+            }
+
+            function showError(message: string) {
+                toastText.text = message
+                toast.color = Theme.errorColor
+                y = Theme.spacingXL
+                errorTimer.restart()
+            }
+
+            Timer {
+                id: timer
+                interval: Theme.toastDuration
+                onTriggered: toast.y = -50
+            }
+
+            Timer {
+                id: errorTimer
+                interval: Theme.toastErrorDuration
+                onTriggered: toast.y = -50
+            }
         }
 
-        Timer {
-            id: errorTimer
-            interval: Theme.toastErrorDuration
-            onTriggered: toast.y = -50
-        }
+        // ===== 边缘调整大小区域 =====
+        ResizeHandle { edge: Qt.TopEdge; x: resizeHandleSize; y: 0; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
+        ResizeHandle { edge: Qt.BottomEdge; x: resizeHandleSize; y: parent.height - resizeHandleSize; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
+        ResizeHandle { edge: Qt.LeftEdge; x: 0; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
+        ResizeHandle { edge: Qt.RightEdge; x: parent.width - resizeHandleSize; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
     }
 
     // ===== Settings 事件连接 =====
@@ -83,66 +162,6 @@ ApplicationWindow {
         function onConfigLoaded() { toast.show("配置已加载") }
         function onErrorOccurred(msg: string) { toast.showError(msg) }
     }
-
-    // ===== SplitView 主布局（标题栏下方） =====
-    SplitView {
-        id: mainSplitView
-        anchors.fill: parent
-        anchors.topMargin: titleBar.height
-        orientation: Qt.Horizontal
-
-        // ===== 侧边栏 =====
-        MacOSSidebar {
-            id: sidebar
-            collapsed: appWindow.sidebarCollapsed
-            Layout.fillHeight: true
-            Layout.minimumWidth: sidebar.collapsed ? 0 : Theme.sidebarMin
-            Layout.preferredWidth: sidebar.collapsed ? 0 : Theme.sidebarIdeal
-            Layout.maximumWidth: Theme.sidebarMax
-
-            SplitView.minimumWidth: sidebar.collapsed ? 0 : Theme.sidebarMin
-            SplitView.preferredWidth: sidebar.collapsed ? 0 : Theme.sidebarIdeal
-
-            visible: !sidebar.collapsed
-
-            onItemClicked: function(index) {
-                pageLoader.currentPage = index
-            }
-        }
-
-        // ===== Content area =====
-        Item {
-            id: contentArea
-            SplitView.fillWidth: true
-            SplitView.fillHeight: true
-
-            // Page components — cached as Components so instances persist
-            Component { id: homePageComponent; HomePage {} }
-            Component { id: logPageComponent; LogPage {} }
-            Component { id: toolsPageComponent; ToolsPage {} }
-            Component { id: settingsPageComponent; SettingsPage {} }
-            Component { id: aboutPageComponent; AboutPage {} }
-
-            Loader {
-                id: pageLoader
-                anchors.fill: parent
-                property int currentPage: 0
-                property var _components: [homePageComponent, logPageComponent, toolsPageComponent, settingsPageComponent, aboutPageComponent]
-
-                onCurrentPageChanged: sourceComponent = _components[currentPage]
-
-                Component.onCompleted: sourceComponent = _components[0]
-            }
-        }
-    }
-
-    // ===== 边缘调整大小区域 =====
-    property int resizeHandleSize: Theme.resizeHandleSize
-
-    ResizeHandle { edge: Qt.TopEdge; x: resizeHandleSize; y: 0; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
-    ResizeHandle { edge: Qt.BottomEdge; x: resizeHandleSize; y: parent.height - resizeHandleSize; width: parent.width - resizeHandleSize * 2; height: resizeHandleSize; z: 10 }
-    ResizeHandle { edge: Qt.LeftEdge; x: 0; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
-    ResizeHandle { edge: Qt.RightEdge; x: parent.width - resizeHandleSize; y: resizeHandleSize; width: resizeHandleSize; height: parent.height - resizeHandleSize * 2; z: 10 }
 
     // ===== 快捷键 =====
     Shortcut {

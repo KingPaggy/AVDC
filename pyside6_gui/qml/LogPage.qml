@@ -14,8 +14,12 @@ Item {
         // ===== Filter bar =====
         Rectangle {
             Layout.fillWidth: true
+            Layout.leftMargin: Theme.spacingMD
+            Layout.rightMargin: Theme.spacingMD
+            Layout.topMargin: Theme.spacingMD
             implicitHeight: Theme.logFilterBarHeight
             color: Theme.cardBg
+            radius: Theme.radiusLG
 
             RowLayout {
                 anchors.fill: parent
