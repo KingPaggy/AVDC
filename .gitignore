@@ -25,3 +25,6 @@ update_check.json
 
 # Go TUI build artifacts
 tui-go/avdc-tui
+
+# CodeGraph index cache
+.codegraph/
