@@ -116,8 +116,8 @@ def main():
         help="Path to config.ini (default: config.ini)",
     )
     parser.add_argument(
-        "--path", required=True,
-        help="Directory containing video files",
+        "--path", default=".",
+        help="Directory containing video files (default: current directory)",
     )
     parser.add_argument(
         "--single",
