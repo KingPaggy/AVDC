@@ -5,11 +5,13 @@ Usage:
     uv run python cli.py --path /path/to/movies
     uv run python cli.py --path /path/to/movies --main-mode organize
     uv run python cli.py --path /path/to/movies --site javbus
+    uv run python cli.py --path /path/to/movies --dry-run
     uv run python cli.py --single /path/to/movie.mp4 --number ABC-123
     uv run python cli.py --path /path/to/movies --json-output
 """
 import argparse
 import json
+import os
 import sys
 
 from core._services.orchestrator import CoreEngine
@@ -26,6 +28,83 @@ MAIN_MODE_MAP = {
 }
 
 SITE_CHOICES = ["all", "mgstage", "javbus", "jav321", "javdb", "fc2", "avsox", "xcity", "dmm"]
+
+
+def _dry_run_batch(movie_path: str, scraper_mode: int, config: AppConfig, json_output: bool) -> None:
+    """Scan files, scrape metadata, print to stdout. No file I/O."""
+    import logging as _logging
+
+    from core._files.file_utils import movie_lists, getNumber
+    from core._scraper.scrape_pipeline import getDataFromJSON
+
+    # Suppress logger output in dry-run mode to keep stdout clean
+    _logging.getLogger("AVDC").setLevel(_logging.CRITICAL)
+
+    escape_folder = config.folders
+    media_type = config.media_type
+    movie_list = movie_lists(escape_folder, media_type, movie_path)
+    total = len(movie_list)
+
+    if total == 0:
+        print(f"No media files found in: {movie_path}", file=sys.stderr)
+        return
+
+    print(f"[dry-run] Found {total} files, scraping metadata only (no file operations)", file=sys.stderr)
+    if not json_output:
+        print(f"[dry-run] Scraper mode: {scraper_mode}", file=sys.stderr)
+        print("-" * 60, file=sys.stderr)
+
+    success_count = 0
+    fail_count = 0
+
+    for i, filepath in enumerate(movie_list, 1):
+        number = getNumber(filepath, config.string)
+        if not number:
+            fail_count += 1
+            if json_output:
+                print(json.dumps({"file": filepath, "error": "no_number"}, ensure_ascii=False), flush=True)
+            else:
+                print(f"[{i}/{total}] {filepath}")
+                print(f"  [SKIP] No number extracted\n")
+            continue
+
+        try:
+            data = getDataFromJSON(number, config, scraper_mode, "")
+        except Exception as exc:
+            fail_count += 1
+            if json_output:
+                print(json.dumps({"file": filepath, "number": number, "error": str(exc)}, ensure_ascii=False), flush=True)
+            else:
+                print(f"[{i}/{total}] {filepath}")
+                print(f"  [ERROR] {exc}\n")
+            continue
+
+        success_count += 1
+
+        if json_output:
+            print(json.dumps({"file": filepath, "number": number, "data": data}, ensure_ascii=False), flush=True)
+        else:
+            print(f"[{i}/{total}] {filepath}")
+            print(f"  Number : {data.get('number', 'N/A')}")
+            print(f"  Title  : {data.get('title', 'N/A')}")
+            print(f"  Studio : {data.get('studio', 'N/A')}")
+            print(f"  Release: {data.get('release', 'N/A')}")
+            actors = data.get('actor', [])
+            if isinstance(actors, list):
+                actors_str = ', '.join(a for a in actors if a)
+            else:
+                actors_str = str(actors)
+            print(f"  Actors : {actors_str}")
+            print(f"  Source : {data.get('source', 'N/A')}")
+            print(f"  Website: {data.get('website', 'N/A')}")
+            print(f"  Score  : {data.get('score', 'N/A')}")
+            outline = data.get('outline', '')
+            if outline and outline not in ('N/A', ''):
+                print(f"  Outline: {outline[:120]}{'...' if len(outline) > 120 else ''}")
+            print()
+
+    print("-" * 60, file=sys.stderr)
+    print(f"[dry-run] Done: {success_count} succeeded, {fail_count} failed, {total} total", file=sys.stderr)
 
 
 def main():
@@ -65,6 +144,10 @@ def main():
     parser.add_argument(
         "--json-output", action="store_true",
         help="Output structured JSON lines for TUI consumption",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Scrape metadata only, print to stdout, no file operations",
     )
     args = parser.parse_args()
 
@@ -115,7 +198,9 @@ def main():
         on_failure=on_failure,
     )
 
-    if args.single:
+    if args.dry_run:
+        _dry_run_batch(args.path, scraper_mode, config, args.json_output)
+    elif args.single:
         result = engine.process_single(
             args.single,
             args.number,
