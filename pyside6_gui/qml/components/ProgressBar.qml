@@ -19,7 +19,7 @@ Item {
         // Bar
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 8
+            implicitHeight: Theme.progressBarHeight
             radius: Theme.radiusMD
             color: Theme.inputBg
 

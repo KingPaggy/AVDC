@@ -18,7 +18,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.margins: Theme.spacingXL
-            width: Math.min(scrollView.availableWidth - Theme.spacingXL * 2, 680)
+            width: Math.min(scrollView.availableWidth - Theme.contentWidthPadding, Theme.maxContentWidth)
             spacing: Theme.spacingLG
 
             // ===== 通用 =====
@@ -44,22 +44,19 @@ Item {
                     onSelectedValueChanged: settings.softLink = selectedValue
                 }
 
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "调试模式"
-                    checked: settings.switchDebug === 1
-                    onCheckedChanged: settings.switchDebug = checked ? 1 : 0
+                    intValue: settings.switchDebug
                 }
 
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "检查更新"
-                    checked: settings.updateCheck === 1
-                    onCheckedChanged: settings.updateCheck = checked ? 1 : 0
+                    intValue: settings.updateCheck
                 }
 
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "保存日志"
-                    checked: settings.saveLog === 1
-                    onCheckedChanged: settings.saveLog = checked ? 1 : 0
+                    intValue: settings.saveLog
                 }
 
                 ConfigRadioGroup {
@@ -191,16 +188,14 @@ Item {
             // ===== 水印 =====
             SectionCard {
                 sectionTitle: "水印"
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "封面添加水印"
-                    checked: settings.posterMark === 1
-                    onCheckedChanged: settings.posterMark = checked ? 1 : 0
+                    intValue: settings.posterMark
                 }
 
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "缩略图添加水印"
-                    checked: settings.thumbMark === 1
-                    onCheckedChanged: settings.thumbMark = checked ? 1 : 0
+                    intValue: settings.thumbMark
                 }
 
                 ConfigSlider {
@@ -266,34 +261,29 @@ Item {
             // ===== 下载 =====
             SectionCard {
                 sectionTitle: "下载"
-                ConfigCheckbox {
+                ConfigSwitchInt {
                     labelText: "下载 NFO"
-                    checked: settings.nfoDownload === 1
-                    onCheckedChanged: settings.nfoDownload = checked ? 1 : 0
+                    intValue: settings.nfoDownload
                 }
 
-                ConfigCheckbox {
+                ConfigSwitchInt {
                     labelText: "下载 Poster"
-                    checked: settings.posterDownload === 1
-                    onCheckedChanged: settings.posterDownload = checked ? 1 : 0
+                    intValue: settings.posterDownload
                 }
 
-                ConfigCheckbox {
+                ConfigSwitchInt {
                     labelText: "下载 Fanart"
-                    checked: settings.fanartDownload === 1
-                    onCheckedChanged: settings.fanartDownload = checked ? 1 : 0
+                    intValue: settings.fanartDownload
                 }
 
-                ConfigCheckbox {
+                ConfigSwitchInt {
                     labelText: "下载 Thumb"
-                    checked: settings.thumbDownload === 1
-                    onCheckedChanged: settings.thumbDownload = checked ? 1 : 0
+                    intValue: settings.thumbDownload
                 }
 
-                ConfigSwitch {
+                ConfigSwitchInt {
                     labelText: "下载 ExtraFanart"
-                    checked: settings.extrafanartDownload === 1
-                    onCheckedChanged: settings.extrafanartDownload = checked ? 1 : 0
+                    intValue: settings.extrafanartDownload
                 }
 
                 ConfigInput {

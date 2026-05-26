@@ -33,7 +33,7 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.spacingSM
-        spacing: 2
+        spacing: Theme.navItemSpacing
 
         // Section header
         Text {
@@ -60,6 +60,14 @@ Item {
                 color: mouseArea.containsMouse ? Theme.hoverBg : "transparent"
                 visible: !root.collapsed
 
+                // Keyboard navigation
+                Accessible.role: Accessible.Button
+                Accessible.name: modelData.label
+                Accessible.onPressAction: {
+                    root.currentIndex = index
+                    root.itemClicked(index)
+                }
+
                 Behavior on color {
                     ColorAnimation { duration: Theme.animationFast }
                 }
@@ -70,9 +78,9 @@ Item {
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    anchors.margins: 4
-                    width: 3
-                    radius: 1.5
+                    anchors.margins: Theme.spacingXS
+                    width: Theme.indicatorWidth
+                    radius: Theme.radiusXS
                     color: Theme.accentColor
                 }
 

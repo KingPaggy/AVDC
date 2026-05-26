@@ -9,8 +9,8 @@ Item {
         anchors.centerIn: parent
         color: Theme.cardBg
         radius: Theme.radiusXL
-        width: 400
-        height: 320
+        width: Theme.aboutCardWidth
+        height: Theme.aboutCardHeight
 
         ColumnLayout {
             anchors.centerIn: parent
@@ -35,7 +35,7 @@ Item {
             // Divider
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 300
+                Layout.preferredWidth: Theme.aboutDividerWidth
                 implicitHeight: 1
                 color: Theme.separatorColor
             }
@@ -65,7 +65,7 @@ Item {
             // Divider
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 300
+                Layout.preferredWidth: Theme.aboutDividerWidth
                 implicitHeight: 1
                 color: Theme.separatorColor
             }

@@ -12,6 +12,7 @@ RowLayout {
     property string textValue: ""
     property bool _suppressUpdate: false
 
+    // Sync external textValue change to input field
     onTextValueChanged: {
         if (!_suppressUpdate && input.text !== textValue) {
             _suppressUpdate = true
@@ -39,8 +40,11 @@ RowLayout {
             border.color: input.activeFocus ? Theme.focusBorder : Theme.separatorColor
             border.width: 1
         }
+        // Sync user input back to textValue
         onTextChanged: {
-            if (root.textValue !== text) root.textValue = text
+            if (!root._suppressUpdate && root.textValue !== text) {
+                root.textValue = text
+            }
         }
     }
 }

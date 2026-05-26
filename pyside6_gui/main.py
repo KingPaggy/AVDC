@@ -93,6 +93,7 @@ THEME = {
     "spacingXXL": 24,
     "spacingXXXL": 32,
     # 圆角
+    "radiusXS": 2,
     "radiusSM": 4,
     "radiusMD": 6,
     "radiusLG": 8,
@@ -126,16 +127,28 @@ THEME = {
     "animationSlow": 500,
     # 组件尺寸
     "titleBarHeight": 38,
+    "titleBarButtonWidth": 36,
+    "titleBarButtonHeight": 26,
     "navItemHeight": 32,
+    "navItemSpacing": 2,
     "toastHeight": 40,
     "iconSize": 16,
+    "indicatorWidth": 3,
     "labelWidthWide": 120,
     "labelWidthNarrow": 100,
     "logFilterBarHeight": 44,
+    "progressBarHeight": 8,
     "resizeHandleSize": 8,
     # Toast 时长
     "toastDuration": 2000,
     "toastErrorDuration": 3000,
+    # 页面布局
+    "maxContentWidth": 680,
+    "contentWidthPadding": 40,   # spacingXL * 2, used in Math.min(parent.width - contentWidthPadding, maxContentWidth)
+    # About 页面
+    "aboutCardWidth": 400,
+    "aboutCardHeight": 320,
+    "aboutDividerWidth": 300,
     # 字体
     "fontMonospace": "SF Mono, Menlo, Monaco, Courier New, monospace",
 }

@@ -7,38 +7,66 @@ ScrollView {
     id: root
     clip: true
 
-    property var logEntries: []       // array of {timestamp, level, message}
     property string filterLevel: "all"  // all | error | warn | info | debug
 
-    // Cached filtered entries — updated via direct property change handlers
-    property var _filteredEntries: []
+    // ListModel for O(1) insert/delete without array re-creation
+    property var logModel: logListModel
 
-    function _updateFilter() {
-        if (root.filterLevel === "all") {
-            _filteredEntries = root.logEntries
-        } else {
-            var targetLevel = root.filterLevel.toUpperCase()
-            _filteredEntries = root.logEntries.filter(function(e) { return e.level === targetLevel })
-        }
+    // Lookup tables for level colors — avoids switch expressions in delegates
+    readonly property var _levelColors: ({
+        "ERROR": Theme.errorColor,
+        "WARN": Theme.warningColor,
+        "INFO": Theme.separatorColor,
+        "DEBUG": Theme.inputBg
+    })
+    readonly property var _msgColors: ({
+        "ERROR": Theme.errorColor,
+        "WARN": Theme.warningColor,
+        "DEBUG": Theme.tertiaryText,
+        "INFO": Theme.textColor
+    })
+    readonly property var _levelTextColors: ({
+        "ERROR": Theme.backgroundColor,
+        "WARN": Theme.backgroundColor,
+        "INFO": Theme.secondaryText,
+        "DEBUG": Theme.secondaryText
+    })
+
+    function addEntry(entry) {
+        logModel.append(entry)
+        // Auto-scroll after append
+        Qt.callLater(logList.positionViewAtEnd)
     }
 
-    onLogEntriesChanged: _updateFilter()
-    onFilterLevelChanged: _updateFilter()
+    function clearAll() {
+        logModel.clear()
+    }
+
+    ListModel {
+        id: logListModel
+    }
 
     ListView {
         id: logList
-        width: Math.max(root.width, 680)
+        width: Math.max(root.width, Theme.maxContentWidth)
         height: Math.max(root.height, logList.contentHeight)
-        model: _filteredEntries
+        model: logListModel
         spacing: 2
 
         delegate: RowLayout {
             width: ListView.view.width
             spacing: Theme.spacingSM
 
+            // Filter visibility — controlled by root.filterLevel, no array recreation
+            visible: root.filterLevel === "all" ||
+                     (root.filterLevel === "error" && model.level === "ERROR") ||
+                     (root.filterLevel === "warn" && model.level === "WARN") ||
+                     (root.filterLevel === "info" && model.level === "INFO") ||
+                     (root.filterLevel === "debug" && model.level === "DEBUG")
+
             // Timestamp
             Text {
-                text: modelData.timestamp || ""
+                text: model.timestamp || ""
                 font.pixelSize: Theme.fontMini
                 font.family: Theme.fontMonospace
                 color: Theme.tertiaryText
@@ -50,56 +78,28 @@ ScrollView {
                 implicitWidth: levelText.implicitWidth + Theme.spacingXS
                 implicitHeight: 18
                 radius: Theme.radiusSM
-                color: _levelBgColor
-
-                readonly property color _levelBgColor: {
-                    switch (modelData.level) {
-                        case "ERROR": return Theme.errorColor
-                        case "WARN": return Theme.warningColor
-                        case "INFO": return Theme.separatorColor
-                        case "DEBUG": return Theme.inputBg
-                        default: return Theme.separatorColor
-                    }
-                }
+                color: root._levelColors[model.level] !== undefined ? root._levelColors[model.level] : Theme.separatorColor
 
                 Text {
                     id: levelText
                     anchors.centerIn: parent
-                    text: modelData.level || "INFO"
+                    text: model.level || "INFO"
                     font.pixelSize: Theme.fontMini
                     font.bold: true
-                    color: (modelData.level === "ERROR" || modelData.level === "WARN") ? Theme.backgroundColor : Theme.secondaryText
+                    color: root._levelTextColors[model.level] !== undefined ? root._levelTextColors[model.level] : Theme.secondaryText
                 }
             }
 
             // Message
             Text {
-                text: modelData.message || ""
+                text: model.message || ""
                 font.pixelSize: Theme.fontCaption
                 font.family: Theme.fontMonospace
-                color: _msgColor
+                color: root._msgColors[model.level] !== undefined ? root._msgColors[model.level] : Theme.textColor
                 Layout.fillWidth: true
                 elide: Text.ElideRight
                 wrapMode: Text.NoWrap
-
-                readonly property color _msgColor: {
-                    switch (modelData.level) {
-                        case "ERROR": return Theme.errorColor
-                        case "WARN": return Theme.warningColor
-                        case "DEBUG": return Theme.tertiaryText
-                        default: return Theme.textColor
-                    }
-                }
-            }
-        }
-
-        // Auto-scroll to bottom on new entries
-        onCountChanged: {
-            if (count > 0) {
-                positionViewAtIndex(count - 1, ListView.End)
             }
         }
     }
-
-    Component.onCompleted: _updateFilter()
 }

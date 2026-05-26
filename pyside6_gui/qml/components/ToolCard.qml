@@ -33,6 +33,10 @@ Rectangle {
         onClicked: root.clicked()
     }
 
+    Accessible.role: Accessible.Button
+    Accessible.name: root.title
+    Accessible.description: root.description
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.spacingMD

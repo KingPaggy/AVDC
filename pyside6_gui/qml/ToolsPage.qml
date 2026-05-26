@@ -21,7 +21,7 @@ Item {
                 anchors.topMargin: Theme.spacingXL
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: Theme.spacingXL
-                width: Math.min(parent.width - Theme.spacingXL * 2, 680)
+                width: Math.min(parent.width - Theme.contentWidthPadding, Theme.maxContentWidth)
                 spacing: Theme.spacingLG
 
                 // ===== 文件工具 =====

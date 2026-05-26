@@ -20,7 +20,14 @@ ApplicationWindow {
     property bool sidebarExpandable: true
     property int resizeHandleSize: Theme.resizeHandleSize
 
-    // 窗口圆角裁剪容器（所有可见元素必须在此内，通过 OpacityMask 裁剪到圆角）
+    // 窗口圆角裁剪容器
+    // 优化：只对内容区域应用 OpacityMask，避免透明 background 的双层渲染
+    // 背景 Rectangle 不放在 roundedContainer 内，减少 layer effect 覆盖面积
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.backgroundColor
+    }
+
     Item {
         id: roundedContainer
         anchors.fill: parent
@@ -31,12 +38,6 @@ ApplicationWindow {
                 height: roundedContainer.height
                 radius: Theme.radiusXL
             }
-        }
-
-        // 背景色
-        Rectangle {
-            anchors.fill: parent
-            color: Theme.backgroundColor
         }
 
         // ===== 自定义标题栏 =====

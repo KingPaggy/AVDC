@@ -14,9 +14,7 @@ Rectangle {
 
     ColumnLayout {
         id: contentColumn
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.fill: parent
         anchors.margins: Theme.spacingMD
         spacing: Theme.spacingSM
         Layout.fillWidth: true
@@ -38,19 +36,4 @@ Rectangle {
         }
     }
 
-    // implicitHeight: sum of all children heights + spacing + margins
-    implicitHeight: {
-        var h = Theme.spacingMD * 2  // top + bottom margin
-        h += titleText.implicitHeight
-        h += divider.implicitHeight
-        for (var i = 0; i < contentColumn.children.length; i++) {
-            var c = contentColumn.children[i]
-            var ch = c.implicitHeight || 0
-            if (ch > 0) h += ch
-        }
-        // spacing: title + divider + children
-        var n = 2 + contentColumn.children.length
-        if (n > 1) h += contentColumn.spacing * (n - 1)
-        return h
-    }
 }

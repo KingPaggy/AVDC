@@ -21,7 +21,7 @@ Item {
                 anchors.topMargin: Theme.spacingXL
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: Theme.spacingXL
-                width: Math.min(parent.width - Theme.spacingXL * 2, 680)
+                width: Math.min(parent.width - Theme.contentWidthPadding, Theme.maxContentWidth)
                 spacing: Theme.spacingLG
 
                 // ===== 输入 =====
@@ -102,9 +102,9 @@ Item {
     }
 
     // Demo state (replace with real CoreEngine bindings)
-    property real _demoProgress: 0.35
-    property string _demoStatusText: "正在处理: SSIS-123.mp4"
-    property int _successCount: 12
-    property int _errorCount: 2
-    property int _skipCount: 1
+    property real _demoProgress: 0.0
+    property string _demoStatusText: ""
+    property int _successCount: 0
+    property int _errorCount: 0
+    property int _skipCount: 0
 }

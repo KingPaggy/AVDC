@@ -63,7 +63,7 @@ Item {
                     font.pixelSize: Theme.fontCaption
                     flat: true
                     palette.buttonText: Theme.tertiaryText
-                    onClicked: logPage._logEntries = []
+                    onClicked: logView.clearAll()
                 }
 
                 Button {
@@ -81,32 +81,18 @@ Item {
             id: logView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            logEntries: logPage._logEntries
-            filterLevel: logPage._logFilter
         }
     }
 
     // Log state
     property string _logFilter: "all"
     property int _maxLogEntries: 1000
-    property var _logEntries: [
-        {timestamp: "10:23:01", level: "INFO", message: "AVDC 启动"},
-        {timestamp: "10:23:02", level: "INFO", message: "加载配置: config.ini"},
-        {timestamp: "10:23:02", level: "DEBUG", message: "main_mode = 1 (刮削模式)"},
-        {timestamp: "10:23:05", level: "INFO", message: "开始处理目录: /Volumes/Data/Movies"},
-        {timestamp: "10:23:06", level: "INFO", message: "找到 15 个文件"},
-        {timestamp: "10:23:10", level: "INFO", message: "处理: SSIS-123.mp4 → javbus"},
-        {timestamp: "10:23:15", level: "INFO", message: "SSIS-123: 刮削成功"},
-        {timestamp: "10:23:20", level: "WARN", message: "ABP-456: javbus 超时，尝试 jav321"},
-        {timestamp: "10:23:25", level: "ERROR", message: "ABP-456: 所有站点均失败"},
-        {timestamp: "10:23:30", level: "INFO", message: "处理: IPX-789.mp4 → javbus"},
-        {timestamp: "10:23:35", level: "INFO", message: "IPX-789: 刮削成功"},
-    ]
 
     function addLogEntry(entry) {
-        _logEntries.push(entry)
-        if (_logEntries.length > _maxLogEntries) {
-            _logEntries = _logEntries.slice(_logEntries.length - _maxLogEntries)
+        logView.addEntry(entry)
+        // Trim oldest entries if exceeding limit
+        while (logView.logModel.count > _maxLogEntries) {
+            logView.logModel.remove(0)
         }
     }
 }
