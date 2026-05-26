@@ -38,6 +38,8 @@ docs/              Documentation
 resources/         Icons, screenshots
 ```
 
+> **CodeGraph**: 不确定文件在哪时，先 `codegraph files` 查看索引中的目录结构。
+
 ### Key Modules
 
 | Layer | Key Files | Purpose |
@@ -50,6 +52,8 @@ resources/         Icons, screenshots
 | File Utils | `core/_files/file_utils.py` | `getNumber`, `movie_lists` |
 | Network | `core/_net/networking.py` | `get_html`, `get_html_javdb` (cloudscraper) |
 | Events | `core/_event/event_bus.py` | `EventBus` for cross-component communication |
+
+> **CodeGraph**: 确认符号定义位置用 `codegraph query "SymbolName"`；理解调用链用 `codegraph callers "method"` / `codegraph callees "method"`。
 
 ### Import Paths
 
@@ -76,6 +80,8 @@ from core._config.errors import AVDCError, ScrapingError
 
 `AppConfig.main_mode` controls scrape vs organize mode. `scraper_mode`: `1=all`, `2=mgstage`, `3=javbus`, `4=jav321`, `5=javdb/fc2`, `6=avsox`, `7=xcity`, `8=dmm`.
 
+> **CodeGraph**: 修改 CoreEngine 前用 `codegraph impact "CoreEngine"` 分析影响范围。
+
 ### Scraper Dispatch
 
 Scrapers registered via `@register_scraper` + `ScraperRegistry`, dispatched by `ScraperDispatcher`. Number pattern classification:
@@ -95,6 +101,8 @@ Scrapers registered via `@register_scraper` + `ScraperRegistry`, dispatched by `
 2. Apply `@register_scraper` decorator
 3. Add entry in `core/_scraper/scraper_dispatcher.py` `SCRAPER_MAPPING`
 4. Add import in `core/_scraper/scrape_pipeline.py` `get_scraper_modules()`
+
+> **CodeGraph**: 不确定涉及哪些文件时用 `codegraph context "add scraper X"` 自动收集上下文。
 
 ### PySide6 + QML GUI
 
@@ -144,15 +152,34 @@ Shared fixtures: `core/test/conftest.py` (`tmp_dir`, `tmp_log_dir`, `tmp_config_
 
 ## CodeGraph
 
-CodeGraph v0.9.4 is installed for code intelligence. Index updated via `codegraph index .`. Useful commands:
+CodeGraph v0.9.4 是本项目的主要代码智能工具。索引更新: `codegraph sync .`
+
+### 何时使用 CodeGraph
+
+| 场景 | 命令 |
+|------|------|
+| 不知道符号在哪 | `codegraph query "CoreEngine"` |
+| 谁调用了这个函数 | `codegraph callers "process_batch"` |
+| 这个函数调了谁 | `codegraph callees "get_html"` |
+| 改这个符号影响哪些代码 | `codegraph impact "Movie"` |
+| 为某个任务收集相关文件 | `codegraph context "add new scraper"` |
+| 看项目目录结构 | `codegraph files` |
+| 检查索引是否最新 | `codegraph status .` |
+
+### 何时不要用 CodeGraph
+
+- **已知文件路径**: 直接用 `Read`
+- **搜索文字/注释**: 用 `grep` via Bash
+- **文件模式匹配**: 用 `find` via Bash
+- **索引过旧**: 先 `codegraph sync .` 再查询
+
+### 常用查询示例
 
 ```bash
-codegraph status .                          # Index status
-codegraph query "SymbolName"                 # Search symbols
-codegraph callers "methodName"               # Find callers of a symbol
-codegraph callees "methodName"               # Find what a symbol calls
-codegraph impact "methodName"                # Analyze affected code by changing a symbol
-codegraph context "Add feature X"            # Build context for a task (outputs markdown)
-codegraph files                             # Show project file structure from index
-codegraph sync .                             # Sync changes since last index
+codegraph query "register_scraper"               # 查找注册装饰器定义
+codegraph callers "scrape"                        # 哪些地方调用了 scrape
+codegraph callees "CoreEngine.process_single"     # process_single 调用了什么
+codegraph impact "getDataFromJSON"                # 改这个函数会影响哪些代码
+codegraph context "修改 QML 主题颜色"              # 收集相关文件上下文
+codegraph query "ScraperRegistry"                 # 查找注册表类
 ```
