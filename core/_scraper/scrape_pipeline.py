@@ -180,7 +180,12 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
 
     # Read concurrent scraper limit from config (default: 1 = sequential)
     try:
-        max_concurrent = int(config.get("common", "max_concurrent", fallback="1"))
+        if hasattr(config, "__getitem__"):
+            # ConfigParser-style
+            max_concurrent = int(config.get("common", "max_concurrent", fallback="1"))
+        else:
+            # AppConfig — max_concurrent not in dataclass, use default
+            max_concurrent = 1
     except (ValueError, TypeError):
         max_concurrent = 1
     max_concurrent = max(1, min(max_concurrent, 5))  # clamp 1-5
@@ -204,10 +209,15 @@ def getDataFromJSON(file_number, config, mode, appoint_url):
         d["tag"] = []
         return d
 
-    # Apply naming rules
-    naming_media = config["Name_Rule"]["naming_media"]
-    naming_file = config["Name_Rule"]["naming_file"]
-    folder_name = config["Name_Rule"]["folder_name"]
+    # Apply naming rules — support both AppConfig (attribute access) and ConfigParser (dict access)
+    if hasattr(config, "naming_media"):
+        naming_media = config.naming_media
+        naming_file = config.naming_file
+        folder_name = config.folder_name
+    else:
+        naming_media = config["Name_Rule"]["naming_media"]
+        naming_file = config["Name_Rule"]["naming_file"]
+        folder_name = config["Name_Rule"]["folder_name"]
 
     movie_dict = movie.to_dict()
     # Flatten actor list to string for backward compatibility
