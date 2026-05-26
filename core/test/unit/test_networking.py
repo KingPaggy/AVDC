@@ -34,7 +34,7 @@ class TestGetHtml:
 
         with patch("core._net.networking.get_proxy_config") as mock_cfg:
             mock_cfg.return_value = ("no", "", 5, 2)
-            with patch("core._net.networking.requests.get", return_value=mock_resp) as mock_get:
+            with patch("core._net.networking._session.get", return_value=mock_resp) as mock_get:
                 result = get_html("http://example.com")
 
         assert result == "<html>ok</html>"
@@ -43,7 +43,7 @@ class TestGetHtml:
     def test_retry_then_raises_network_error(self):
         with patch("core._net.networking.get_proxy_config") as mock_cfg:
             mock_cfg.return_value = ("no", "", 5, 2)
-            with patch("core._net.networking.requests.get", side_effect=Exception("timeout")):
+            with patch("core._net.networking._session.get", side_effect=Exception("timeout")):
                 with pytest.raises(NetworkError, match="failed after 2 retries"):
                     get_html("http://example.com")
 
@@ -59,7 +59,7 @@ class TestGetHtml:
 
         with patch("core._net.networking.get_proxy_config") as mock_cfg:
             mock_cfg.return_value = ("http", "proxy:8080", 10, 1)
-            with patch("core._net.networking.requests.get", return_value=mock_resp) as mock_get:
+            with patch("core._net.networking._session.get", return_value=mock_resp) as mock_get:
                 get_html("http://example.com")
                 # verify proxies passed through
                 _, kwargs = mock_get.call_args
@@ -77,7 +77,7 @@ class TestPostHtml:
 
         with patch("core._net.networking.get_proxy_config") as mock_cfg:
             mock_cfg.return_value = ("no", "", 5, 1)
-            with patch("core._net.networking.requests.post", return_value=mock_resp) as mock_post:
+            with patch("core._net.networking._session.post", return_value=mock_resp) as mock_post:
                 result = post_html("http://example.com", {"key": "val"})
 
         assert result == "posted"
@@ -86,7 +86,7 @@ class TestPostHtml:
     def test_retry_then_raises_network_error(self):
         with patch("core._net.networking.get_proxy_config") as mock_cfg:
             mock_cfg.return_value = ("no", "", 5, 1)
-            with patch("core._net.networking.requests.post", side_effect=Exception("fail")):
+            with patch("core._net.networking._session.post", side_effect=Exception("fail")):
                 with pytest.raises(NetworkError, match="POST to http://example.com failed"):
                     post_html("http://example.com", {"key": "val"})
 

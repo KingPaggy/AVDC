@@ -4,6 +4,7 @@ import re
 from lxml import etree
 import json
 from core._net.networking import get_html
+from core._config.logger import logger
 from urllib.parse import urlencode
 
 
@@ -305,7 +306,7 @@ def main(number, appoint_url=""):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in dmm.main : " + str(error_info))
+        logger.exception("dmm.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -314,12 +315,6 @@ def main(number, appoint_url=""):
         dic, ensure_ascii=False, sort_keys=True, indent=4, separators=(",", ":")
     )  # .encode('UTF-8')
     return js
-
-
-# main('DV-1562')
-# print(main('mide00139', "https://www.dmm.co.jp/digital/videoa/-/detail/=/cid=mide00139"))
-# print(main('mide00139', ""))
-# print(main('kawd00969'))
 
 
 # ======================================================================== ScraperBase integration

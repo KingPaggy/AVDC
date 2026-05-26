@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
-import Qt5Compat.GraphicalEffects 1.0
 import "components"
 
 // AVDC 主窗口 — Apple HIG 无边框风格
@@ -21,24 +20,17 @@ ApplicationWindow {
     property int resizeHandleSize: Theme.resizeHandleSize
 
     // 窗口圆角裁剪容器
-    // 优化：只对内容区域应用 OpacityMask，避免透明 background 的双层渲染
-    // 背景 Rectangle 不放在 roundedContainer 内，减少 layer effect 覆盖面积
+    // 优化：背景 Rectangle 单独放置，内容区域用 clip + radius 替代 OpacityMask，避免 GPU 离屏渲染
     Rectangle {
         anchors.fill: parent
         color: Theme.backgroundColor
+        radius: Theme.radiusXL
+        clip: true
     }
 
     Item {
         id: roundedContainer
         anchors.fill: parent
-        layer.enabled: true
-        layer.effect: OpacityMask {
-            maskSource: Rectangle {
-                width: roundedContainer.width
-                height: roundedContainer.height
-                radius: Theme.radiusXL
-            }
-        }
 
         // ===== 自定义标题栏 =====
         TitleBar {

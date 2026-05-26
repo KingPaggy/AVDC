@@ -5,6 +5,7 @@ import re
 import concurrent.futures
 from core._files.file_utils import getDataState, is_uncensored
 from core._config.errors import ScrapingError
+from core._config.logger import logger
 from core._models.models import Movie
 from core._scraper.scraper_adapter import clear_cache, cache_key, get_cached, set_cache
 from core._scraper.scraper_dispatcher import ScraperDispatcher
@@ -87,7 +88,7 @@ def _try_single_scraper(method_path, scrapers, working_number, appoint_url, isun
     except (json.JSONDecodeError, ScrapingError):
         pass
     except Exception:
-        pass
+        logger.exception("Scraper failed for %s", method_path)
     return None, working_number
 
 

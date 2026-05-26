@@ -6,7 +6,6 @@ UI layer reads/writes config.ini through AppConfig, never directly.
 
 This module has ZERO Qt dependencies.
 """
-from __future__ import annotations
 
 import os
 from configparser import ConfigParser

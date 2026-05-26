@@ -2,6 +2,7 @@ import re
 from lxml import etree
 import json
 from core._net.networking import post_html
+from core._config.logger import logger
 
 
 def getActorPhoto(actor):
@@ -177,7 +178,7 @@ def main(number, appoint_url, isuncensored=False):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in jav321.main : " + str(error_info))
+        logger.exception("jav321.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -190,21 +191,6 @@ def main(number, appoint_url, isuncensored=False):
         separators=(",", ":"),
     )  # .encode('UTF-8')
     return js
-
-
-"""
-print(main('msfh-010'))
-print(main('kavr-065'))
-print(main('ssni-645'))
-print(main('sivr-038'))
-print(main('ara-415'))
-print(main('luxu-1257'))
-print(main('heyzo-1031'))
-print(main('ABP-905'))
-"""
-# print(main('heyzo-1031', ''))
-# print(main('ssni-645', ''))
-# print(main('ymdd-173', 'https://www.jav321.com/video/ymdd00173'))
 
 
 # ======================================================================== ScraperBase integration

@@ -4,7 +4,6 @@ SettingsModel — PySide6 QML data binding layer for AppConfig.
 Exposes all config.ini fields as Qt Properties with change notification,
 enabling two-way QML binding. Load/save delegates to core._config.
 """
-from __future__ import annotations
 
 import os
 from pathlib import Path
@@ -75,6 +74,7 @@ class SettingsModel(QObject):
     configLoaded = Signal()
     configSaved = Signal()
     errorOccurred = Signal(str)
+    allPropertiesReset = Signal()
 
     def __init__(self, config_path: str = ""):
         super().__init__()
@@ -307,11 +307,8 @@ class SettingsModel(QObject):
     def resetToDefaults(self):
         """Reset all properties to default values."""
         self._fields = dict(self._defaults)
-        # Emit all change signals so QML bindings update
-        signal_map = self._signal_map()
-        for name, value in self._fields.items():
-            if name in signal_map:
-                signal_map[name].emit(value)
+        # Emit a single batch signal instead of 38+ individual signals
+        self.allPropertiesReset.emit()
         self.configLoaded.emit()
 
     def _signal_map(self) -> dict:

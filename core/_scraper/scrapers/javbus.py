@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import json
 from core._net.networking import get_html
 from core._net.networking import post_html
+from core._config.logger import logger
 
 
 def getActorPhoto(htmlcode):
@@ -155,7 +156,7 @@ def getOutlineScore(number):  # 获取简介
                         .replace("\n", "")
                     )
     except Exception as error_info:
-        print("Error in javbus.getOutlineScore : " + str(error_info))
+        logger.exception("javbus.getOutlineScore error: %s", error_info)
     return outline, score
 
 
@@ -188,7 +189,7 @@ def getCover_small(number):  # 从avsox获取封面图
                 )[0]
                 return cover_small
     except Exception as error_info:
-        print("Error in javbus.getCover_small : " + str(error_info))
+        logger.exception("javbus.getCover_small error: %s", error_info)
     return ""
 
 
@@ -317,7 +318,7 @@ def main(number, appoint_url):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in javbus.main : " + str(error_info))
+        logger.exception("javbus.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -379,7 +380,7 @@ def main_uncensored(number, appoint_url):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in javbus.main_uncensored : " + str(error_info))
+        logger.exception("javbus.main_uncensored error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -465,7 +466,7 @@ def main_us(number, appoint_url=""):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in javbus.main_us : " + str(error_info))
+        logger.exception("javbus.main_us error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -478,20 +479,6 @@ def main_us(number, appoint_url=""):
         separators=(",", ":"),
     )  # .encode('UTF-8')
     return js
-
-
-"""
-print(find_number('KA-001'))
-print(main_uncensored('010115-001'))
-print(main('ssni-644'))
-print(main_uncensored('012715-793'))
-print(main_us('sexart.15.06.10'))
-print(main_uncensored('heyzo-1031'))
-"""
-
-# print(main('ssni-644', "https://www.javbus.com/SSNI-644"))
-# print(main('ssni-802', ""))
-# print(main_us('DirtyMasseur.20.07.26', "https://www.javbus.one/DirtyMasseur-20-07-26"))
 
 
 # ======================================================================== ScraperBase integration

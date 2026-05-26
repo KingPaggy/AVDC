@@ -2,6 +2,7 @@ import re
 from lxml import etree
 import json
 from core._net.networking import get_html
+from core._config.logger import logger
 
 
 def getTitle(htmlcode):
@@ -200,7 +201,7 @@ def main(number, appoint_url):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in mgstage.main : " + str(error_info))
+        logger.exception("mgstage.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -213,15 +214,6 @@ def main(number, appoint_url):
         separators=(",", ":"),
     )  # .encode('UTF-8')
     return js
-
-
-"""
-print(main('200GANA-2240'))
-print(main('SIRO-4042'))
-print(main('300MIUM-382'))
-"""
-# print(main('300MIUM-382', ''))
-# print(main('300MIUM-382', 'https://www.mgstage.com/product/product_detail/300MIUM-382/'))
 
 
 # ======================================================================== ScraperBase integration

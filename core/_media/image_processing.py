@@ -145,57 +145,14 @@ def add_watermark(
 ) -> None:
     """Add watermark marks (SUB/LEAK/UNCENSORED) to an image.
 
-    Args:
-        pic_path: path to the image to watermark (modified in place)
-        mark_size: size factor (1-5, larger = smaller watermark)
-        mark_pos: one of top_left, top_right, bottom_right, bottom_left
-        marks: dict like {"cn_sub": True, "leak": False, "uncensored": True}
+    Thin wrapper around apply_marks for backward compatibility.
     """
     if marks is None:
         marks = {}
-
-    start_count = MARK_POS_INDEX.get(mark_pos, 0)
-    count = start_count
-
-    img_pic = Image.open(pic_path)
-    size = 14 - mark_size
-
-    for mark_key, flag_name in MARK_TYPES:
-        if not marks.get(flag_name, False):
-            continue
-        mark_img_path = MARK_PATHS[mark_key]
-        if not os.path.exists(mark_img_path):
-            continue
-        _apply_single_mark(pic_path, img_pic, size, count % 4, mark_img_path)
-        count = (count + 1) % 4
-
-    img_pic.close()
-
-
-def _apply_single_mark(
-    pic_path: str,
-    img_pic: Image.Image,
-    size: int,
-    pos_index: int,
-    mark_path: str,
-) -> None:
-    """Composite a single watermark onto the image at the given corner position."""
-    img_subt = _load_mark_image(mark_path)
-    scroll_high = int(img_pic.height / size)
-    scroll_wide = int(scroll_high * img_subt.width / img_subt.height)
-    img_subt = img_subt.resize((scroll_wide, scroll_high), Image.LANCZOS)
-
-    r, g, b, a = img_subt.split()
-
-    pos = [
-        {"x": 0, "y": 0},
-        {"x": img_pic.width - scroll_wide, "y": 0},
-        {"x": img_pic.width - scroll_wide, "y": img_pic.height - scroll_high},
-        {"x": 0, "y": img_pic.height - scroll_high},
-    ]
-
-    img_pic.paste(img_subt, (pos[pos_index]["x"], pos[pos_index]["y"]), mask=a)
-    img_pic.save(pic_path, quality=95)
+    cn_sub = 1 if marks.get("cn_sub", False) else 0
+    leak = 1 if marks.get("leak", False) else 0
+    uncensored = 1 if marks.get("uncensored", False) else 0
+    apply_marks(pic_path, cn_sub, leak, uncensored, {"mark_size": mark_size, "mark_pos": mark_pos})
 
 
 @functools.lru_cache(maxsize=4)
@@ -414,7 +371,7 @@ def _add_watermark_overlay(
         logger.info(f"[-]Watermark image not found: {mark_path}")
         return
 
-    img_subt = Image.open(mark_path)
+    img_subt = _load_mark_image(mark_path)
     scroll_high = int(img_pic.height / size)
     scroll_wide = int(scroll_high * img_subt.width / img_subt.height)
     img_subt = img_subt.resize((scroll_wide, scroll_high), Image.Resampling.LANCZOS)

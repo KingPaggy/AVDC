@@ -90,9 +90,10 @@ Item {
 
     function addLogEntry(entry) {
         logView.addEntry(entry)
-        // Trim oldest entries if exceeding limit
-        while (logView.logModel.count > _maxLogEntries) {
-            logView.logModel.remove(0)
+        // Trim oldest entries if exceeding limit — batch removal for O(n) performance
+        var excess = logView.logModel.count - _maxLogEntries
+        if (excess > 0) {
+            logView.logModel.remove(0, excess)
         }
     }
 }

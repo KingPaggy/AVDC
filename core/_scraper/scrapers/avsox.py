@@ -3,6 +3,7 @@ import re
 from bs4 import BeautifulSoup
 from lxml import etree
 from core._net.networking import get_html
+from core._config.logger import logger
 
 
 def getActorPhoto(htmlcode):  # //*[@id="star_qdt"]/li/a/img
@@ -178,7 +179,7 @@ def main(number, appoint_url=""):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in avsox.main : " + str(error_info))
+        logger.exception("avsox.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -191,11 +192,6 @@ def main(number, appoint_url=""):
         separators=(",", ":"),
     )  # .encode('UTF-8')
     return js
-
-
-# print(main('051119-917'))
-# print(main('032620_001'))
-# print(main('032620_001', 'https://avsox.website/cn/movie/cb8d28437cff4e90'))
 
 
 # ======================================================================== ScraperBase integration

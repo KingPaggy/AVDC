@@ -3,7 +3,6 @@ Core orchestrator for AVDC — the primary entry point for the scrape/organize w
 
 No Qt dependency. Accepts AppConfig for all settings. Reports via callbacks.
 """
-from __future__ import annotations
 
 import os
 import re

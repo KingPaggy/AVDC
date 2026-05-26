@@ -4,6 +4,7 @@ from lxml import etree
 import json
 from core._net.networking import get_html_javdb
 from core._net.networking import post_html
+from core._config.logger import logger
 
 
 def getTitle(htmlcode):
@@ -220,7 +221,7 @@ def getOutlineScore(number):  # 获取简介
                 .replace("'", "")
             )
     except Exception as error_info:
-        print("Error in javdb.getOutlineScore : " + str(error_info))
+        logger.exception("javdb.getOutlineScore error: %s", error_info)
     return outline, score
 
 
@@ -323,7 +324,7 @@ def main(number, appoint_url, isuncensored=False):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in javdb.main : " + str(error_info))
+        logger.exception("javdb.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -451,7 +452,7 @@ def main_us(number, appoint_url=""):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in javdb.main_us : " + str(error_info))
+        logger.exception("javdb.main_us error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -464,33 +465,6 @@ def main_us(number, appoint_url=""):
         separators=(",", ":"),
     )  # .encode('UTF-8')
     return js
-
-
-"""
-print(main('abs-141'))
-print(main('HYSD-00083'))
-print(main('IESP-660'))
-print(main('n1403'))
-print(main('GANA-1910'))
-print(main('heyzo-1031'))
-print(main_us('x-art.19.11.03'))
-print(main('032020-001'))
-print(main('S2M-055'))
-print(main('LUXU-1217'))
-"""
-# print(main('IPX-604', ''))
-# print(main('SSIS-084', ''))
-# print(main('abs-141', ''))
-# print(main('HYSD-00083', ''))
-# print(main('IESP-660', ''))
-# print(main('n1403', ''))
-# print(main('GANA-1910', ''))
-# print(main('heyzo-1031', ''))
-# print(main_us('x-art.19.11.03', ''))
-# print(main('032020-001', ''))
-# print(main('S2M-055', ''))
-# print(main('LUXU-1217', ''))
-# print(main_us('x-art.19.11.03', ''))
 
 
 # ======================================================================== ScraperBase integration

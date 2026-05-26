@@ -4,6 +4,7 @@ import re
 from lxml import etree
 import json
 from core._net.networking import get_html
+from core._config.logger import logger
 
 
 def getTitle(a):
@@ -224,7 +225,7 @@ def main(number, appoint_url):
             "website": "timeout",
         }
     except Exception as error_info:
-        print("Error in xcity.main : " + str(error_info))
+        logger.exception("xcity.main error: %s", error_info)
         dic = {
             "title": "",
             "website": "",
@@ -233,18 +234,6 @@ def main(number, appoint_url):
         dic, ensure_ascii=False, sort_keys=True, indent=4, separators=(",", ":")
     )  # .encode('UTF-8')
     return js
-
-
-"""
-print(main('xc-1280'))
-print(main('xv-163'))
-print(main('sea-081'))
-print(main('IA-28'))
-print(main('xc-1298'))
-print(main('DMOW185'))
-print(main('EMOT007'))
-"""
-# print(main('EMOT007', "https://xcity.jp/avod/detail/?id=147036"))
 
 
 # ======================================================================== ScraperBase integration

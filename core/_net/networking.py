@@ -1,7 +1,25 @@
+import time
+
 import requests
 import cloudscraper
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from core._config.config_io import get_proxy_config
 from core._config.errors import NetworkError, ConfigError
+
+# Module-level session with connection pooling
+_session = requests.Session()
+_adapter = HTTPAdapter(
+    pool_connections=10,
+    pool_maxsize=20,
+    max_retries=Retry(total=0),  # we handle retries ourselves
+)
+_session.mount("http://", _adapter)
+_session.mount("https://", _adapter)
+
+# Module-level cloudscraper instance (avoids TLS handshake overhead per call)
+_javdb_scraper = cloudscraper.create_scraper()
 
 
 def get_proxies(proxy_type, proxy):
@@ -17,8 +35,7 @@ def get_proxies(proxy_type, proxy):
 
 def get_html_javdb(url):
     """Fetch HTML with Cloudflare bypass via cloudscraper."""
-    scraper = cloudscraper.create_scraper()
-    response = scraper.get(url)
+    response = _javdb_scraper.get(url)
     return response.text
 
 
@@ -35,11 +52,13 @@ def get_html(url, cookies=None):
     proxies = get_proxies(proxy_type, proxy)
     for i in range(retry_count):
         try:
+            if i > 0:
+                time.sleep(min(2 ** i, 10))
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/60.0.3100.0 Safari/537.36"
             }
-            getweb = requests.get(
+            getweb = _session.get(
                 str(url),
                 headers=headers,
                 timeout=timeout,
@@ -70,7 +89,9 @@ def post_html(url: str, query: dict):
     proxies = get_proxies(proxy_type, proxy)
     for i in range(retry_count):
         try:
-            result = requests.post(url, data=query, proxies=proxies, timeout=timeout)
+            if i > 0:
+                time.sleep(min(2 ** i, 10))
+            result = _session.post(url, data=query, proxies=proxies, timeout=timeout)
             result.encoding = "utf-8"
             return result.text
         except Exception as e:

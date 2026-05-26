@@ -4,7 +4,6 @@ Emby API client for AVDC — actor list, profile picture upload.
 All functions accept emby_url and api_key as parameters (no Qt references).
 Logging via core.logger.
 """
-from __future__ import annotations
 
 import base64
 import os

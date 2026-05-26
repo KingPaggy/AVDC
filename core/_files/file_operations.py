@@ -4,7 +4,6 @@ File operations for AVDC — downloads, NFO generation, file moves, naming.
 All functions accept typed parameters (no Qt / self.Ui references).
 Logging via core.logger.
 """
-from __future__ import annotations
 
 import os
 import re
