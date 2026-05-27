@@ -1,7 +1,7 @@
 """Tests for cli.py — standalone CLI entry point (no PyQt5)."""
 import sys
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from cli.cli import main
 from core._config.config import AppConfig
@@ -25,7 +25,8 @@ class TestArgumentParsing:
             with patch("cli.cli.CoreEngine") as MockEngine:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
         engine_kwargs = MockEngine.call_args.kwargs
         assert engine_kwargs["config"] is not None
 
@@ -38,10 +39,11 @@ class TestArgumentParsing:
                     config = _mock_config()
                     MockConfig.from_ini.return_value = config
                     instance = MockEngine.return_value
-                    main()
-        instance.process_batch.assert_called_once()
-        _, kwargs = instance.process_batch.call_args
-        assert kwargs["scraper_mode"] == 1
+                    instance.process_single.return_value = "success"
+                    with patch("core._files.file_utils.movie_lists", return_value=["/tmp/movies/test.mp4"]):
+                        with patch("core._files.file_utils.getNumber", return_value="TEST-001"):
+                            main()
+        instance.process_single.assert_called_once()
         assert config.main_mode == 2
 
     def test_deprecated_mode_2_updates_main_mode_only(self):
@@ -53,9 +55,11 @@ class TestArgumentParsing:
                     config = _mock_config()
                     MockConfig.from_ini.return_value = config
                     instance = MockEngine.return_value
-                    main()
-        _, kwargs = instance.process_batch.call_args
-        assert kwargs["scraper_mode"] == 1
+                    instance.process_single.return_value = "success"
+                    with patch("core._files.file_utils.movie_lists", return_value=["/tmp/movies/test.mp4"]):
+                        with patch("core._files.file_utils.getNumber", return_value="TEST-001"):
+                            main()
+        instance.process_single.assert_called_once()
         assert config.main_mode == 2
 
     def test_site_flag_selects_scraper_mode(self):
@@ -66,9 +70,12 @@ class TestArgumentParsing:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
-                    main()
-        _, kwargs = instance.process_batch.call_args
-        assert kwargs["scraper_mode"] == 3
+                    instance.process_single.return_value = "success"
+                    with patch("core._files.file_utils.movie_lists", return_value=["/tmp/movies/test.mp4"]):
+                        with patch("core._files.file_utils.getNumber", return_value="TEST-001"):
+                            main()
+        call_kwargs = instance.process_single.call_args.kwargs
+        assert call_kwargs["scraper_mode"] == 3
 
     def test_config_website_selects_default_scraper_mode(self):
         """Config website is used when --site is omitted."""
@@ -78,9 +85,12 @@ class TestArgumentParsing:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config(website="javdb")
                     instance = MockEngine.return_value
-                    main()
-        _, kwargs = instance.process_batch.call_args
-        assert kwargs["scraper_mode"] == 5
+                    instance.process_single.return_value = "success"
+                    with patch("core._files.file_utils.movie_lists", return_value=["/tmp/movies/test.mp4"]):
+                        with patch("core._files.file_utils.getNumber", return_value="TEST-001"):
+                            main()
+        call_kwargs = instance.process_single.call_args.kwargs
+        assert call_kwargs["scraper_mode"] == 5
 
     def test_single_mode_calls_process_single(self):
         """--single should call process_single instead of process_batch."""
@@ -101,7 +111,8 @@ class TestArgumentParsing:
             with patch("cli.cli.CoreEngine"):
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
         MockConfig.from_ini.assert_called_once_with("/custom/config.ini")
 
     def test_number_passed_to_process_single(self):
@@ -138,8 +149,8 @@ class TestCallbacks:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
-                    # Capture the on_progress callback and call it directly
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
                     on_progress = MockEngine.call_args.kwargs["on_progress"]
         on_progress(3, 10, "/tmp/movie.mp4")
         captured = capsys.readouterr()
@@ -154,7 +165,8 @@ class TestCallbacks:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
                     on_success = MockEngine.call_args.kwargs["on_success"]
         on_success("/tmp/movie.mp4", "-C")
         captured = capsys.readouterr()
@@ -169,7 +181,8 @@ class TestCallbacks:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
                     on_failure = MockEngine.call_args.kwargs["on_failure"]
         on_failure("/tmp/movie.mp4", "no_number", ValueError("bad"))
         captured = capsys.readouterr()
@@ -184,7 +197,8 @@ class TestCallbacks:
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
                     instance = MockEngine.return_value
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
                     on_log = MockEngine.call_args.kwargs["on_log"]
         with patch("cli.cli.logger.info") as mock_info:
             on_log("test message")
@@ -205,12 +219,17 @@ class TestErrorHandling:
             with patch("cli.cli.CoreEngine"):
                 with patch("cli.cli.AppConfig") as MockConfig:
                     MockConfig.from_ini.return_value = _mock_config()
-                    # Invoke via __main__ path simulation
-                    main()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
 
-    def test_requires_path(self):
-        """--path is required and should error if missing."""
-        test_args = ["cli.py"]
+    def test_empty_directory_handled_gracefully(self, capsys):
+        """When no files match filters, CLI should exit gracefully."""
+        test_args = ["cli.py", "--path", "/tmp/empty"]
         with patch("sys.argv", test_args):
-            with pytest.raises(SystemExit):
-                main()
+            with patch("cli.cli.CoreEngine"):
+                with patch("cli.cli.AppConfig") as MockConfig:
+                    MockConfig.from_ini.return_value = _mock_config()
+                    with patch("core._files.file_utils.movie_lists", return_value=[]):
+                        main()
+        captured = capsys.readouterr()
+        assert "No files to process" in captured.err

@@ -240,3 +240,87 @@ class AppConfig:
             return {}
         scheme = "http" if self.proxy_type == "http" else "socks5"
         return {scheme: f"{scheme}://{self.proxy}"}
+
+    # Section-to-field mapping for dotted access (e.g. "proxy.type" -> "proxy_type")
+    _SECTION_FIELDS: dict[str, dict[str, str]] = field(default_factory=lambda: {
+        "common": {
+            "main_mode": "main_mode", "soft_link": "soft_link",
+            "failed_file_move": "failed_file_move", "show_poster": "show_poster",
+            "website": "website", "success_output_folder": "success_output_folder",
+            "failed_output_folder": "failed_output_folder",
+        },
+        "proxy": {
+            "type": "proxy_type", "proxy": "proxy",
+            "timeout": "timeout", "retry": "retry",
+        },
+        "Name_Rule": {
+            "folder_name": "folder_name", "naming_media": "naming_media",
+            "naming_file": "naming_file",
+        },
+        "update": {"update_check": "update_check"},
+        "log": {"save_log": "save_log"},
+        "media": {
+            "media_type": "media_type", "sub_type": "sub_type", "media_path": "media_path",
+        },
+        "escape": {
+            "literals": "literals", "folders": "folders", "string": "string",
+        },
+        "debug_mode": {"switch": "switch_debug"},
+        "emby": {"emby_url": "emby_url", "api_key": "api_key"},
+        "mark": {
+            "poster_mark": "poster_mark", "thumb_mark": "thumb_mark",
+            "mark_size": "mark_size", "mark_type": "mark_type", "mark_pos": "mark_pos",
+        },
+        "uncensored": {
+            "uncensored_prefix": "uncensored_prefix", "uncensored_poster": "uncensored_poster",
+        },
+        "file_download": {
+            "nfo": "nfo_download", "poster": "poster_download",
+            "fanart": "fanart_download", "thumb": "thumb_download",
+        },
+        "extrafanart": {
+            "extrafanart_download": "extrafanart_download",
+            "extrafanart_folder": "extrafanart_folder",
+        },
+        "baidu": {
+            "app_id": "baidu_app_id", "api_key": "baidu_api_key",
+            "secret_key": "baidu_secret_key",
+        },
+    })
+
+    def _resolve_field(self, dotted: str) -> str | None:
+        """Resolve 'section.key' or 'field' to the dataclass attribute name."""
+        if "." in dotted:
+            section, key = dotted.split(".", 1)
+            return self._SECTION_FIELDS.get(section, {}).get(key)
+        return dotted if hasattr(self, dotted) else None
+
+    def get_field(self, dotted: str) -> str | None:
+        """Get config value by dotted name (e.g. 'proxy.type') or field name."""
+        field_name = self._resolve_field(dotted)
+        if field_name and hasattr(self, field_name):
+            return str(getattr(self, field_name))
+        return None
+
+    def set_field(self, dotted: str, value: str) -> bool:
+        """Set config value by dotted name, with type coercion. Returns True if successful."""
+        field_name = self._resolve_field(dotted)
+        if not field_name or not hasattr(self, field_name):
+            return False
+        current = getattr(self, field_name)
+        if isinstance(current, int):
+            try:
+                value = str(int(value))
+            except ValueError:
+                return False
+        setattr(self, field_name, value)
+        return True
+
+    def all_fields(self) -> list[tuple[str, str, str]]:
+        """Return list of (section, key, value) for all config fields."""
+        result = []
+        for section, fields in self._SECTION_FIELDS.items():
+            for key, field_name in fields.items():
+                if hasattr(self, field_name):
+                    result.append((section, key, str(getattr(self, field_name))))
+        return result
