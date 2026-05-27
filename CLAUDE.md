@@ -15,14 +15,14 @@ AVDC (AV Data Capture) is a Python GUI application for scraping JAV website meta
 ```bash
 uv sync                                        # Install all dependencies (workspace)
 uv run python pyside6_gui/main.py              # Run PySide6 + QML GUI (primary)
-uv run python PyQt5-GUI/main.py                # Run PyQt5 GUI (legacy)
+uv run python pyqt5-gui/main.py                # Run PyQt5 GUI (legacy)
 uv run python cli/cli.py --path /path/to/movies  # Run CLI
 uv run pytest core/test cli/test/ -v           # Run core/CLI tests
 uv run pytest pyside6_gui/test/ -v             # Run PySide6 QML tests
 ```
 
 QML lint: `.venv/bin/pyside6-qmllint pyside6_gui/qml/main.qml`
-UI compile: `uv run pyuic5 PyQt5-GUI/ui/main_window.ui -o PyQt5-GUI/ui/main_window.py`
+UI compile: `uv run pyuic5 pyqt5-gui/ui/main_window.ui -o pyqt5-gui/ui/main_window.py`
 
 ## Architecture
 
@@ -31,7 +31,7 @@ UI compile: `uv run pyuic5 PyQt5-GUI/ui/main_window.ui -o PyQt5-GUI/ui/main_wind
 ```
 core/              Business logic (typed, no Qt) — _config, _models, _scraper, _services, _files, _media, _net, _event
 pyside6_gui/       PySide6 + QML GUI (primary frontend) — main.py, settings_model.py, qml/
-PyQt5-GUI/         PyQt5 GUI (legacy frontend)
+pyqt5-gui/         PyQt5 GUI (legacy frontend)
 cli/               CLI frontend (no Qt dependency)
 tui-go/            Go TUI frontend
 docs/              Documentation
@@ -122,7 +122,7 @@ Python SettingsModel ──→ setContextProperty("settings") ──→ QML two-
 
 ### Dependency Management (uv workspace)
 
-Root `pyproject.toml` declares workspace with four members: `core/` (avdc-core), `cli/` (avdc-cli), `PyQt5-GUI/` (avdc-pyqt5-gui), `pyside6_gui/` (avdc-pyside6-gui).
+Root `pyproject.toml` declares workspace with four members: `core/` (avdc-core), `cli/` (avdc-cli), `pyqt5-gui/` (avdc-pyqt5-gui), `pyside6_gui/` (avdc-pyside6-gui).
 
 All deps installed via `uv sync` into single `.venv` at root. **Only run `uv sync` from project root** — workspace members share one `.venv`.
 

@@ -48,13 +48,13 @@ AVDC_Page/
 │   └── test/           # 核心测试套件
 ├── cli/                # CLI 命令行前端
 │   └── test/           # CLI 测试
-├── PyQt5-GUI/          # PyQt5 图形界面前端
+├── pyqt5-gui/          # PyQt5 图形界面前端
 ├── tui-go/             # Go TUI 终端界面前端
 ├── config.ini          # 共享配置文件
 └── docs/               # 文档
 ```
 
-三个前端（CLI、PyQt5-GUI、tui-go）共用 `core/` 核心逻辑。使用 `uv` 管理依赖（uv workspace monorepo）。
+三个前端（CLI、pyqt5-gui、tui-go）共用 `core/` 核心逻辑。使用 `uv` 管理依赖（uv workspace monorepo）。
 
 ### 快速开始
 
@@ -63,7 +63,7 @@ AVDC_Page/
 uv sync
 
 # 运行图形界面
-uv run python PyQt5-GUI/main.py
+uv run python pyqt5-gui/main.py
 
 # 运行命令行
 uv run python cli/cli.py --path /path/to/movies

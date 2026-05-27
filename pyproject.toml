@@ -29,7 +29,7 @@ managed = true
 package = false
 
 [tool.uv.workspace]
-members = ["core", "cli", "PyQt5-GUI", "pyside6_gui"]
+members = ["core", "cli", "pyqt5-gui", "pyside6_gui"]
 
 [tool.pytest.ini_options]
 testpaths = ["core/test", "cli/test"]
