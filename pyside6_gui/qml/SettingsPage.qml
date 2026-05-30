@@ -17,6 +17,9 @@ Item {
             width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
             spacing: Theme.spacingLG
 
+            // Top spacer
+            Item { implicitHeight: Theme.spacingXL; width: parent.width }
+
             // ===== 通用 =====
             SectionCard {
                 width: parent.width
@@ -357,6 +360,9 @@ Item {
                     onClicked: settings.save()
                 }
             }
+
+            // Bottom spacer
+            Item { implicitHeight: Theme.spacingXL; width: parent.width }
         }
     }
 

@@ -17,6 +17,9 @@ Item {
             width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
             spacing: Theme.spacingLG
 
+            // Top spacer
+            Item { implicitHeight: Theme.spacingXL; width: parent.width }
+
             // ===== 输入 =====
             SectionCard {
                 width: parent.width
@@ -92,6 +95,9 @@ Item {
                     StatusBadge { status: "info"; text: "跳过: " + homePage._skipCount }
                 }
             }
+
+            // Bottom spacer
+            Item { implicitHeight: Theme.spacingXL; width: parent.width }
         }
     }
 
