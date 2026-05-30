@@ -120,6 +120,48 @@ Python SettingsModel ──→ setContextProperty("settings") ──→ QML two-
 
 **QML convention**: PascalCase filenames, type name matches filename. Components in `qml/components/`, imported via `import "components"`.
 
+**Layout types**:
+- `ColumnLayout` / `RowLayout` / `GridLayout` — **Layout 类型**，子元素用 `Layout.*` 属性（`Layout.fillWidth`、`Layout.preferredHeight`）
+- `Column` / `Row` — **非 Layout 类型**，子元素用 `implicitHeight`/`implicitWidth` 或显式 `width`/`height`，**不能**用 `Layout.*` 属性
+- `Item` / `Rectangle` — 基础类型，需要显式尺寸或通过子元素 `implicitHeight` 推算
+
+**implicitHeight 关键概念**:
+- 非 Layout 父容器（如 `Column`）依赖子元素的 `implicitHeight` 来确定自己的高度
+- 如果子元素没有 `implicitHeight` 且没有显式 `height`，父容器高度为 0，内容不显示
+- `anchors.fill: parent` 在父容器无尺寸时会产生循环依赖，导致布局失败
+
+**SectionCard 模式**:
+```qml
+Rectangle {
+    id: root
+    implicitHeight: contentColumn.implicitHeight + padding  // 关键：让 Column 能算出高度
+    default property alias contentData: contentColumn.children
+
+    ColumnLayout {
+        id: contentColumn
+        width: parent.width - padding
+        x: padding
+        y: padding
+        // 内部子元素可以用 Layout.* 属性
+    }
+}
+```
+
+**页面布局模式** (`ScrollView > Column > SectionCard`):
+```qml
+ScrollView {
+    Column {
+        width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
+        spacing: Theme.spacingLG
+
+        Item { implicitHeight: Theme.spacingXL }  // Top spacer
+        SectionCard { ... }
+        SectionCard { ... }
+        Item { implicitHeight: Theme.spacingXL }  // Bottom spacer
+    }
+}
+```
+
 ### Dependency Management (uv workspace)
 
 Root `pyproject.toml` declares workspace with four members: `core/` (avdc-core), `cli/` (avdc-cli), `pyqt5-gui/` (avdc-pyqt5-gui), `pyside6_gui/` (avdc-pyside6-gui).
