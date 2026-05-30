@@ -12,12 +12,15 @@ Rectangle {
     property string sectionTitle: "Section"
     default property alias contentData: contentColumn.children
 
+    implicitHeight: contentColumn.implicitHeight + Theme.spacingMD * 2
+
     ColumnLayout {
         id: contentColumn
-        anchors.fill: parent
-        anchors.margins: Theme.spacingMD
+        width: parent.width - Theme.spacingMD * 2
+        height: implicitHeight
+        x: Theme.spacingMD
+        y: Theme.spacingMD
         spacing: Theme.spacingSM
-        Layout.fillWidth: true
 
         Text {
             id: titleText
