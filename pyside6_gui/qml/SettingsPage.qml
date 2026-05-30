@@ -8,21 +8,18 @@ Item {
     id: settingsPage
 
     ScrollView {
-        id: scrollView
         anchors.fill: parent
         clip: true
-        contentWidth: settingsPage.width
+        contentWidth: width
 
-        ColumnLayout {
-            id: column
+        Column {
             anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.margins: Theme.spacingXL
-            width: Math.min(scrollView.availableWidth - Theme.contentWidthPadding, Theme.maxContentWidth)
+            width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
             spacing: Theme.spacingLG
 
             // ===== 通用 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "通用"
                 ConfigRadioGroup {
                     labelText: "模式"
@@ -84,6 +81,7 @@ Item {
 
             // ===== 代理 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "代理"
                 ConfigRadioGroup {
                     labelText: "代理类型"
@@ -121,6 +119,7 @@ Item {
 
             // ===== 命名规则 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "命名规则"
                 ConfigInput {
                     labelText: "文件夹名"
@@ -143,6 +142,7 @@ Item {
 
             // ===== 媒体 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "媒体"
                 ConfigInput {
                     labelText: "文件类型"
@@ -165,6 +165,7 @@ Item {
 
             // ===== 排除 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "排除"
                 ConfigInput {
                     labelText: "排除文件夹"
@@ -187,6 +188,7 @@ Item {
 
             // ===== 水印 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "水印"
                 ConfigSwitchInt {
                     labelText: "封面添加水印"
@@ -240,6 +242,7 @@ Item {
 
             // ===== 无码 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "无码"
                 ConfigRadioGroup {
                     labelText: "无码海报"
@@ -260,6 +263,7 @@ Item {
 
             // ===== 下载 =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "下载"
                 ConfigSwitchInt {
                     labelText: "下载 NFO"
@@ -295,6 +299,7 @@ Item {
 
             // ===== Emby =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "Emby 客户端"
                 ConfigInput {
                     labelText: "Emby 地址"
@@ -311,6 +316,7 @@ Item {
 
             // ===== Baidu AI =====
             SectionCard {
+                width: parent.width
                 sectionTitle: "百度 AI（人脸检测）"
                 ConfigInput {
                     labelText: "App ID"
@@ -333,9 +339,7 @@ Item {
 
             // ===== Buttons =====
             RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spacingSM
-                Layout.bottomMargin: Theme.spacingXXL
+                width: parent.width
                 spacing: Theme.spacingLG
 
                 Item { Layout.fillWidth: true }
@@ -353,13 +357,9 @@ Item {
                     onClicked: settings.save()
                 }
             }
-
-            // Bottom spacer for ScrollView
-            Item { implicitHeight: Theme.spacingXXL; Layout.fillWidth: true }
         }
     }
 
-    // Helper to rebuild mark_type string from checkboxes
     function _updateMarkType() {
         var parts = []
         if (markSubCheckbox.checked) parts.push("SUB")
