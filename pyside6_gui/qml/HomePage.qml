@@ -66,8 +66,14 @@ Item {
                         font.pixelSize: Theme.fontBody
                         font.weight: Theme.weightMedium
                         highlighted: true
+                        enabled: !processing.isProcessing
                         Layout.fillWidth: true
-                        onClicked: toast.show("开始处理...")
+                        onClicked: {
+                            var dir = settings.successOutputFolder
+                            var escape = settings.escapeFolders
+                            var mode = settings.mainMode
+                            processing.startBatch(dir, escape, mode)
+                        }
                     }
 
                     Button {
@@ -75,8 +81,9 @@ Item {
                         font.family: Theme.fontFamilySans
                         font.pixelSize: Theme.fontBody
                         font.weight: Theme.weightMedium
+                        enabled: processing.isProcessing
                         Layout.fillWidth: true
-                        onClicked: toast.show("已停止")
+                        onClicked: processing.stop()
                     }
                 }
             }
@@ -86,8 +93,8 @@ Item {
                 width: parent.width
                 sectionTitle: "进度"
                 ProgressBar {
-                    progressValue: homePage._demoProgress
-                    statusText: homePage._demoStatusText
+                    progressValue: processing.progressValue
+                    statusText: processing.statusText
                     Layout.fillWidth: true
                 }
 
@@ -95,9 +102,9 @@ Item {
                     width: parent.width
                     spacing: Theme.spacingLG
 
-                    StatusBadge { status: "success"; text: "成功: " + homePage._successCount }
-                    StatusBadge { status: "error"; text: "失败: " + homePage._errorCount }
-                    StatusBadge { status: "info"; text: "跳过: " + homePage._skipCount }
+                    StatusBadge { status: "success"; text: "成功: " + processing.successCount }
+                    StatusBadge { status: "error"; text: "失败: " + processing.failCount }
+                    StatusBadge { status: "info"; text: "跳过: " + processing.skipCount }
                 }
             }
 
@@ -106,9 +113,4 @@ Item {
         }
     }
 
-    property real _demoProgress: 0.0
-    property string _demoStatusText: ""
-    property int _successCount: 0
-    property int _errorCount: 0
-    property int _skipCount: 0
 }

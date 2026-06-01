@@ -27,6 +27,7 @@ dev = [
     "pillow>=12.2.0",
     "pytest",
     "pytest-cov",
+    "pytest-qt",
 ]
 
 [tool.uv]

@@ -1,7 +1,7 @@
 """Tests for ProcessingModel — start_batch and start_single CoreEngine bridging."""
 import pytest
 from unittest.mock import MagicMock, patch
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, QCoreApplication
 from PySide6.QtTest import QSignalSpy, QTest
 
 import sys
@@ -73,7 +73,8 @@ class TestProcessingModelBatch:
             MockEngine.return_value = mock_engine
 
             model.start_batch("/tmp/movies", "", 1)
-            QTest.qWait(1000)
+            QTest.qWait(1500)
+            QCoreApplication.processEvents()
 
         assert spy.count() >= 1
         assert spy.at(0)[0] == 3  # success

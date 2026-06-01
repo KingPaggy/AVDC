@@ -57,6 +57,7 @@ dev = [
     { name = "pillow" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "pytest-qt" },
 ]
 
 [package.metadata]
@@ -83,6 +84,7 @@ dev = [
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "pytest-qt" },
 ]
 
 [[package]]

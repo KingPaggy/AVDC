@@ -292,6 +292,11 @@ class SettingsModel(QObject):
         except Exception as e:
             self.errorOccurred.emit(f"加载配置失败: {e}")
 
+    def app_config(self):
+        """Create an AppConfig instance from current property values."""
+        from core._config.config import AppConfig
+        return AppConfig(**self._fields)
+
     @Slot()
     def save(self):
         """Write all properties to config.ini."""
