@@ -31,8 +31,9 @@ Rectangle {
                 default: return ""
             }
         }
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
-        font.bold: true
+        font.weight: Theme.weightSemibold
         color: mouseArea.containsMouse ? root.buttonColor : Theme.secondaryText
     }
 

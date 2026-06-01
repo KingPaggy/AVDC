@@ -40,7 +40,9 @@ Item {
 
             Text {
                 text: root.statusText
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontCaption
+                font.weight: Theme.weightRegular
                 color: Theme.secondaryText
                 Layout.fillWidth: true
                 elide: Text.ElideRight
@@ -49,8 +51,9 @@ Item {
             Text {
                 visible: root.showPercentage
                 text: Math.round(root.progressValue * 100) + "%"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontCaption
-                font.bold: true
+                font.weight: Theme.weightBold
                 color: Theme.accentColor
             }
         }

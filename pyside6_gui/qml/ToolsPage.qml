@@ -5,6 +5,7 @@ import "components"
 
 // ToolsPage — tool cards in a grid layout
 Item {
+    objectName: "toolsPage"
     id: toolsPage
 
     ScrollView {
@@ -14,7 +15,7 @@ Item {
 
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
+            width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxToolContentWidth)
             spacing: Theme.spacingLG
 
             // Top spacer

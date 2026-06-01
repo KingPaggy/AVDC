@@ -19,7 +19,9 @@ RowLayout {
 
     Text {
         text: root.labelText
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
+        font.weight: Theme.weightRegular
         color: Theme.secondaryText
         Layout.preferredWidth: Theme.labelWidthWide
     }

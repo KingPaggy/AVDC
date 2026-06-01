@@ -26,8 +26,9 @@ Rectangle {
         id: badgeText
         anchors.centerIn: parent
         text: root.text
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontCaption
-        font.bold: true
+        font.weight: Theme.weightSemibold
         color: Theme.backgroundColor
     }
 }

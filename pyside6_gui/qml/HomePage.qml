@@ -5,6 +5,7 @@ import "components"
 
 // HomePage — workspace: file selection, mode, process button, progress
 Item {
+    objectName: "homePage"
     id: homePage
 
     ScrollView {
@@ -61,7 +62,9 @@ Item {
 
                     Button {
                         text: "开始处理"
+                        font.family: Theme.fontFamilySans
                         font.pixelSize: Theme.fontBody
+                        font.weight: Theme.weightMedium
                         highlighted: true
                         Layout.fillWidth: true
                         onClicked: toast.show("开始处理...")
@@ -69,7 +72,9 @@ Item {
 
                     Button {
                         text: "停止"
+                        font.family: Theme.fontFamilySans
                         font.pixelSize: Theme.fontBody
+                        font.weight: Theme.weightMedium
                         Layout.fillWidth: true
                         onClicked: toast.show("已停止")
                     }

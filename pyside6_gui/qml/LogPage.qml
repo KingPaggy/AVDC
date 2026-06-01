@@ -5,6 +5,7 @@ import "components"
 
 // LogPage — real-time log output with filtering
 Item {
+    objectName: "logPage"
     id: logPage
 
     ColumnLayout {
@@ -29,7 +30,9 @@ Item {
 
                 Text {
                     text: "过滤:"
+                    font.family: Theme.fontFamilySans
                     font.pixelSize: Theme.fontCaption
+                    font.weight: Theme.weightMedium
                     color: Theme.secondaryText
                 }
 
@@ -45,6 +48,7 @@ Item {
 
                     Button {
                         text: modelData.text
+                        font.family: Theme.fontFamilySans
                         font.pixelSize: Theme.fontCaption
                         flat: true
                         palette.buttonText: logPage._logFilter === modelData.value ? Theme.accentColor : Theme.tertiaryText
@@ -60,6 +64,7 @@ Item {
 
                 Button {
                     text: "清空"
+                    font.family: Theme.fontFamilySans
                     font.pixelSize: Theme.fontCaption
                     flat: true
                     palette.buttonText: Theme.tertiaryText
@@ -68,6 +73,7 @@ Item {
 
                 Button {
                     text: "导出"
+                    font.family: Theme.fontFamilySans
                     font.pixelSize: Theme.fontCaption
                     flat: true
                     palette.buttonText: Theme.tertiaryText

@@ -67,8 +67,11 @@ ScrollView {
             // Timestamp
             Text {
                 text: model.timestamp || ""
+                font.family: Theme.fontFamilyMono
                 font.pixelSize: Theme.fontMini
-                font.family: Theme.fontMonospace
+                font.weight: Theme.weightRegular
+                lineHeight: Theme.lineHeightRelaxed
+                lineHeightMode: Text.ProportionalHeight
                 color: Theme.tertiaryText
                 Layout.preferredWidth: 70
             }
@@ -84,8 +87,11 @@ ScrollView {
                     id: levelText
                     anchors.centerIn: parent
                     text: model.level || "INFO"
+                    font.family: Theme.fontFamilySans
                     font.pixelSize: Theme.fontMini
-                    font.bold: true
+                    font.weight: Theme.weightSemibold
+                    lineHeight: Theme.lineHeightTight
+                    lineHeightMode: Text.ProportionalHeight
                     color: root._levelTextColors[model.level] !== undefined ? root._levelTextColors[model.level] : Theme.secondaryText
                 }
             }
@@ -93,8 +99,11 @@ ScrollView {
             // Message
             Text {
                 text: model.message || ""
+                font.family: Theme.fontFamilyMono
                 font.pixelSize: Theme.fontCaption
-                font.family: Theme.fontMonospace
+                font.weight: Theme.weightRegular
+                lineHeight: Theme.lineHeightRelaxed
+                lineHeightMode: Text.ProportionalHeight
                 color: root._msgColors[model.level] !== undefined ? root._msgColors[model.level] : Theme.textColor
                 Layout.fillWidth: true
                 elide: Text.ElideRight

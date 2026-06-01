@@ -38,9 +38,11 @@ Item {
         // Section header
         Text {
             text: "导航"
+            font.family: Theme.fontFamilySans
             font.pixelSize: Theme.fontSidebarHeader
-            font.bold: true
+            font.weight: Theme.weightSemibold
             color: Theme.tertiaryText
+            font.letterSpacing: Theme.letterSpacingWide
             Layout.fillWidth: true
             Layout.leftMargin: Theme.spacingXS
             Layout.topMargin: Theme.spacingXS
@@ -106,7 +108,9 @@ Item {
                     // Label
                     Text {
                         text: modelData.label
-                        font.pixelSize: Theme.fontBody
+                        font.family: Theme.fontFamilySans
+                        font.pixelSize: Theme.fontBodySm
+                        font.weight: root.currentIndex === index ? Theme.weightSemibold : Theme.weightRegular
                         color: root.currentIndex === index ? Theme.accentColor : Theme.textColor
                         Layout.fillWidth: true
                         elide: Text.ElideRight

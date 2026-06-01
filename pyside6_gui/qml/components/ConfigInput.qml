@@ -23,7 +23,9 @@ RowLayout {
 
     Text {
         text: root.labelText
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
+        font.weight: Theme.weightRegular
         color: Theme.secondaryText
         Layout.preferredWidth: Theme.labelWidthWide
     }
@@ -32,7 +34,9 @@ RowLayout {
         id: input
         text: root.textValue
         color: Theme.textColor
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
+        font.weight: Theme.weightRegular
         Layout.fillWidth: true
         background: Rectangle {
             radius: Theme.radiusMD

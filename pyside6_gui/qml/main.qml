@@ -81,6 +81,7 @@ ApplicationWindow {
 
                 Loader {
                     id: pageLoader
+                    objectName: "pageLoader"
                     anchors.fill: parent
                     property int currentPage: 0
                     property var _components: [homePageComponent, logPageComponent, toolsPageComponent, settingsPageComponent, aboutPageComponent]
@@ -109,8 +110,9 @@ ApplicationWindow {
             Text {
                 id: toastText
                 anchors.centerIn: parent
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontBody
-                font.bold: true
+                font.weight: Theme.weightSemibold
                 color: Theme.backgroundColor
             }
 

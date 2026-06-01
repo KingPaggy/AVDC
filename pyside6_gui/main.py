@@ -99,15 +99,34 @@ THEME = {
     "radiusLG": 8,
     "radiusXL": 12,
     # 字号层级
-    "fontTitle":        16,
-    "fontHeading":      13,
+    "fontTitle":        18,
+    "fontHeading":      15,
     "fontBody":         13,
+    "fontBodySm":       12,
     "fontCaption":      11,
     "fontMini":         10,
-    "fontSidebarHeader": 12,
-    "fontStat":         28,
+    "fontSidebarHeader": 11,
+    "fontStat":         32,
     "fontLargeTitle":   34,
     "fontPageTitle":    28,
+    # 字体族
+    "fontFamilySans": "SF Pro Text",
+    "fontFamilyDisplay": "SF Pro Display",
+    "fontFamilyMono": "SF Mono",
+    # 字重
+    "weightLight":    300,
+    "weightRegular":  400,
+    "weightMedium":   500,
+    "weightSemibold": 600,
+    "weightBold":     700,
+    # 行高（倍数）
+    "lineHeightTight":   1.2,
+    "lineHeightNormal":  1.5,
+    "lineHeightRelaxed": 1.75,
+    # 字间距
+    "letterSpacingTight":  -0.2,
+    "letterSpacingNormal":  0,
+    "letterSpacingWide":    0.5,
     # 侧边栏宽度
     "sidebarMin":   200,
     "sidebarIdeal": 240,
@@ -144,6 +163,8 @@ THEME = {
     "toastErrorDuration": 3000,
     # 页面布局
     "maxContentWidth": 680,
+    "maxFormContentWidth": 760,   # SettingsPage 加宽表单
+    "maxToolContentWidth": 840,   # ToolsPage 加宽网格
     "contentWidthPadding": 40,   # spacingXL * 2, used in Math.min(parent.width - contentWidthPadding, maxContentWidth)
     # About 页面
     "aboutCardWidth": 400,

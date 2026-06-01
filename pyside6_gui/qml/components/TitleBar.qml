@@ -41,8 +41,9 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         anchors.leftMargin: 40  // make room for sidebar toggle
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
-        font.bold: true
+        font.weight: Theme.weightSemibold
         color: Theme.textColor
         text: "AVDC"
     }

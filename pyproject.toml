@@ -22,7 +22,12 @@ dependencies = [
 dev = ["pytest", "pytest-cov"]
 
 [dependency-groups]
-dev = ["pytest", "pytest-cov"]
+dev = [
+    "numpy>=2.4.6",
+    "pillow>=12.2.0",
+    "pytest",
+    "pytest-cov",
+]
 
 [tool.uv]
 managed = true

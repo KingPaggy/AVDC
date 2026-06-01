@@ -24,7 +24,9 @@ RowLayout {
 
     Text {
         text: root.labelText
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontBody
+        font.weight: Theme.weightRegular
         color: Theme.secondaryText
         Layout.preferredWidth: Theme.labelWidthWide
     }
@@ -44,8 +46,9 @@ RowLayout {
 
     Text {
         text: Math.round(slider.value).toString()
+        font.family: Theme.fontFamilySans
         font.pixelSize: Theme.fontCaption
-        font.bold: true
+        font.weight: Theme.weightSemibold
         color: Theme.accentColor
         Layout.preferredWidth: 30
         horizontalAlignment: Text.AlignRight

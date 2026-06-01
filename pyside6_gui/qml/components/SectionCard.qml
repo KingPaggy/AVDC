@@ -7,9 +7,10 @@ Rectangle {
     id: root
     radius: Theme.radiusLG
     color: Theme.cardBg
-    Layout.fillWidth: true
+    width: parent.width
 
     property string sectionTitle: "Section"
+    property string sectionDescription: ""
     default property alias contentData: contentColumn.children
 
     implicitHeight: contentColumn.implicitHeight + Theme.spacingMD * 2
@@ -17,7 +18,6 @@ Rectangle {
     ColumnLayout {
         id: contentColumn
         width: parent.width - Theme.spacingMD * 2
-        height: implicitHeight
         x: Theme.spacingMD
         y: Theme.spacingMD
         spacing: Theme.spacingSM
@@ -25,10 +25,24 @@ Rectangle {
         Text {
             id: titleText
             text: root.sectionTitle
-            font.pixelSize: Theme.fontHeading
-            font.bold: true
+            font.family: Theme.fontFamilyDisplay
+            font.pixelSize: Theme.fontTitle
+            font.weight: Theme.weightSemibold
             color: Theme.textColor
             Layout.fillWidth: true
+        }
+
+        Text {
+            id: descriptionText
+            text: root.sectionDescription
+            font.family: Theme.fontFamilySans
+            font.pixelSize: Theme.fontCaption
+            font.weight: Theme.weightRegular
+            color: Theme.secondaryText
+            lineHeight: Theme.lineHeightRelaxed
+            lineHeightMode: Text.ProportionalHeight
+            Layout.fillWidth: true
+            visible: text !== ""
         }
 
         Rectangle {

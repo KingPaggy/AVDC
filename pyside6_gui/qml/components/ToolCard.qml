@@ -44,8 +44,9 @@ Rectangle {
 
         Text {
             text: root.title
+            font.family: Theme.fontFamilySans
             font.pixelSize: Theme.fontBody
-            font.bold: true
+            font.weight: Theme.weightSemibold
             color: Theme.textColor
             Layout.fillWidth: true
             elide: Text.ElideRight
@@ -53,7 +54,9 @@ Rectangle {
 
         Text {
             text: root.description
+            font.family: Theme.fontFamilySans
             font.pixelSize: Theme.fontCaption
+            font.weight: Theme.weightRegular
             color: Theme.secondaryText
             Layout.fillWidth: true
             elide: Text.ElideRight
@@ -65,8 +68,9 @@ Rectangle {
 
         Text {
             text: root.actionLabel + " →"
+            font.family: Theme.fontFamilySans
             font.pixelSize: Theme.fontCaption
-            font.bold: true
+            font.weight: Theme.weightSemibold
             color: mouseArea.containsMouse ? Theme.accentColor : Theme.tertiaryText
             Behavior on color { ColorAnimation { duration: Theme.animationFast } }
         }

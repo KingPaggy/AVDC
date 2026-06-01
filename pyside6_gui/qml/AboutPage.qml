@@ -3,6 +3,7 @@ import QtQuick.Layouts 2.15
 
 // AboutPage — version info, dependencies, credits
 Item {
+    objectName: "aboutPage"
     id: aboutPage
 
     Rectangle {
@@ -19,15 +20,21 @@ Item {
             // Title
             Text {
                 text: "AVDC"
+                font.family: Theme.fontFamilyDisplay
                 font.pixelSize: Theme.fontPageTitle
-                font.bold: true
+                font.weight: Theme.weightBold
                 color: Theme.textColor
+                lineHeight: Theme.lineHeightTight
+                lineHeightMode: Text.ProportionalHeight
+                font.letterSpacing: Theme.letterSpacingTight
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
                 text: "PySide6 + QML 版"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontBody
+                font.weight: Theme.weightRegular
                 color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
@@ -43,21 +50,27 @@ Item {
             // Info
             Text {
                 text: "版本: 0.1.0"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontBody
+                font.weight: Theme.weightRegular
                 color: Theme.secondaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
                 text: "Python 3.13"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontCaption
+                font.weight: Theme.weightRegular
                 color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Text {
                 text: "Apple HIG 设计规范"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontCaption
+                font.weight: Theme.weightRegular
                 color: Theme.tertiaryText
                 Layout.alignment: Qt.AlignHCenter
             }
@@ -73,8 +86,12 @@ Item {
             // Tech stack
             Text {
                 text: "PySide6 · QML 2.15 · avdc-core"
+                font.family: Theme.fontFamilySans
                 font.pixelSize: Theme.fontMini
+                font.weight: Theme.weightRegular
                 color: Theme.tertiaryText
+                lineHeight: Theme.lineHeightRelaxed
+                lineHeightMode: Text.ProportionalHeight
                 Layout.alignment: Qt.AlignHCenter
             }
         }
