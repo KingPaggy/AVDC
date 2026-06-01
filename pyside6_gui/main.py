@@ -15,6 +15,9 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickImageProvider, QQuickWindow
 from PySide6.QtWidgets import QApplication, QStyle
 
+from core._event.event_bus import EventBus
+from log_bridge import LogBridge
+from processing_model import ProcessingModel
 from settings_model import SettingsModel
 
 
@@ -194,6 +197,16 @@ def main():
     settings = SettingsModel()
     engine.rootContext().setContextProperty("settings", settings)
     engine.rootContext().setContextProperty("Theme", THEME)
+
+    # EventBus + LogBridge (exposed to QML as "logBridge")
+    event_bus = EventBus()
+    log_bridge = LogBridge(event_bus=event_bus)
+    log_bridge.connect()
+    engine.rootContext().setContextProperty("logBridge", log_bridge)
+
+    # ProcessingModel (exposed to QML as "processing")
+    processing = ProcessingModel(config_model=settings)
+    engine.rootContext().setContextProperty("processing", processing)
 
     # WindowController must be registered BEFORE load() so QML can reference it
     class WindowController(QObject):

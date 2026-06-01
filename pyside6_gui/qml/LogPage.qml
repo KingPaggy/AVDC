@@ -102,4 +102,25 @@ Item {
             logView.logModel.remove(0, excess)
         }
     }
+
+    // ===== 连接 logBridge 信号 =====
+    Connections {
+        target: logBridge
+        function onLogReceived(level, message) {
+            if (message === "") return
+
+            var now = new Date()
+            var timestamp = Qt.formatDateTime(now, "hh:mm:ss")
+
+            // 映射 LogBridge level → LogViewer level
+            var viewerLevel = level
+            if (level === "SEPARATOR") viewerLevel = "INFO"
+
+            addLogEntry({
+                level: viewerLevel,
+                message: message,
+                timestamp: timestamp
+            })
+        }
+    }
 }
