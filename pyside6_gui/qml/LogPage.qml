@@ -3,7 +3,12 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 import "components"
 
-// LogPage — real-time log output with filtering
+// LogPage — 实时日志页面，使用 Python 侧过滤的虚拟化模型
+// logModel: LogFilterModel 实例（从 main.py 暴露）
+// - filterLevel: 过滤级别 (all/error/warn/info/debug)
+// - totalCount: 总日志数
+// - filteredModel: 过滤后的 QAbstractListModel
+// - clearAll(): 清空日志
 Item {
     objectName: "logPage"
     id: logPage
@@ -36,7 +41,7 @@ Item {
                     color: Theme.secondaryText
                 }
 
-                // Filter buttons
+                // Filter buttons — 直接设置 logModel.filterLevel
                 Repeater {
                     model: [
                         {value: "all", text: "全部"},
@@ -51,16 +56,23 @@ Item {
                         font.family: Theme.fontFamilySans
                         font.pixelSize: Theme.fontCaption
                         flat: true
-                        palette.buttonText: logPage._logFilter === modelData.value ? Theme.accentColor : Theme.tertiaryText
+                        palette.buttonText: logModel.filterLevel === modelData.value ? Theme.accentColor : Theme.tertiaryText
 
-                        onClicked: {
-                            logPage._logFilter = modelData.value
-                            logView.filterLevel = modelData.value
-                        }
+                        onClicked: logModel.filterLevel = modelData.value
                     }
                 }
 
                 Item { Layout.fillWidth: true }
+
+                // Log count indicator
+                Text {
+                    text: logModel.totalCount + " 条"
+                    font.family: Theme.fontFamilySans
+                    font.pixelSize: Theme.fontCaption
+                    font.weight: Theme.weightRegular
+                    color: Theme.tertiaryText
+                    visible: logModel.totalCount > 0
+                }
 
                 Button {
                     text: "清空"
@@ -68,7 +80,7 @@ Item {
                     font.pixelSize: Theme.fontCaption
                     flat: true
                     palette.buttonText: Theme.tertiaryText
-                    onClicked: logView.clearAll()
+                    onClicked: logModel.clearAll()
                 }
 
                 Button {
@@ -87,40 +99,14 @@ Item {
             id: logView
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: Theme.spacingMD
+            Layout.rightMargin: Theme.spacingMD
+            Layout.topMargin: Theme.spacingSM
+            Layout.bottomMargin: Theme.spacingMD
         }
     }
 
-    // Log state
-    property string _logFilter: "all"
-    property int _maxLogEntries: 1000
-
-    function addLogEntry(entry) {
-        logView.addEntry(entry)
-        // Trim oldest entries if exceeding limit — batch removal for O(n) performance
-        var excess = logView.logModel.count - _maxLogEntries
-        if (excess > 0) {
-            logView.logModel.remove(0, excess)
-        }
-    }
-
-    // ===== 连接 logBridge 信号 =====
-    Connections {
-        target: logBridge
-        function onLogReceived(level, message) {
-            if (message === "") return
-
-            var now = new Date()
-            var timestamp = Qt.formatDateTime(now, "hh:mm:ss")
-
-            // 映射 LogBridge level → LogViewer level
-            var viewerLevel = level
-            if (level === "SEPARATOR") viewerLevel = "INFO"
-
-            addLogEntry({
-                level: viewerLevel,
-                message: message,
-                timestamp: timestamp
-            })
-        }
-    }
+    // ===== 连接 logBridge 信号（备用，已由 Python main.py 连接） =====
+    // main.py 中: log_bridge.logReceived.connect(log_model.addEntry)
+    // 这里不需要再处理，logModel 自动接收日志
 }

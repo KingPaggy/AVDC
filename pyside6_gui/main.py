@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QStyle
 
 from core._event.event_bus import EventBus
 from log_bridge import LogBridge
+from log_model import LogFilterModel
 from processing_model import ProcessingModel
 from settings_model import SettingsModel
 
@@ -198,10 +199,16 @@ def main():
     engine.rootContext().setContextProperty("settings", settings)
     engine.rootContext().setContextProperty("Theme", THEME)
 
-    # EventBus + LogBridge (exposed to QML as "logBridge")
+    # EventBus + LogBridge + LogFilterModel (exposed to QML)
     event_bus = EventBus()
+    log_model = LogFilterModel(max_entries=1000)
     log_bridge = LogBridge(event_bus=event_bus)
     log_bridge.connect()
+    
+    # Connect LogBridge signals to LogFilterModel
+    log_bridge.logReceived.connect(log_model.addEntry)
+    
+    engine.rootContext().setContextProperty("logModel", log_model)
     engine.rootContext().setContextProperty("logBridge", log_bridge)
 
     # ProcessingModel (exposed to QML as "processing")

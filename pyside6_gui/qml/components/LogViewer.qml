@@ -2,17 +2,17 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 2.15
 
-// LogViewer — scrollable log display with level-based coloring
+// LogViewer — 虚拟化日志显示，使用 Qt AbstractListModel
+// QML ListView 只渲染可见行，实现真正的虚拟化
 ScrollView {
     id: root
     clip: true
 
-    property string filterLevel: "all"  // all | error | warn | info | debug
+    // 绑定到 logModel.filteredModel (QAbstractListModel)
+    // 这个 model 由 Python LogFilterModel 管理，已过滤
+    property var logModel: logModel.filteredModel
 
-    // ListModel for O(1) insert/delete without array re-creation
-    property var logModel: logListModel
-
-    // Lookup tables for level colors — avoids switch expressions in delegates
+    // 颜色查找表 — 避免 delegate 中的条件判断
     readonly property var _levelColors: ({
         "ERROR": Theme.errorColor,
         "WARN": Theme.warningColor,
@@ -32,37 +32,37 @@ ScrollView {
         "DEBUG": Theme.secondaryText
     })
 
-    function addEntry(entry) {
-        logModel.append(entry)
-        // Auto-scroll after append
-        Qt.callLater(logList.positionViewAtEnd)
-    }
-
-    function clearAll() {
-        logModel.clear()
-    }
-
-    ListModel {
-        id: logListModel
-    }
-
     ListView {
         id: logList
-        width: Math.max(root.width, Theme.maxContentWidth)
-        height: Math.max(root.height, logList.contentHeight)
-        model: logListModel
+        anchors.fill: parent
+        model: root.logModel
         spacing: 2
+        clip: true
+
+        // 虚拟化关键参数
+        cacheBuffer: 100  // 缓存额外 100px 内容，平滑滚动
+        preferredHighlightBegin: -1  // 不需要高亮
+        preferredHighlightEnd: -1
+        highlightRangeMode: ListView.StrictlyEnforceRange
+
+        // 自动滚动到底部（当有新日志时）
+        onCountChanged: {
+            if (count > 0 && !atYEnd) {
+                // 只有用户没有手动滚动时才自动滚动
+                // 使用 Timer 避免频繁调用
+                autoScrollTimer.start()
+            }
+        }
+
+        Timer {
+            id: autoScrollTimer
+            interval: 50
+            onTriggered: logList.positionViewAtEnd()
+        }
 
         delegate: RowLayout {
             width: ListView.view.width
             spacing: Theme.spacingSM
-
-            // Filter visibility — controlled by root.filterLevel, no array recreation
-            visible: root.filterLevel === "all" ||
-                     (root.filterLevel === "error" && model.level === "ERROR") ||
-                     (root.filterLevel === "warn" && model.level === "WARN") ||
-                     (root.filterLevel === "info" && model.level === "INFO") ||
-                     (root.filterLevel === "debug" && model.level === "DEBUG")
 
             // Timestamp
             Text {
@@ -110,5 +110,10 @@ ScrollView {
                 wrapMode: Text.NoWrap
             }
         }
+    }
+
+    // 滚动到底部的方法（供外部调用）
+    function scrollToBottom() {
+        logList.positionViewAtEnd()
     }
 }
