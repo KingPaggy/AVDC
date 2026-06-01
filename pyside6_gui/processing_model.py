@@ -182,7 +182,7 @@ class ProcessingModel(QObject):
             finally:
                 # 回到主线程设置状态
                 from PySide6.QtCore import QMetaObject, Qt
-                QMetaObject.invokeMethod(self, "_finishProcessing", Qt.QueuedConnection)
+                QMetaObject.invokeMethod(self, "_finishProcessing", Qt.ConnectionType.QueuedConnection)
 
         self._worker_thread = threading.Thread(target=_worker, daemon=True)
         self._worker_thread.start()
@@ -238,7 +238,7 @@ class ProcessingModel(QObject):
                 self.processingFinished.emit(0, 1, 0)
             finally:
                 from PySide6.QtCore import QMetaObject, Qt
-                QMetaObject.invokeMethod(self, "_finishProcessing", Qt.QueuedConnection)
+                QMetaObject.invokeMethod(self, "_finishProcessing", Qt.ConnectionType.QueuedConnection)
 
         self._worker_thread = threading.Thread(target=_worker, daemon=True)
         self._worker_thread.start()
