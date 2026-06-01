@@ -45,7 +45,6 @@ class TestProcessingModelSkeleton:
     def test_stop_slot_exists(self, qt_app):
         """stop() Slot 应该存在且可调用。"""
         model = ProcessingModel()
-        # 不应抛出异常
         model.stop()
 
     def test_stop_requests_flag(self, qt_app):
