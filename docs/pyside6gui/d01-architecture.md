@@ -125,6 +125,39 @@ window.setFlags(Qt.FramelessWindowHint | ...)
 controller.set_window(window)
 ```
 
+## 启动时序图
+
+`main()` 函数的完整执行流程：
+
+```
+main()
+│
+├─ 1. sys.path 注入项目根目录（确保 core 包可导入）
+├─ 2. QT_QUICK_CONTROLS_STYLE = "Basic"（允许自定义 TextField/RadioButton 外观）
+├─ 3. QApplication(sys.argv) + setOrganizationName/setApplicationName
+├─ 4. QQmlApplicationEngine()
+├─ 5. IconProvider(app) → engine.addImageProvider("styleicons", ...)
+│      将 QStyle 标准图标（house/doc/wrench/gear/info/expand/collapse）暴露给 QML
+├─ 6. SettingsModel() → setContextProperty("settings", ...)
+│      内部: AppConfig.from_ini() → 填充 _fields → Property getter 可用
+├─ 7. setContextProperty("Theme", THEME)  — 纯 dict，无副作用
+├─ 8. EventBus() + LogFilterModel(1000) + LogBridge(event_bus)
+│      log_bridge.connect()  — 订阅 LOG_INFO/LOG_ERROR/LOG_SEPARATOR
+│      log_bridge.logReceived.connect(log_model.addEntry)
+│      → setContextProperty("logModel", ...)
+├─ 9. ProcessingModel(config_model=settings) → setContextProperty("processing", ...)
+│      注意：config_model 是 SettingsModel 实例，用于 to_app_config()
+├─ 10. WindowController() → setContextProperty("windowController", ...)
+│       此时 _win = None，等 QML 加载完成后通过 set_window() 注入
+├─ 11. engine.load(qml_file)
+│       QML 解析 → 实例化 main.qml → Component.onCompleted → 首页加载
+├─ 12. window = engine.rootObjects()[0]
+│       window.setFlags(FramelessWindowHint | WindowSystemMenuHint | ...)
+│       window.setColor(Qt.transparent)  — 启用像素级透明，圆角平滑
+│       controller.set_window(window)  — 连接 visibilityChanged 信号
+└─ 13. app.exec()  — 进入 Qt 事件循环
+```
+
 ## 页面加载机制
 
 使用 `Loader` + `Component` 实现懒加载，切换页面时才实例化：

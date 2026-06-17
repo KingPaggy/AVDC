@@ -4,10 +4,35 @@
 
 ## 设计理念
 
-- **Apple HIG 平台无关**：语义化颜色命名，不绑定特定平台
-- **Dark Mode 默认**：所有颜色基于深色背景
-- **8pt 网格**：间距均为 4 的倍数
-- **集中管理**：所有视觉参数在 `main.py` 的 `THEME` dict 中定义，QML 只读引用
+### 为什么选择 Apple HIG 平台无关风格
+
+- **跨平台一致性**：语义化颜色命名（accentColor、errorColor）不绑定 macOS/iOS 特定 API，Windows/Linux 上同样适用
+- **成熟的色彩体系**：Apple 的系统色值经过大量用户测试，对比度符合 WCAG AA/AAA 标准
+- **开发者友好**：Apple HIG 文档完善，设计规范公开，便于团队统一理解
+
+### 为什么 Dark Mode 默认
+
+- **桌面工具类应用**：用户长时间操作，深色背景减少视觉疲劳
+- **OLED 友好**：低白光发射，省电（笔记本场景）
+- **媒体工具气质**：与 Emby/Plex 等媒体服务器的深色 UI 风格一致
+
+### 颜色选择依据
+
+- **系统色值**：直接采用 macOS 系统调色板（`#0A84FF` = macOS 系统蓝、`#FF453A` = 系统红）
+- **语义化命名**：`accentColor` 而非 `blueColor`，方便未来切换主题色
+- **背景层次**：`backgroundColor`(#1E1E1E) → `sidebarBg/cardBg`(#2D2D2D) → `inputBg`(#3A3A3C)，三级灰度营造层次感
+
+### 8pt 网格
+
+- 源自 iOS/macOS 设计传统，所有间距为 4 的倍数（4/8/12/16/20/24/32）
+- 确保组件对齐到像素网格，避免亚像素模糊
+- 与 Qt 的 Layout 系统天然兼容
+
+### 字体策略
+
+- **系统原生字体**：SF Pro Text / SF Pro Display / SF Mono，不嵌入自定义字体文件
+- **优点**：零额外依赖、与操作系统视觉一致、渲染性能最佳
+- **回退链**：`SF Mono, Menlo, Monaco, Courier New, monospace` 确保非 macOS 上也能显示
 
 ## 注入方式
 
