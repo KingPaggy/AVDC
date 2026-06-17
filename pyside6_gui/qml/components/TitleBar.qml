@@ -82,7 +82,7 @@ Rectangle {
         TitleBarButton {
             icon: "close"
             buttonColor: Theme.errorColor
-            onClicked: windowController.close()
+            onClicked: windowController.closeWindow()
         }
     }
 }

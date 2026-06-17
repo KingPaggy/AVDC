@@ -256,7 +256,7 @@ def main():
                     self._win.showMaximized()
 
         @Slot()
-        def close(self):
+        def closeWindow(self):
             if self._win:
                 self._win.close()
 
