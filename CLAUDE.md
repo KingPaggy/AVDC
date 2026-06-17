@@ -249,16 +249,16 @@ Keep index fresh: `codegraph sync .`
 | `requirements.md` | Core I/O contract | 核心模块的输入输出规范 |
 | `architecture.md` | System architecture overview | 系统架构、模块关系图 |
 | `scraping-flow.md` | Scraping workflow and pipeline details | 抓取流程、Pipeline 机制、Scraper Chain |
-| `qml-ui-design.md` | QML UI design manual | QML 组件规范、布局模式、Theme 系统 |
-| `pyside6-dynamic-property.md` | PySide6 动态 Property 陷阱 | 类工厂模式解决 meta-object 注册问题 |
+| `gui/qml-ui-design.md` | QML UI design manual | QML 组件规范、布局模式、Theme 系统 |
+| `gui/pyside6-dynamic-property.md` | PySide6 动态 Property 陷阱 | 类工厂模式解决 meta-object 注册问题 |
 
 ### 文档用途说明
 
 - **核心架构**：`requirements.md`、`architecture.md` — 理解系统整体设计
 - **抓取流程**：`scraping-flow.md` — 理解 Scraper 调度、Pipeline 机制、Scraper Chain
-- **GUI 开发**：`qml-ui-design.md` — QML 组件开发规范、布局模式、Theme 使用
-- **技术陷阱**：`pyside6-dynamic-property.md` — PySide6 Property 动态注册的已知问题及解决方案
+- **GUI 开发**：`gui/qml-ui-design.md` — QML 组件开发规范、布局模式、Theme 使用
+- **技术陷阱**：`gui/pyside6-dynamic-property.md` — PySide6 Property 动态注册的已知问题及解决方案
 
 ### Apple HIG Design Principles
 
-项目遵循 Apple Human Interface Guidelines（HIG）平台无关设计原则，详见 `docs/qml-ui-design.md`。
+项目遵循 Apple Human Interface Guidelines（HIG）平台无关设计原则，详见 `docs/gui/qml-ui-design.md`。
