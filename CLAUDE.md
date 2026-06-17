@@ -44,9 +44,14 @@ docs/
 ├── core/                        核心模块
 │   ├── 01-requirements.md       I/O 规范
 │   └── 02-scraping-flow.md      抓取流程
-├── pyside6gui/                  PySide6 GUI
-│   ├── 01-qml-ui-design.md      QML 设计手册
-│   └── 02-dynamic-property.md   动态 Property 踩坑
+├── pyside6gui/                  PySide6 GUI（7 个文件）
+│   ├── 01-architecture.md       整体架构 + 数据流
+│   ├── 02-theme-system.md       Theme 常量参考
+│   ├── 03-python-models.md      Python 模型层
+│   ├── 04-window-and-nav.md     窗口与导航
+│   ├── 05-component-library.md  组件库速查
+│   ├── 06-animation-and-interaction.md  动画与交互
+│   └── 07-dynamic-property.md   踩坑记录
 └── tooling/                     工具链
     └── 01-codegraph.md          CodeGraph 指南
 ```
@@ -118,8 +123,13 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 
 | 文档 | 内容 | 何时阅读 |
 |------|------|----------|
-| `pyside6gui/01-qml-ui-design.md` | QML 组件规范、布局模式、Theme | 开发 QML 页面/组件 |
-| `pyside6gui/02-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
+| `pyside6gui/01-architecture.md` | 整体架构、数据流、依赖库、Context Property 注册顺序 | 首次接触 GUI 代码 |
+| `pyside6gui/02-theme-system.md` | Theme 常量、颜色/间距/字号/组件尺寸全量参考 | 调整视觉样式 |
+| `pyside6gui/03-python-models.md` | SettingsModel + ProcessingModel + Log 系统 | 修改 Python 模型层 |
+| `pyside6gui/04-window-and-nav.md` | 无边框窗口、TitleBar、Sidebar、Loader、Toast | 修改窗口/导航 |
+| `pyside6gui/05-component-library.md` | 组件属性速查、布局规范、新增组件步骤 | 开发 QML 页面/组件 |
+| `pyside6gui/06-animation-and-interaction.md` | Behavior 动画、Timer、快捷键、状态过渡 | 添加动画/交互 |
+| `pyside6gui/07-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
 
 ### 工具链（`docs/tooling/`）
 
@@ -129,4 +139,4 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 
 ## Apple HIG Design
 
-项目遵循 Apple Human Interface Guidelines 平台无关设计原则，详见 [docs/pyside6gui/01-qml-ui-design.md](docs/pyside6gui/01-qml-ui-design.md)。
+项目遵循 Apple Human Interface Guidelines 平台无关设计原则，详见 [docs/pyside6gui/02-theme-system.md](docs/pyside6gui/02-theme-system.md)。
