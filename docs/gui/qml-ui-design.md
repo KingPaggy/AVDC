@@ -395,9 +395,67 @@ Python SettingsModel                    QML Components
 
 ---
 
-## 8. 编码规范
+## 8. QML 布局规范
 
-### 8.1 QML 文件规范
+### 8.1 文件命名
+
+- PascalCase 文件名，类型名匹配文件名（如 `SectionCard.qml` → `id: sectionCard`）
+- 组件放在 `qml/components/`，通过 `import "components"` 引入
+
+### 8.2 布局类型
+
+| 类型 | 子元素属性 | 说明 |
+|------|-----------|------|
+| `ColumnLayout` / `RowLayout` / `GridLayout` | `Layout.*`（`Layout.fillWidth`、`Layout.preferredHeight`） | 自动布局 |
+| `Column` / `Row` | `implicitHeight`/`implicitWidth` 或显式 `width`/`height` | **不能**使用 `Layout.*` |
+| `Item` / `Rectangle` | 显式尺寸或子元素 `implicitHeight` | 基础类型 |
+
+### 8.3 implicitHeight 关键概念
+
+- 非 Layout 父元素（如 `Column`）依赖子元素的 `implicitHeight` 来确定自身高度
+- 子元素既无 `implicitHeight` 也无显式 `height` → 父元素高度为 0，内容不可见
+- 在零高度父元素上 `anchors.fill: parent` 会形成循环依赖 → 布局失败
+
+### 8.4 SectionCard 模式
+
+```qml
+Rectangle {
+    id: root
+    implicitHeight: contentColumn.implicitHeight + padding
+    default property alias contentData: contentColumn.children
+
+    ColumnLayout {
+        id: contentColumn
+        width: parent.width - padding
+        x: padding / y: padding
+    }
+}
+```
+
+### 8.5 Page Layout 模式（ScrollView > Column > SectionCard）
+
+```qml
+ScrollView {
+    Column {
+        width: Math.min(parent.width - Theme.spacingXL * 2, Theme.maxContentWidth)
+        spacing: Theme.spacingLG
+        Item { implicitHeight: Theme.spacingXL }  // Top spacer
+        SectionCard { ... }
+        SectionCard { ... }
+        Item { implicitHeight: Theme.spacingXL }  // Bottom spacer
+    }
+}
+```
+
+### 8.6 Navigation 架构
+
+`SplitView` + `MacOSSidebar` + `Loader`（懒加载页面）。Sidebar 目标宽度 240pt，可折叠。
+
+---
+
+## 9. 编码规范
+
+### 9.1 QML 文件规范
 
 - **文件名**：PascalCase，如 `SettingsPage.qml`、`ConfigInput.qml`
 - **类型名**：与文件名一致（`Item { id: settingsPage }`）
@@ -405,7 +463,7 @@ Python SettingsModel                    QML Components
 - **属性声明**：放在组件顶部，`id` 之后
 - **注释**：`// 中文说明`，分组用 `// ===== 区块名 =====`
 
-### 8.2 属性命名
+### 9.2 属性命名
 
 ```qml
 // 对外暴露的 property
@@ -421,7 +479,7 @@ id: slider        // 滑块
 id: column        // 布局容器
 ```
 
-### 8.3 双向绑定防循环
+### 9.3 双向绑定防循环
 
 ```qml
 // ConfigInput 中的做法：
@@ -437,7 +495,7 @@ TextField {
 }
 ```
 
-### 8.4 颜色使用规范
+### 9.4 颜色使用规范
 
 ```qml
 // ❌ 不要：硬编码颜色散落在各处
@@ -451,7 +509,7 @@ color: "#1e1e2e"  // Catppuccin Mantle
 
 ---
 
-## 9. 可访问性
+## 10. 可访问性
 
 | 检查项 | 要求 | 状态 |
 |--------|------|------|
@@ -463,9 +521,9 @@ color: "#1e1e2e"  // Catppuccin Mantle
 
 ---
 
-## 10. 开发工作流
+## 11. 开发工作流
 
-### 10.1 添加新页面
+### 11.1 添加新页面
 
 1. 在 `qml/` 下创建 `XxxPage.qml`
 2. 在 `main.qml` 的 SwipeView 中添加页面
@@ -474,7 +532,7 @@ color: "#1e1e2e"  // Catppuccin Mantle
 5. 需要新数据 → 在 `settings_model.py` 添加 Property
 6. 运行 `pyside6-qmllint` 检查语法
 
-### 10.2 调试命令
+### 11.2 调试命令
 
 ```bash
 # QML 语法检查
@@ -487,7 +545,7 @@ color: "#1e1e2e"  // Catppuccin Mantle
 uv run python pyside6_gui/main.py
 ```
 
-### 10.3 目录结构
+### 11.3 目录结构
 
 ```
 pyside6_gui/
