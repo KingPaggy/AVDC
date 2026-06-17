@@ -56,6 +56,12 @@ docs/
     └── 01-codegraph.md          CodeGraph 指南
 ```
 
+### 📝 文档写作规范
+
+> **写任何文档之前，必须先阅读 [docs/00-doc-standards.md](docs/00-doc-standards.md)。**
+
+所有文档遵循该标准，包括：文件组织（单主题 / 10KB 上限 / 零重叠）、命名规范（`00-` overview / `d` design / `t` trap）、内容结构（摘要行 / 索引表格）等。
+
 ### Key Modules
 
 | Layer | Key File | Purpose |
@@ -130,6 +136,7 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 | `pyside6gui/05-component-library.md` | 组件属性速查、布局规范、新增组件步骤 | 开发 QML 页面/组件 |
 | `pyside6gui/06-animation-and-interaction.md` | Behavior 动画、Timer、快捷键、状态过渡 | 添加动画/交互 |
 | `pyside6gui/07-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
+| `pyside6gui/08-qml-pages.md` | 5 个 QML 页面的结构、数据绑定、交互流程 | 开发/调试页面逻辑 |
 
 ### 工具链（`docs/tooling/`）
 
