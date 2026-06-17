@@ -85,13 +85,14 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 
 | 文档 | 内容 | 何时阅读 |
 |------|------|----------|
-| [docs/architecture.md](docs/architecture.md) | 系统架构、模块关系图 | 理解整体设计 |
-| [docs/scraping-flow.md](docs/scraping-flow.md) | 抓取流程、Pipeline、Scraper Chain、新增刮削器步骤 | 修改刮削逻辑、添加新站点 |
-| [docs/requirements.md](docs/requirements.md) | 核心模块 I/O 规范 | 修改 core 模块接口 |
-| [docs/gui/qml-ui-design.md](docs/gui/qml-ui-design.md) | QML 组件规范、布局模式、Theme、SectionCard 模式 | 开发 QML 页面/组件 |
-| [docs/gui/pyside6-dynamic-property.md](docs/gui/pyside6-dynamic-property.md) | PySide6 动态 Property 陷阱与解决方案 | 修改 SettingsModel |
-| [docs/codegraph.md](docs/codegraph.md) | CodeGraph 代码智能工具使用指南 | 需要代码导航/影响分析 |
+| [docs/01-project-overview.md](docs/01-project-overview.md) | 项目总览、技术栈、快速导航 | 首次了解项目 |
+| [docs/02-architecture.md](docs/02-architecture.md) | 系统架构、模块关系图 | 理解整体设计 |
+| [docs/core/02-scraping-flow.md](docs/core/02-scraping-flow.md) | 抓取流程、Pipeline、Scraper Chain、新增刮削器步骤 | 修改刮削逻辑、添加新站点 |
+| [docs/core/01-requirements.md](docs/core/01-requirements.md) | 核心模块 I/O 规范 | 修改 core 模块接口 |
+| [docs/pyside6gui/01-qml-ui-design.md](docs/pyside6gui/01-qml-ui-design.md) | QML 组件规范、布局模式、Theme、SectionCard 模式 | 开发 QML 页面/组件 |
+| [docs/pyside6gui/02-dynamic-property.md](docs/pyside6gui/02-dynamic-property.md) | PySide6 动态 Property 陷阱与解决方案 | 修改 SettingsModel |
+| [docs/tooling/01-codegraph.md](docs/tooling/01-codegraph.md) | CodeGraph 代码智能工具使用指南 | 需要代码导航/影响分析 |
 
 ## Apple HIG Design
 
-项目遵循 Apple Human Interface Guidelines 平台无关设计原则，详见 [docs/gui/qml-ui-design.md](docs/gui/qml-ui-design.md)。
+项目遵循 Apple Human Interface Guidelines 平台无关设计原则，详见 [docs/pyside6gui/01-qml-ui-design.md](docs/pyside6gui/01-qml-ui-design.md)。
