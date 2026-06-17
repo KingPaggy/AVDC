@@ -31,7 +31,24 @@ pyside6_gui/       PySide6 + QML GUI (primary frontend)
 pyqt5-gui/         PyQt5 GUI (legacy frontend)
 cli/               CLI frontend (no Qt dependency)
 tui-go/            Go TUI frontend
-docs/              Documentation
+docs/              Documentation（按编号排序，子文件夹按模块分组）
+resources/         Icons, screenshots
+```
+
+### Docs Structure
+
+```
+docs/
+├── 01-project-overview.md       项目总览
+├── 02-architecture.md           系统架构
+├── core/                        核心模块
+│   ├── 01-requirements.md       I/O 规范
+│   └── 02-scraping-flow.md      抓取流程
+├── pyside6gui/                  PySide6 GUI
+│   ├── 01-qml-ui-design.md      QML 设计手册
+│   └── 02-dynamic-property.md   动态 Property 踩坑
+└── tooling/                     工具链
+    └── 01-codegraph.md          CodeGraph 指南
 ```
 
 ### Key Modules
@@ -83,15 +100,32 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 
 > 按需深入，点击跳转到对应文档。
 
+### 项目级（`docs/` 顶层）
+
 | 文档 | 内容 | 何时阅读 |
 |------|------|----------|
-| [docs/01-project-overview.md](docs/01-project-overview.md) | 项目总览、技术栈、快速导航 | 首次了解项目 |
-| [docs/02-architecture.md](docs/02-architecture.md) | 系统架构、模块关系图 | 理解整体设计 |
-| [docs/core/02-scraping-flow.md](docs/core/02-scraping-flow.md) | 抓取流程、Pipeline、Scraper Chain、新增刮削器步骤 | 修改刮削逻辑、添加新站点 |
-| [docs/core/01-requirements.md](docs/core/01-requirements.md) | 核心模块 I/O 规范 | 修改 core 模块接口 |
-| [docs/pyside6gui/01-qml-ui-design.md](docs/pyside6gui/01-qml-ui-design.md) | QML 组件规范、布局模式、Theme、SectionCard 模式 | 开发 QML 页面/组件 |
-| [docs/pyside6gui/02-dynamic-property.md](docs/pyside6gui/02-dynamic-property.md) | PySide6 动态 Property 陷阱与解决方案 | 修改 SettingsModel |
-| [docs/tooling/01-codegraph.md](docs/tooling/01-codegraph.md) | CodeGraph 代码智能工具使用指南 | 需要代码导航/影响分析 |
+| `docs/01-project-overview.md` | 项目总览、技术栈、快速导航 | 首次了解项目 |
+| `docs/02-architecture.md` | 系统架构、模块关系图 | 理解整体设计 |
+
+### 核心模块（`docs/core/`）
+
+| 文档 | 内容 | 何时阅读 |
+|------|------|----------|
+| `core/01-requirements.md` | 核心 I/O 黑盒规范 | 修改 core 模块接口 |
+| `core/02-scraping-flow.md` | 抓取流程、Pipeline、Scraper Chain | 修改刮削逻辑、添加新站点 |
+
+### PySide6 GUI（`docs/pyside6gui/`）
+
+| 文档 | 内容 | 何时阅读 |
+|------|------|----------|
+| `pyside6gui/01-qml-ui-design.md` | QML 组件规范、布局模式、Theme | 开发 QML 页面/组件 |
+| `pyside6gui/02-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
+
+### 工具链（`docs/tooling/`）
+
+| 文档 | 内容 | 何时阅读 |
+|------|------|----------|
+| `tooling/01-codegraph.md` | CodeGraph 代码智能工具指南 | 需要代码导航/影响分析 |
 
 ## Apple HIG Design
 
