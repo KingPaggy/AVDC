@@ -161,6 +161,7 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 | `pyside6gui/d10-accessibility.md` | QML Accessible 属性、键盘导航、屏幕阅读器 | 添加无障碍支持 |
 | `pyside6gui/d11-internationalization.md` | Qt 国际化、qsTr()、翻译工作流 | 添加多语言支持 |
 | `pyside6gui/d12-qml-conventions.md` | QML 代码规范（命名、布局、import） | 编写 QML 代码 |
+| `pyside6gui/d13-modern-qml-page.md` | 现代化页面编写指南（样式、动画、性能） | 编写现代化 QML 页面 |
 | `pyside6gui/t01-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
 | `pyside6gui/t02-debugging-guide.md` | QML 控制台错误、日志调试、性能分析 | 调试 GUI 问题 |
 

@@ -21,9 +21,10 @@
 | 步骤 | 文档 | 你将了解 |
 |------|------|----------|
 | 4 | [d12-qml-conventions.md](d12-qml-conventions.md) | **代码规范**：命名、布局、import 顺序 |
-| 5 | [d05-component-library.md](d05-component-library.md) | 组件速查：现有组件怎么用、如何新增组件 |
-| 6 | [d07-qml-pages.md](d07-qml-pages.md) | 页面结构：5 个页面如何组织、数据绑定 |
-| 7 | [d04-window-and-nav.md](d04-window-and-nav.md) | 窗口导航：无边框窗口、侧边栏、Toast |
+| 5 | [d13-modern-qml-page.md](d13-modern-qml-page.md) | **现代化页面**：样式、动画、性能优化 |
+| 6 | [d05-component-library.md](d05-component-library.md) | 组件速查：现有组件怎么用、如何新增组件 |
+| 7 | [d07-qml-pages.md](d07-qml-pages.md) | 页面结构：5 个页面如何组织、数据绑定 |
+| 8 | [d04-window-and-nav.md](d04-window-and-nav.md) | 窗口导航：无边框窗口、侧边栏、Toast |
 
 ### 遇到问题
 
@@ -62,5 +63,6 @@
 | d10 | [d10-accessibility.md](d10-accessibility.md) | design | Accessible 属性、键盘导航、屏幕阅读器 |
 | d11 | [d11-internationalization.md](d11-internationalization.md) | design | qsTr() 翻译、.ts/.qm 文件、本地化 |
 | d12 | [d12-qml-conventions.md](d12-qml-conventions.md) | design | QML 代码规范（命名、布局、import） |
+| d13 | [d13-modern-qml-page.md](d13-modern-qml-page.md) | design | 现代化页面编写指南 |
 | t01 | [t01-dynamic-property.md](t01-dynamic-property.md) | trap | Qt 动态 Property 注册失败的解法 |
 | t02 | [t02-debugging-guide.md](t02-debugging-guide.md) | trap | QML 调试、性能分析、常见错误 |
