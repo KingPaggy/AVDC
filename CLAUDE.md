@@ -47,7 +47,7 @@ docs/
 │   ├── 01-requirements.md       I/O 规范
 │   └── 02-scraping-flow.md      抓取流程
 ├── pyside6gui/                  PySide6 GUI（d=设计 / t=踩坑）
-│   ├── 00-overview.md           目录概览
+│   ├── 00-overview.md           目录概览 + 学习路径
 │   ├── d01-architecture.md      整体架构 + 数据流
 │   ├── d02-theme-system.md      Theme 常量参考
 │   ├── d03-python-models.md     Python 模型层
@@ -59,6 +59,7 @@ docs/
 │   ├── d09-data-binding.md      数据绑定详解
 │   ├── d10-accessibility.md     无障碍访问指南
 │   ├── d11-internationalization.md 国际化指南
+│   ├── d12-qml-conventions.md   QML 代码规范
 │   ├── t01-dynamic-property.md  踩坑：动态 Property 陷阱
 │   └── t02-debugging-guide.md   踩坑：调试指南
 └── tooling/                     工具链
@@ -159,6 +160,7 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 | `pyside6gui/d09-data-binding.md` | Python ↔ QML 绑定机制、Signal/Property、调试技巧 | 修改数据绑定 |
 | `pyside6gui/d10-accessibility.md` | QML Accessible 属性、键盘导航、屏幕阅读器 | 添加无障碍支持 |
 | `pyside6gui/d11-internationalization.md` | Qt 国际化、qsTr()、翻译工作流 | 添加多语言支持 |
+| `pyside6gui/d12-qml-conventions.md` | QML 代码规范（命名、布局、import） | 编写 QML 代码 |
 | `pyside6gui/t01-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
 | `pyside6gui/t02-debugging-guide.md` | QML 控制台错误、日志调试、性能分析 | 调试 GUI 问题 |
 
