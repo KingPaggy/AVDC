@@ -55,7 +55,12 @@ docs/
 │   ├── d05-component-library.md 组件库速查
 │   ├── d06-animation-and-interaction.md  动画与交互
 │   ├── d07-qml-pages.md         QML 页面详解
-│   └── t01-dynamic-property.md  踩坑：动态 Property 陷阱
+│   ├── d08-testing.md           测试策略与实践
+│   ├── d09-data-binding.md      数据绑定详解
+│   ├── d10-accessibility.md     无障碍访问指南
+│   ├── d11-internationalization.md 国际化指南
+│   ├── t01-dynamic-property.md  踩坑：动态 Property 陷阱
+│   └── t02-debugging-guide.md   踩坑：调试指南
 └── tooling/                     工具链
     ├── 00-overview.md           目录概览
     └── 01-codegraph.md          CodeGraph 指南
@@ -66,6 +71,15 @@ docs/
 > **写任何文档之前，必须先阅读 [docs/00-doc-standards.md](docs/00-doc-standards.md)。**
 
 所有文档遵循该标准，包括：文件组织（单主题 / 10KB 上限 / 零重叠）、命名规范（`00-` overview / `d` design / `t` trap）、内容结构（摘要行 / 索引表格）等。
+
+### 🛠️ Edit / Write 工具使用规范
+
+编辑文档时遵循以下原则：
+
+- **优先使用 Edit**：丰富现有文档时，用 Edit 工具精确插入/替换内容，而非重写整个文件
+- **Write 只写大纲**：新建文件时，先用 Write 工具创建一个骨架大纲（标题 + 空章节），不要一次写入大量内容
+- **渐进式丰富**：通过 Read 工具阅读源码确定要新增的内容，然后每次 Edit 只修改一个细节点
+- **小步迭代**：每轮 Edit 聚焦一个具体的知识点或章节，避免一次性大段修改
 
 ### Key Modules
 
@@ -140,8 +154,13 @@ Shared fixtures: `core/test/conftest.py`, `pyside6_gui/test/conftest.py`.
 | `pyside6gui/d04-window-and-nav.md` | 无边框窗口、TitleBar、Sidebar、Loader、Toast | 修改窗口/导航 |
 | `pyside6gui/d05-component-library.md` | 组件属性速查、布局规范、新增组件步骤 | 开发 QML 页面/组件 |
 | `pyside6gui/d06-animation-and-interaction.md` | Behavior 动画、Timer、快捷键、状态过渡 | 添加动画/交互 |
-| `pyside6gui/t01-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
 | `pyside6gui/d07-qml-pages.md` | 5 个 QML 页面的结构、数据绑定、交互流程 | 开发/调试页面逻辑 |
+| `pyside6gui/d08-testing.md` | 测试架构、Mock 策略、QML 测试、截图回归 | 添加/运行 GUI 测试 |
+| `pyside6gui/d09-data-binding.md` | Python ↔ QML 绑定机制、Signal/Property、调试技巧 | 修改数据绑定 |
+| `pyside6gui/d10-accessibility.md` | QML Accessible 属性、键盘导航、屏幕阅读器 | 添加无障碍支持 |
+| `pyside6gui/d11-internationalization.md` | Qt 国际化、qsTr()、翻译工作流 | 添加多语言支持 |
+| `pyside6gui/t01-dynamic-property.md` | 动态 Property 陷阱与类工厂解法 | 修改 SettingsModel |
+| `pyside6gui/t02-debugging-guide.md` | QML 控制台错误、日志调试、性能分析 | 调试 GUI 问题 |
 
 ### 工具链（`docs/tooling/`）
 

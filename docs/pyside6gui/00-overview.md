@@ -13,4 +13,9 @@
 | d05 | [d05-component-library.md](d05-component-library.md) | design | 组件属性速查、布局规范 |
 | d06 | [d06-animation-and-interaction.md](d06-animation-and-interaction.md) | design | 动画、状态过渡、快捷键 |
 | d07 | [d07-qml-pages.md](d07-qml-pages.md) | design | 5 个页面内部结构 |
+| d08 | [d08-testing.md](d08-testing.md) | design | 测试架构、Mock 策略、截图回归 |
+| d09 | [d09-data-binding.md](d09-data-binding.md) | design | Python ↔ QML 绑定机制、双向绑定防循环 |
+| d10 | [d10-accessibility.md](d10-accessibility.md) | design | Accessible 属性、键盘导航、屏幕阅读器 |
+| d11 | [d11-internationalization.md](d11-internationalization.md) | design | qsTr() 翻译、.ts/.qm 文件、本地化 |
 | t01 | [t01-dynamic-property.md](t01-dynamic-property.md) | trap | Qt 动态 Property 注册失败的解法 |
+| t02 | [t02-debugging-guide.md](t02-debugging-guide.md) | trap | QML 调试、性能分析、常见错误 |

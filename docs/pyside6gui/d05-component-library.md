@@ -265,3 +265,229 @@ TextField {
     }
 }
 ```
+
+---
+
+## 组件开发详解
+
+### 开发 Checklist
+
+| # | 检查项 | 原因 |
+|---|--------|------|
+| 1 | 使用 `Theme.*` 常量 | 不硬编码颜色/尺寸，保持视觉一致 |
+| 2 | 设置 `implicitHeight` | 在非 Layout 父元素中自撑高度 |
+| 3 | 双向绑定用 `_suppressUpdate` | 防止循环更新 |
+| 4 | 添加 `Accessible.role` | 屏幕阅读器支持 |
+| 5 | 使用 `Behavior on` | 交互动画平滑过渡 |
+| 6 | 光标形状正确 | 可点击元素用 `PointingHandCursor` |
+| 7 | 运行 `qmllint` | 检查语法错误 |
+
+### 完整示例：开发 ConfigColorPicker
+
+从 0 开发一个新的配置组件：
+
+**步骤 1：创建组件文件**
+
+```qml
+// qml/components/ConfigColorPicker.qml
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+
+RowLayout {
+    id: root
+    spacing: Theme.spacingSM
+
+    // 对外属性
+    property string labelText: ""
+    property color colorValue: "#000000"
+
+    // 内部状态
+    property bool _suppressUpdate: false
+
+    // 无障碍
+    Accessible.role: Accessible.Group
+    Accessible.name: labelText
+
+    // 标签
+    Text {
+        text: labelText
+        color: Theme.textColor
+        font.pixelSize: Theme.fontBody
+        Layout.preferredWidth: Theme.labelWidthWide
+    }
+
+    // 颜色预览 + 点击区域
+    Rectangle {
+        width: 40
+        height: 24
+        radius: Theme.radiusSM
+        color: root.colorValue
+        border.color: Theme.separatorColor
+        border.width: 1
+
+        Behavior on color {
+            ColorAnimation { duration: Theme.animationFast }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: colorDialog.open()
+        }
+    }
+
+    // 颜色值显示
+    Text {
+        text: root.colorValue.toString().toUpperCase()
+        color: Theme.secondaryText
+        font.pixelSize: Theme.fontBodySm
+        font.family: Theme.fontMonospace
+    }
+
+    // 系统颜色选择器（Qt 6）
+    Dialog {
+        id: colorDialog
+        title: "选择颜色"
+        // ... 颜色选择逻辑
+    }
+
+    // 外部更新时同步内部状态
+    onColorValueChanged: {
+        if (!_suppressUpdate) {
+            // 同步逻辑
+        }
+    }
+}
+```
+
+**步骤 2：在页面中使用**
+
+```qml
+// SettingsPage.qml
+SectionCard {
+    sectionTitle: "主题设置"
+    ConfigColorPicker {
+        labelText: "强调色"
+        colorValue: settings.accentColor
+        onColorValueChanged: settings.accentColor = colorValue
+    }
+}
+```
+
+**步骤 3：添加 SCHEMA 字段（如需持久化）**
+
+```python
+# settings_model.py
+SCHEMA = {
+    # ...
+    "accent_color": (str, "#0A84FF", "accentColor"),
+}
+```
+
+**步骤 4：测试**
+
+```python
+# test/test_config_color_picker.py
+def test_color_picker_default():
+    """验证默认颜色值"""
+    assert settings.accentColor == "#0A84FF"
+
+def test_color_picker_change():
+    """验证颜色变更信号"""
+    spy = QSignalSpy(settings.accentColorChanged)
+    settings.accentColor = "#FF0000"
+    assert spy.count() == 1
+```
+
+### 性能优化
+
+**1. Loader 延迟加载**
+
+```qml
+// 不推荐：所有页面立即实例化
+Item {
+    HomePage { visible: currentPage === 0 }
+    SettingsPage { visible: currentPage === 1 }
+}
+
+// 推荐：使用 Loader 按需加载
+Loader {
+    id: pageLoader
+    sourceComponent: currentPage === 0 ? homeComponent : settingsComponent
+
+    Component { id: homeComponent; HomePage {} }
+    Component { id: settingsComponent; SettingsPage {} }
+}
+```
+
+**2. ListView 虚拟化**
+
+```qml
+// 不推荐：Repeater 实例化所有项
+Repeater {
+    model: 1000
+    delegate: Rectangle { /* ... */ }
+}
+
+// 推荐：ListView 只渲染可见项
+ListView {
+    model: 1000
+    delegate: Rectangle { /* ... */ }
+    cacheBuffer: 100  // 缓存额外 100px
+}
+```
+
+**3. 避免 delegate 内条件判断**
+
+```qml
+// 不推荐：每个 delegate 都计算颜色
+delegate: Rectangle {
+    color: {
+        if (model.level === "ERROR") return Theme.errorColor
+        if (model.level === "WARN") return Theme.warningColor
+        return Theme.infoColor
+    }
+}
+
+// 推荐：使用查找表
+delegate: Rectangle {
+    readonly property var _levelColors: ({
+        "ERROR": Theme.errorColor,
+        "WARN": Theme.warningColor,
+        "INFO": Theme.infoColor
+    })
+    color: _levelColors[model.level] || Theme.infoColor
+}
+```
+
+### 组件测试模板
+
+```python
+# test/test_my_component.py
+import pytest
+from PySide6.QtQML import QQmlApplicationEngine
+
+class TestMyComponent:
+    @pytest.fixture
+    def engine(self, qt_app):
+        engine = QQmlApplicationEngine()
+        engine.rootContext().setContextProperty("Theme", THEME)
+        engine.load("qml/components/MyComponent.qml")
+        return engine
+
+    def test_loads_without_error(self, engine):
+        """验证组件可加载"""
+        assert len(engine.rootObjects()) > 0
+
+    def test_default_property_values(self, engine):
+        """验证默认属性值"""
+        root = engine.rootObjects()[0]
+        assert root.property("myProperty") == "default"
+
+    def test_signal_emitted_on_change(self, engine):
+        """验证信号发射"""
+        root = engine.rootObjects()[0]
+        spy = QSignalSpy(root.mySignal)
+        root.setProperty("myProperty", "new_value")
+        assert spy.count() == 1
+```

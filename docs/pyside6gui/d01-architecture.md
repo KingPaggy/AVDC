@@ -158,6 +158,129 @@ main()
 └─ 13. app.exec()  — 进入 Qt 事件循环
 ```
 
+## main.py 启动流程详解
+
+### sys.path 注入
+
+```python
+# main.py 第 6-10 行
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+```
+
+**原因**：`pyside6_gui/` 作为独立包运行，需要向上查找 `core/` 包。不使用 `pip install -e .` 时必须手动注入。
+
+### QT_QUICK_CONTROLS_STYLE
+
+```python
+os.environ["QT_QUICK_CONTROLS_STYLE"] = "Basic"
+```
+
+**原因**：默认 macOS 风格会锁定 TextField/RadioButton 外观，无法自定义背景和边框。Basic 风格允许完全覆盖。
+
+### IconProvider 实现
+
+```python
+class IconProvider(QQuickImageProvider):
+    def __init__(self, app):
+        super().__init__(QQuickImageProvider.Image)
+        self._style_map = {
+            "house": QStyle.SP_DirHomeIcon,
+            "doc": QStyle.SP_FileIcon,
+            "wrench": QStyle.SP_DialogApplyButton,
+            "gear": QStyle.SP_DialogHelpButton,
+            "info": QStyle.SP_MessageBoxInformation,
+            "expand": QStyle.SP_ArrowRight,
+            "collapse": QStyle.SP_ArrowLeft,
+        }
+
+    def requestImage(self, id, size, requestedSize):
+        m = re.match(r"^(house|doc|wrench|gear|info|expand|collapse)", id)
+        if not m:
+            return QImage()
+        sp = self._style_map.get(m.group(1))
+        icon = self._app.style().standardIcon(QStyle.StandardPixmap(sp))
+        w = requestedSize.width() if requestedSize is not None else 16
+        h = requestedSize.height() if requestedSize is not None else 16
+        return icon.pixmap(w, h).toImage()
+```
+
+QML 使用：`source: "image://styleicons/house"`
+
+### WindowController 内联定义
+
+`main.py` 将 `WindowController` 定义在 `main()` 函数内部（非顶层类），因为它只在启动时用到一次：
+
+```python
+def main():
+    # ...
+
+    class WindowController(QObject):
+        isMaximizedChanged = Signal()
+
+        def __init__(self):
+            super().__init__()
+            self._win = None  # 延迟注入
+
+        def set_window(self, win: QQuickWindow):
+            self._win = win
+            self._win.visibilityChanged.connect(self._on_visibility_changed)
+
+        @Slot()
+        def startMove(self):
+            if self._win:
+                self._win.startSystemMove()
+
+        @Slot(int)
+        def startResize(self, edge: int):
+            if self._win:
+                self._win.startSystemResize(Qt.Edge(edge))
+
+        @Slot()
+        def minimize(self):
+            if self._win:
+                self._win.showMinimized()
+
+        @Slot()
+        def maximize(self):
+            if self._win:
+                if self._win.visibility() == QQuickWindow.Maximized:
+                    self._win.showNormal()
+                else:
+                    self._win.showMaximized()
+
+        @Slot()
+        def closeWindow(self):
+            if self._win:
+                self._win.close()
+
+        @Property(bool, notify=isMaximizedChanged)
+        def isMaximized(self):
+            if self._win:
+                return self._win.visibility() == QQuickWindow.Maximized
+            return False
+
+    controller = WindowController()
+    engine.rootContext().setContextProperty("windowController", controller)
+```
+
+### 窗口标志设置（加载后）
+
+必须在 `engine.load()` **之后**，因为此时才能获取 root window 对象：
+
+```python
+window = engine.rootObjects()[0]
+if isinstance(window, QQuickWindow):
+    window.setFlags(
+        Qt.FramelessWindowHint        # 移除系统标题栏
+        | Qt.WindowSystemMenuHint     # 保留系统菜单（Alt+Space）
+        | Qt.WindowMinMaxButtonsHint  # 保留最小/最大按钮语义
+    )
+    window.setColor(Qt.transparent)   # 启用像素级透明，圆角平滑
+    controller.set_window(window)     # 注入窗口引用
+```
+
 ## 页面加载机制
 
 使用 `Loader` + `Component` 实现懒加载，切换页面时才实例化：
