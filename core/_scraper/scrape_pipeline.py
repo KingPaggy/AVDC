@@ -60,6 +60,12 @@ def _to_movie(json_data: dict) -> Movie:
     # Sanitize text fields
     for field in ("title", "studio", "director", "series", "publisher"):
         setattr(movie, field, getattr(movie, field, "").replace("/", ""))
+    # Sanitize actor names (actor is a list)
+    if movie.actor:
+        movie.actor = [
+            a.replace("/", "").replace("\\", "").replace("..", "")
+            for a in movie.actor
+        ]
     # Normalize empty actor
     if not movie.actor:
         movie.actor = ["Unknown"]

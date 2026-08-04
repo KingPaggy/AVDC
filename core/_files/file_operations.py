@@ -18,6 +18,7 @@ from PIL import Image
 from core._config.config import AppConfig
 from core._config.logger import logger
 from core._files.file_utils import check_pic, escapePath
+from core._net.networking import _validate_url
 from core._services.metadata import get_info
 
 # ========================================================================
@@ -39,6 +40,7 @@ def download_file(
     failed_folder: str = "",
 ) -> bool:
     """Download *url* to *path/filename*, retrying per config. Returns True on success."""
+    _validate_url(url)
     proxies = config.get_proxies_dict()
     timeout = config.timeout
     retry_count = config.retry

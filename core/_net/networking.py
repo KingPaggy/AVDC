@@ -1,4 +1,6 @@
+import ipaddress
 import time
+from urllib.parse import urlparse
 
 import requests
 import cloudscraper
@@ -7,6 +9,21 @@ from urllib3.util.retry import Retry
 
 from core._config.config_io import get_proxy_config
 from core._config.errors import NetworkError, ConfigError
+
+
+def _validate_url(url: str) -> str:
+    """Reject non-http(s) schemes and private/reserved IP addresses."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise NetworkError(f"Blocked URL scheme: {parsed.scheme}")
+    hostname = parsed.hostname or ""
+    try:
+        addr = ipaddress.ip_address(hostname)
+        if addr.is_private or addr.is_reserved or addr.is_loopback or addr.is_link_local:
+            raise NetworkError(f"Blocked private/reserved IP: {hostname}")
+    except ValueError:
+        pass
+    return url
 
 # Module-level session with connection pooling
 _session = requests.Session()
@@ -49,6 +66,7 @@ def get_html(url, cookies=None):
     except Exception as e:
         raise ConfigError(f"Proxy config error: {e}") from e
 
+    _validate_url(url)
     proxies = get_proxies(proxy_type, proxy)
     for i in range(retry_count):
         try:
