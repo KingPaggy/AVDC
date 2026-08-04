@@ -3,7 +3,10 @@ package controllers
 import (
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
+	"avdc-tui/pkg/python"
 	"avdc-tui/pkg/util"
 
 	"github.com/jesseduffield/gocui"
@@ -26,10 +29,20 @@ type GUI interface {
 	GetGui() *gocui.Gui
 }
 
+// scanCache holds cached scan results to avoid repeated Python subprocess calls.
+type scanCache struct {
+	mu        sync.Mutex
+	dir       string
+	files     []util.VideoFile
+	timestamp time.Time
+}
+
 // FilesController handles file list interactions.
 type FilesController struct {
 	gui     GUI
 	scraper *Scraper
+	client  *python.Client
+	cache   scanCache
 }
 
 // Setup registers file-specific keybindings.
@@ -125,11 +138,56 @@ func (c *FilesController) promptDirectory(v *gocui.View) error {
 }
 
 func (c *FilesController) scanAndDisplay(dir string) error {
-	files, err := util.ScanDir(dir)
-	if err != nil {
-		return c.showError(err.Error())
+	// Check cache first (30 second TTL)
+	c.cache.mu.Lock()
+	if c.cache.dir == dir && time.Since(c.cache.timestamp) < 30*time.Second {
+		files := c.cache.files
+		c.cache.mu.Unlock()
+		return c.displayFiles(dir, files)
 	}
+	c.cache.mu.Unlock()
 
+	// Show loading indicator
+	v, _ := c.gui.GetView("files")
+	v.Editable = false
+	v.Clear()
+	c.gui.SetViewTitle(v, "Scanning...")
+	fmt.Fprint(v, "[yellow]Scanning directory via Python core...")
+
+	// Run scan asynchronously
+	go func() {
+		result, err := c.client.Scan(dir)
+		g := c.gui.GetGui()
+		g.Update(func(g *gocui.Gui) error {
+			if err != nil {
+				return c.showError(err.Error())
+			}
+
+			// Convert Scan results to VideoFile
+			files := make([]util.VideoFile, len(result.Files))
+			for i, f := range result.Files {
+				files[i] = util.VideoFile{
+					Path:   f.File,
+					Name:   f.Name,
+					Number: f.Number,
+				}
+			}
+
+			// Update cache
+			c.cache.mu.Lock()
+			c.cache.dir = dir
+			c.cache.files = files
+			c.cache.timestamp = time.Now()
+			c.cache.mu.Unlock()
+
+			return c.displayFiles(dir, files)
+		})
+	}()
+
+	return nil
+}
+
+func (c *FilesController) displayFiles(dir string, files []util.VideoFile) error {
 	v, _ := c.gui.GetView("files")
 	v.Editable = false
 	v.Clear()
@@ -177,5 +235,7 @@ func (c *FilesController) showError(msg string) error {
 
 // NewFilesController creates a new files controller.
 func NewFilesController(g GUI, s *Scraper) *FilesController {
-	return &FilesController{gui: g, scraper: s}
+	projectRoot := python.FindProjectRoot()
+	client := python.NewClient(projectRoot)
+	return &FilesController{gui: g, scraper: s, client: client}
 }

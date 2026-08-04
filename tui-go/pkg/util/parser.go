@@ -1,3 +1,10 @@
+// Package util provides utility functions for the Go TUI.
+//
+// Deprecated: The number extraction logic in this package (ExtractNumber) is
+// duplicated from Python core/_files/file_utils.py. File scanning and number
+// extraction are now handled by Python core via python.Client.Scan().
+// This file is kept for reference and backward compatibility but should not
+// be used for new code. It will be removed in a future version.
 package util
 
 import (
@@ -7,6 +14,8 @@ import (
 )
 
 // Number extraction regex patterns — translated from Python core/_files/file_utils.py
+// Deprecated: Use python.Client.Scan() instead, which calls the Python core
+// directly and ensures consistent behavior across all frontends.
 var (
 	reCD          = regexp.MustCompile(`(?i)-CD\d+`)
 	reDate        = regexp.MustCompile(`-\d{4}-\d{1,2}-\d{1,2}|\d{4}-\d{1,2}-\d{1,2}-`)

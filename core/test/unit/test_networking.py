@@ -2,8 +2,52 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from core._net.networking import get_proxies, get_html, post_html
+from core._net.networking import get_proxies, get_html, post_html, _validate_url
 from core._config.errors import ConfigError, NetworkError
+
+
+class TestValidateUrl:
+    """Tests for SSRF protection in _validate_url."""
+
+    def test_allows_http(self):
+        assert _validate_url("http://example.com/path") == "http://example.com/path"
+
+    def test_allows_https(self):
+        assert _validate_url("https://example.com/path") == "https://example.com/path"
+
+    def test_blocks_file_scheme(self):
+        with pytest.raises(NetworkError, match="Blocked URL scheme"):
+            _validate_url("file:///etc/passwd")
+
+    def test_blocks_ftp_scheme(self):
+        with pytest.raises(NetworkError, match="Blocked URL scheme"):
+            _validate_url("ftp://example.com/file")
+
+    def test_blocks_localhost(self):
+        with pytest.raises(NetworkError, match="Blocked private/reserved IP"):
+            _validate_url("http://127.0.0.1/admin")
+
+    def test_blocks_private_10(self):
+        with pytest.raises(NetworkError, match="Blocked private/reserved IP"):
+            _validate_url("http://10.0.0.1/internal")
+
+    def test_blocks_private_172(self):
+        with pytest.raises(NetworkError, match="Blocked private/reserved IP"):
+            _validate_url("http://172.16.0.1/internal")
+
+    def test_blocks_private_192(self):
+        with pytest.raises(NetworkError, match="Blocked private/reserved IP"):
+            _validate_url("http://192.168.1.1/admin")
+
+    def test_blocks_link_local(self):
+        with pytest.raises(NetworkError, match="Blocked private/reserved IP"):
+            _validate_url("http://169.254.169.254/latest/meta-data")
+
+    def test_allows_public_ip(self):
+        assert _validate_url("http://8.8.8.8/dns") == "http://8.8.8.8/dns"
+
+    def test_allows_domain_name(self):
+        assert _validate_url("https://api.example.com/v1") == "https://api.example.com/v1"
 
 
 class TestGetProxies:

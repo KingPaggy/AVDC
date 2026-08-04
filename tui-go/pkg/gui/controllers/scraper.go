@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"avdc-tui/pkg/python"
 )
 
 // ScrapingState tracks the current scraping progress.
@@ -75,15 +76,17 @@ type JSONEvent struct {
 
 // Scraper manages subprocess calls to cli.py.
 type Scraper struct {
-	gui   GUI
-	state *ScrapingState
+	gui    GUI
+	state  *ScrapingState
+	client *python.Client
 }
 
 // NewScraper creates a new scraper.
-func NewScraper(g GUI) *Scraper {
+func NewScraper(g GUI, client *python.Client) *Scraper {
 	return &Scraper{
-		gui:   g,
-		state: &ScrapingState{},
+		gui:    g,
+		state:  &ScrapingState{},
+		client: client,
 	}
 }
 
@@ -115,8 +118,12 @@ func (s *Scraper) StartScrape(dir string, mode int) error {
 func (s *Scraper) runScrape(dir string, mode int) {
 	defer s.state.SetRunning(false)
 
-	// Find project root (where cli.py lives)
-	projectRoot := findProjectRoot()
+	if s.client == nil {
+		s.gui.AppendLog("Error: Python client not initialized", 1)
+		return
+	}
+
+	projectRoot := s.client.ProjectRoot()
 	if projectRoot == "" {
 		s.gui.AppendLog("Error: cannot find project root", 1)
 		return
@@ -207,22 +214,3 @@ func (s *Scraper) handleJSONLine(line string) {
 	}
 }
 
-// findProjectRoot searches upward for the directory containing cli/cli.py.
-func findProjectRoot() string {
-	dir, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-	for i := 0; i < 10; i++ {
-		cliPath := filepath.Join(dir, "cli", "cli.py")
-		if _, err := os.Stat(cliPath); err == nil {
-			return dir
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-	return ""
-}

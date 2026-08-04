@@ -22,6 +22,11 @@ type VideoFile struct {
 }
 
 // ScanDir scans a directory for video files and extracts movie numbers.
+//
+// Deprecated: This function only performs single-level directory scanning and
+// uses a local port of the number extraction logic. Use python.Client.Scan()
+// instead, which calls Python core's movie_lists() + getNumber() for
+// consistent behavior (recursive scanning, escape folder/string support).
 func ScanDir(dirPath string) ([]VideoFile, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {

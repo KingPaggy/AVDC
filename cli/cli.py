@@ -409,6 +409,31 @@ def _cmd_poster_crop(args, config: AppConfig):
             sys.exit(1)
 
 
+def _cmd_scan(args, config: AppConfig):
+    """Scan directory for video files and extract numbers. Returns JSON."""
+    from core._files.file_utils import movie_lists, getNumber
+
+    escape_folder = args.escape_folder if args.escape_folder is not None else config.folders
+    media_type = args.media_type if args.media_type is not None else config.media_type
+    escape_string = args.escape_string if args.escape_string is not None else config.string
+
+    file_list = movie_lists(escape_folder, media_type, args.path)
+
+    files = []
+    for f in file_list:
+        number = getNumber(f, escape_string)
+        directory = os.path.dirname(f)
+        name = os.path.splitext(os.path.basename(f))[0]
+        files.append({
+            "file": f,
+            "name": name,
+            "number": number,
+            "dir": directory,
+        })
+
+    print(json.dumps({"files": files, "total": len(files)}, ensure_ascii=False), flush=True)
+
+
 # ---------------------------------------------------------------------------
 # Summary helpers
 # ---------------------------------------------------------------------------
@@ -483,6 +508,13 @@ def main():
     pc_parser.add_argument("--output", help="Output poster path")
     pc_parser.add_argument("--method", default="center", choices=["center"], help="Crop method")
     pc_parser.add_argument("--batch", action="store_true", help="Batch crop all thumbs in directory")
+
+    # --- scan subcommand ---
+    scan_parser = subparsers.add_parser("scan", help="Scan directory for video files and extract numbers")
+    scan_parser.add_argument("--path", default=".", help="Directory to scan")
+    scan_parser.add_argument("--escape-folder", default=None, help="Override escape folders from config")
+    scan_parser.add_argument("--media-type", default=None, help="Override media types from config")
+    scan_parser.add_argument("--escape-string", default=None, help="Override escape string from config")
 
     # --- top-level arguments (batch mode defaults) ---
     parser.add_argument(
@@ -596,6 +628,10 @@ def main():
 
     if args.command == "poster-crop":
         _cmd_poster_crop(args, config)
+        return
+
+    if args.command == "scan":
+        _cmd_scan(args, config)
         return
 
     # --- Batch / single mode ---

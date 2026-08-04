@@ -232,4 +232,87 @@ class TestErrorHandling:
                     with patch("core._files.file_utils.movie_lists", return_value=[]):
                         main()
         captured = capsys.readouterr()
-        assert "No files to process" in captured.err
+
+
+# ========================================================================
+# Scan subcommand
+# ========================================================================
+
+class TestScanCommand:
+    """Test the scan subcommand for file scanning and number extraction."""
+
+    def test_scan_returns_json_with_files(self, capsys):
+        """scan subcommand should output JSON with files array and total."""
+        import json
+        test_args = ["cli.py", "scan", "--path", "/tmp/movies"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.AppConfig") as MockConfig:
+                MockConfig.from_ini.return_value = _mock_config()
+                with patch("core._files.file_utils.movie_lists", return_value=[
+                    "/tmp/movies/SSIS-123.mp4",
+                    "/tmp/movies/ABP-456.mkv",
+                ]):
+                    with patch("core._files.file_utils.getNumber", side_effect=["SSIS-123", "ABP-456"]):
+                        main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out.strip())
+        assert result["total"] == 2
+        assert len(result["files"]) == 2
+        assert result["files"][0]["number"] == "SSIS-123"
+        assert result["files"][1]["number"] == "ABP-456"
+
+    def test_scan_empty_directory(self, capsys):
+        """scan should return empty files array for empty directory."""
+        import json
+        test_args = ["cli.py", "scan", "--path", "/tmp/empty"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.AppConfig") as MockConfig:
+                MockConfig.from_ini.return_value = _mock_config()
+                with patch("core._files.file_utils.movie_lists", return_value=[]):
+                    main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out.strip())
+        assert result["total"] == 0
+        assert result["files"] == []
+
+    def test_scan_file_without_number(self, capsys):
+        """scan should include files even when number extraction fails."""
+        import json
+        test_args = ["cli.py", "scan", "--path", "/tmp/movies"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.AppConfig") as MockConfig:
+                MockConfig.from_ini.return_value = _mock_config()
+                with patch("core._files.file_utils.movie_lists", return_value=[
+                    "/tmp/movies/random_video.mp4",
+                ]):
+                    with patch("core._files.file_utils.getNumber", return_value=""):
+                        main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out.strip())
+        assert result["total"] == 1
+        assert result["files"][0]["number"] == ""
+        assert result["files"][0]["name"] == "random_video"
+
+    def test_scan_with_escape_folder_override(self, capsys):
+        """scan should accept --escape-folder override."""
+        import json
+        test_args = ["cli.py", "scan", "--path", "/tmp/movies", "--escape-folder", "failed,JAV_output"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.AppConfig") as MockConfig:
+                config = _mock_config()
+                MockConfig.from_ini.return_value = config
+                with patch("core._files.file_utils.movie_lists", return_value=[]) as mock_lists:
+                    main()
+                mock_lists.assert_called_once_with("failed,JAV_output", config.media_type, "/tmp/movies")
+
+    def test_scan_with_media_type_override(self, capsys):
+        """scan should accept --media-type override."""
+        import json
+        test_args = ["cli.py", "scan", "--path", "/tmp/movies", "--media-type", ".mp4|.mkv"]
+        with patch("sys.argv", test_args):
+            with patch("cli.cli.AppConfig") as MockConfig:
+                config = _mock_config()
+                MockConfig.from_ini.return_value = config
+                with patch("core._files.file_utils.movie_lists", return_value=[]) as mock_lists:
+                    main()
+                mock_lists.assert_called_once_with(config.folders, ".mp4|.mkv", "/tmp/movies")

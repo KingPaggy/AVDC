@@ -14,8 +14,119 @@ from core._files.file_utils import escapePath, getNumber, getDataState, is_uncen
 from core._services.metadata import get_info
 from core._services.naming_service import resolve_name
 from core._models.models import Movie
-from core._scraper.scrape_pipeline import getDataFromJSON as scrape_pipeline_getDataFromJSON
+from core._scraper.scrape_pipeline import getDataFromJSON as scrape_pipeline_getDataFromJSON, _to_movie
 import core._scraper.scrape_pipeline as scrape_pipeline
+
+
+class ScrapePipelineSecurityTests(unittest.TestCase):
+    """Tests for security fixes in scrape_pipeline."""
+
+    def test_actor_sanitizes_forward_slash(self):
+        """actor field should have / removed to prevent directory traversal."""
+        data = {
+            "title": "Movie",
+            "actor": ["Actor/Name"],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, ["ActorName"])
+
+    def test_actor_sanitizes_backslash(self):
+        """actor field should have \\ removed to prevent directory traversal."""
+        data = {
+            "title": "Movie",
+            "actor": ["Actor\\Name"],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, ["ActorName"])
+
+    def test_actor_sanitizes_double_dot(self):
+        """actor field should have .. removed to prevent directory traversal."""
+        data = {
+            "title": "Movie",
+            "actor": [".."],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, [""])
+
+    def test_actor_sanitizes_complex_traversal(self):
+        """actor field should sanitize complex traversal attempts."""
+        data = {
+            "title": "Movie",
+            "actor": ["../etc/passwd"],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertNotIn("..", movie.actor[0])
+        self.assertNotIn("/", movie.actor[0])
+        self.assertNotIn("\\", movie.actor[0])
+
+    def test_actor_multiple_names_all_sanitized(self):
+        """All actor names in the list should be sanitized."""
+        data = {
+            "title": "Movie",
+            "actor": ["Actor/One", "Actor\\Two", "../Actor/Three"],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, ["ActorOne", "ActorTwo", "ActorThree"])
+
+    def test_actor_empty_list_defaults_to_unknown(self):
+        """Empty actor list should default to ['Unknown']."""
+        data = {
+            "title": "Movie",
+            "actor": [],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, ["Unknown"])
+
+    def test_actor_normal_names_unchanged(self):
+        """Normal actor names without special chars should remain unchanged."""
+        data = {
+            "title": "Movie",
+            "actor": ["John Doe", "Jane Smith"],
+            "studio": "",
+            "director": "",
+            "series": "",
+            "publisher": "",
+            "release": "2024-01-01",
+            "number": "TEST-123",
+        }
+        movie = _to_movie(data)
+        self.assertEqual(movie.actor, ["John Doe", "Jane Smith"])
 
 
 class CoreFileUtilsTests(unittest.TestCase):
