@@ -1,4 +1,28 @@
-# AVDC — Project Guide
+# AGENTS.md — AVDC_Page 项目记忆
+
+> 来源：原 pi-hermes-memory 项目记忆迁移（2026-09-09）
+> 相关：QML 布局坑已入全局踩坑合集
+
+## THEME 字典字体属性命名
+
+- 字体族：fontFamilySans / fontFamilyDisplay / fontFamilyMono
+- 字重：weightLight ~ weightBold
+- 行高：lineHeightTight / Normal / Relaxed
+- 字间距：letterSpacingTight / Normal / Wide
+- QML 引用：`font.family: Theme.fontFamilySans`、`font.weight:
+  Theme.weightSemibold`
+- ⚠️ 必须用 `font.letterSpacing`，不是顶层属性
+
+## 文档组织
+
+- docs/ 文档组织与丰富工作流（编号前缀、Edit 优先、AGENTS.md
+  精简索引）见项目 AGENTS.md 与 docs/
+- QML 布局陷阱已迁全局踩坑合集
+
+---
+
+## 项目指引（合并自原 CLAUDE.md，2026-09-12）
+
 
 > AI assistant reference for working with this repository.
 
