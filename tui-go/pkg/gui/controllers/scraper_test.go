@@ -3,6 +3,7 @@ package controllers
 import (
 	"testing"
 
+	"avdc-tui/pkg/commands"
 	"avdc-tui/pkg/gui/types"
 
 	"github.com/jesseduffield/gocui"
@@ -70,78 +71,73 @@ func TestScrapingState_ThreadSafety(t *testing.T) {
 	}
 }
 
-func TestScraperHandleJSONLine(t *testing.T) {
+func TestScraperHandleEvent(t *testing.T) {
 	mock := &mockGUIForScraper{}
 	scraper := &Scraper{gui: mock, state: &ScrapingState{}}
 
 	tests := []struct {
 		name   string
-		input  string
+		input  commands.Event
 		verify func(*ScrapingState) bool
 	}{
 		{
 			name:  "progress event",
-			input: `{"type":"progress","current":3,"total":10,"file":"ssis-123.mp4"}`,
+			input: commands.Event{Type: "progress", Current: 3, Total: 10},
 			verify: func(s *ScrapingState) bool {
 				return s.Current == 3 && s.Total == 10
 			},
 		},
 		{
 			name:  "success event",
-			input: `{"type":"success","file":"ssis-123.mp4","suffix":"-C"}`,
+			input: commands.Event{Type: "success", File: "ssis-123.mp4"},
 			verify: func(s *ScrapingState) bool {
 				return s.Success == 1
 			},
 		},
 		{
 			name:  "failure event",
-			input: `{"type":"failure","file":"unknown.mp4","reason":"timeout"}`,
+			input: commands.Event{Type: "failure", File: "unknown.mp4", Reason: "timeout"},
 			verify: func(s *ScrapingState) bool {
 				return s.Failed == 1
 			},
 		},
 		{
 			name:  "done event",
-			input: `{"type":"done","total":10,"success":8,"failed":2}`,
+			input: commands.Event{Type: "done", Total: 10, Success: 8, Failed: 2},
 			verify: func(s *ScrapingState) bool {
 				return s.Total == 10 && s.Success == 8 && s.Failed == 2
 			},
 		},
 		{
-			name:   "invalid json does not crash",
-			input:  `this is not json`,
-			verify: func(s *ScrapingState) bool { return true },
-		},
-		{
-			name:   "empty string does not crash",
-			input:  ``,
+			name:  "unknown type ignored",
+			input: commands.Event{Type: "bogus"},
 			verify: func(s *ScrapingState) bool { return true },
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scraper.handleJSONLine(tt.input)
+			scraper.handleEvent(tt.input)
 			if !tt.verify(scraper.state) {
-				t.Errorf("state verification failed after: %s", tt.input)
+				t.Errorf("state verification failed after: %s", tt.input.Type)
 			}
 		})
 	}
 }
 
-func TestScraperHandleJSONLine_Sequence(t *testing.T) {
+func TestScraperHandleEvent_Sequence(t *testing.T) {
 	mock := &mockGUIForScraper{}
 	scraper := &Scraper{gui: mock, state: &ScrapingState{}}
 
 	// Simulate a full scrape session
-	scraper.handleJSONLine(`{"type":"progress","current":1,"total":3,"file":"a.mp4"}`)
-	scraper.handleJSONLine(`{"type":"log","msg":"Starting scrape"}`)
-	scraper.handleJSONLine(`{"type":"success","file":"a.mp4","suffix":"-C"}`)
-	scraper.handleJSONLine(`{"type":"progress","current":2,"total":3,"file":"b.mp4"}`)
-	scraper.handleJSONLine(`{"type":"failure","file":"b.mp4","reason":"timeout"}`)
-	scraper.handleJSONLine(`{"type":"progress","current":3,"total":3,"file":"c.mp4"}`)
-	scraper.handleJSONLine(`{"type":"success","file":"c.mp4","suffix":""}`)
-	scraper.handleJSONLine(`{"type":"done","total":3,"success":2,"failed":1}`)
+	scraper.handleEvent(commands.Event{Type: "progress", Current: 1, Total: 3, File: "a.mp4"})
+	scraper.handleEvent(commands.Event{Type: "log", Msg: "Starting scrape"})
+	scraper.handleEvent(commands.Event{Type: "success", File: "a.mp4", Suffix: "-C"})
+	scraper.handleEvent(commands.Event{Type: "progress", Current: 2, Total: 3, File: "b.mp4"})
+	scraper.handleEvent(commands.Event{Type: "failure", File: "b.mp4", Reason: "timeout"})
+	scraper.handleEvent(commands.Event{Type: "progress", Current: 3, Total: 3, File: "c.mp4"})
+	scraper.handleEvent(commands.Event{Type: "success", File: "c.mp4"})
+	scraper.handleEvent(commands.Event{Type: "done", Total: 3, Success: 2, Failed: 1})
 
 	s := scraper.state
 	if s.Success != 2 {
@@ -155,12 +151,12 @@ func TestScraperHandleJSONLine_Sequence(t *testing.T) {
 	}
 }
 
-func TestScraperHandleJSONLogEvents(t *testing.T) {
+func TestScraperHandleLogEvents(t *testing.T) {
 	mock := &mockGUIForScraper{}
 	scraper := &Scraper{gui: mock, state: &ScrapingState{}}
 
-	scraper.handleJSONLine(`{"type":"log","msg":"[INFO] Starting"}`)
-	scraper.handleJSONLine(`{"type":"log","msg":"[ERROR] Failed"}`)
+	scraper.handleEvent(commands.Event{Type: "log", Msg: "[INFO] Starting"})
+	scraper.handleEvent(commands.Event{Type: "log", Msg: "[ERROR] Failed"})
 
 	if len(mock.logs) != 2 {
 		t.Errorf("log count: expected 2, got %d", len(mock.logs))

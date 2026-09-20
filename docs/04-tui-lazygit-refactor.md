@@ -201,5 +201,13 @@ Go 子进程：Commands 层 → cli.py --json-output
   目标，但复用模式建立（新增菜单仅需几行 config）；confirm_dialog
   原无调用点（死代码）一并清除；Menu 未接入 context 栈（仍由
   调用方切回焦点），留待后续。
-- [ ] Phase 5：Python 命令层
+- [x] **Phase 5**（2026-09-20）：Python 命令层。新建 pkg/commands/
+  （ProcessRunner：子进程 + JSONL 流式解析 + 进程组 kill 取消 + 
+  cancelled flag；CmdFactory 注入支持 mock；ScanArgs/ProcessArgs）；
+  Scraper 改用 ProcessRunner + 事件回调，新增 Cancel（状态机
+  running/cancelling）；x 键取消（files/log）；uv 绝对路径统一。
+  commands 层 6 个 mock 子进程测试（事件流/stderr/非 JSON/取消/
+  并发拒绝/args）。偏差：python/client.go 的 Scan 保留同步实现
+  （不并入流式 ProcessRunner）；取消状态显示为日志行而非独立
+  toast。
 - [ ] Phase 6：交互增强（可选）

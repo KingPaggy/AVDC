@@ -46,7 +46,8 @@ func (c *Client) ProjectRoot() string {
 func (c *Client) Scan(dir string) (*ScanResult, error) {
 	cliPath := filepath.Join(c.projectRoot, "cli", "cli.py")
 
-	cmd := exec.Command("uv", "run", "python", cliPath, "scan", "--path", dir)
+	cmd := exec.Command("/opt/homebrew/bin/uv", "run", "python",
+		cliPath, "scan", "--path", dir)
 	cmd.Dir = c.projectRoot
 
 	var stdout, stderr bytes.Buffer

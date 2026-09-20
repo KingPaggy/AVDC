@@ -5,7 +5,6 @@ import (
 	"avdc-tui/pkg/gui/controllers"
 	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/gui/types"
-	"avdc-tui/pkg/python"
 	"strconv"
 	"sync"
 
@@ -124,11 +123,8 @@ func (g *Gui) setupKeybindings() error {
 	if err := g.keybindings.setup(); err != nil {
 		return err
 	}
-	// Create Python client for subprocess calls
-	projectRoot := python.FindProjectRoot()
-	pyClient := python.NewClient(projectRoot)
-	// Create scraper with Python client
-	g.scraper = controllers.NewScraper(g, pyClient)
+	// Create scraper with ProcessRunner (commands layer)
+	g.scraper = controllers.NewScraper(g)
 	// Register file-specific bindings (FilesController creates its own client reference)
 	g.filesCtrl = controllers.NewFilesController(g, g.scraper)
 	if err := g.filesCtrl.Setup(); err != nil {

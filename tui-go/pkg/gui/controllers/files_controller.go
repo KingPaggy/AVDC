@@ -73,6 +73,24 @@ func (c *FilesController) Setup() error {
 			return err
 		}
 	}
+
+	// x: cancel current scrape（files + log 全局语义）
+	if err := g.SetKeybinding(v, 'x', gocui.ModNone,
+		c.handleCancelScrape); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("log", 'x', gocui.ModNone,
+		c.handleCancelScrape); err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleCancelScrape 取消当前刮削任务。
+func (c *FilesController) handleCancelScrape(g *gocui.Gui, v *gocui.View) error {
+	if c.scraper != nil {
+		c.scraper.Cancel()
+	}
 	return nil
 }
 

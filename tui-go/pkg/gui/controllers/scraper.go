@@ -1,27 +1,25 @@
 package controllers
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 
+	"avdc-tui/pkg/commands"
 	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/python"
 )
 
 // ScrapingState tracks the current scraping progress.
 type ScrapingState struct {
-	Running bool
-	Total   int
-	Success int
-	Failed  int
-	Current int
-	Dir     string
-	mu      sync.Mutex
+	Running    bool
+	Cancelling bool
+	Total      int
+	Success    int
+	Failed     int
+	Current    int
+	Dir        string
+	mu         sync.Mutex
 }
 
 // IsRunning returns true if scraping is in progress.
@@ -36,6 +34,20 @@ func (s *ScrapingState) SetRunning(r bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Running = r
+}
+
+// IsCancelling returns true if a cancel was requested.
+func (s *ScrapingState) IsCancelling() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Cancelling
+}
+
+// SetCancelling sets the cancelling flag.
+func (s *ScrapingState) SetCancelling(c bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Cancelling = c
 }
 
 // IncrementSuccess increments the success counter.
@@ -60,34 +72,23 @@ func (s *ScrapingState) UpdateProgress(current, total int) {
 	s.Total = total
 }
 
-// JSONEvent represents a JSON line from cli.py --json-output.
-type JSONEvent struct {
-	Type    string `json:"type"`
-	Msg     string `json:"msg,omitempty"`
-	File    string `json:"file,omitempty"`
-	Suffix  string `json:"suffix,omitempty"`
-	Reason  string `json:"reason,omitempty"`
-	Error   string `json:"error,omitempty"`
-	Current int    `json:"current,omitempty"`
-	Total   int    `json:"total,omitempty"`
-	Success int    `json:"success,omitempty"`
-	Failed  int    `json:"failed,omitempty"`
-	Result  string `json:"result,omitempty"`
-}
-
-// Scraper manages subprocess calls to cli.py.
+// Scraper 管理刮削子进程：通过 commands.ProcessRunner
+// 流式解析 JSONL 事件并更新状态/视图。
 type Scraper struct {
 	gui    GUI
 	state  *ScrapingState
-	client *python.Client
+	runner *commands.ProcessRunner
 }
 
-// NewScraper creates a new scraper.
-func NewScraper(g GUI, client *python.Client) *Scraper {
+// NewScraper creates a new scraper with a ProcessRunner
+// pointed at cli/cli.py.
+func NewScraper(g GUI) *Scraper {
+	projectRoot := python.FindProjectRoot()
+	cliPath := filepath.Join(projectRoot, "cli", "cli.py")
 	return &Scraper{
 		gui:    g,
 		state:  &ScrapingState{},
-		client: client,
+		runner: commands.NewProcessRunner(projectRoot, cliPath),
 	}
 }
 
@@ -103,6 +104,7 @@ func (s *Scraper) StartScrape(dir string, mode int) error {
 	}
 
 	s.state.SetRunning(true)
+	s.state.SetCancelling(false)
 	s.state.Dir = dir
 	s.state.Total = 0
 	s.state.Success = 0
@@ -110,7 +112,8 @@ func (s *Scraper) StartScrape(dir string, mode int) error {
 	s.state.Current = 0
 
 	s.gui.ClearResults()
-	s.gui.AppendLog("Starting scrape: mode="+fmt.Sprint(mode)+" dir="+dir, helpers.LevelInfo)
+	s.gui.AppendLog("Starting scrape: mode="+fmt.Sprint(mode)+
+		" dir="+dir, helpers.LevelInfo)
 
 	go s.runScrape(dir, mode)
 	return nil
@@ -119,99 +122,68 @@ func (s *Scraper) StartScrape(dir string, mode int) error {
 func (s *Scraper) runScrape(dir string, mode int) {
 	defer s.state.SetRunning(false)
 
-	if s.client == nil {
-		s.gui.AppendLog("Error: Python client not initialized", helpers.LevelError)
+	args := commands.ProcessArgs(dir, mode)
+	err := s.runner.Run(args, s.handleEvent, func(line string) {
+		s.gui.AppendLog("[STDERR] "+line, helpers.LevelInfo)
+	})
+
+	if s.state.IsCancelling() {
+		s.gui.AppendLog("Scrape cancelled", helpers.LevelInfo)
+		s.state.SetCancelling(false)
 		return
 	}
-
-	projectRoot := s.client.ProjectRoot()
-	if projectRoot == "" {
-		s.gui.AppendLog("Error: cannot find project root", helpers.LevelError)
-		return
-	}
-
-	cmd := exec.Command(
-		"uv", "run", "python",
-		filepath.Join(projectRoot, "cli", "cli.py"),
-		"--path", dir,
-		"--main-mode", fmt.Sprint(mode),
-		"--json-output",
-	)
-	cmd.Dir = projectRoot
-
-	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		s.gui.AppendLog("Error creating stdout pipe: "+err.Error(), helpers.LevelError)
-		return
-	}
-
-	stderr, _ := cmd.StderrPipe()
-
-	if err := cmd.Start(); err != nil {
-		s.gui.AppendLog("Error starting cli.py: "+err.Error(), helpers.LevelError)
-		return
-	}
-
-	// Read stdout JSON lines
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		line := scanner.Text()
-		s.handleJSONLine(line)
-	}
-
-	// Read stderr for any non-JSON output
-	errScanner := bufio.NewScanner(stderr)
-	for errScanner.Scan() {
-		line := errScanner.Text()
-		if strings.TrimSpace(line) != "" {
-			s.gui.AppendLog("[STDERR] "+line, helpers.LevelInfo)
-		}
-	}
-
-	if err := cmd.Wait(); err != nil {
-		s.gui.AppendLog("Process exited with error: "+err.Error(), helpers.LevelError)
+		s.gui.AppendLog("Process error: "+err.Error(), helpers.LevelError)
 	}
 
 	s.gui.AppendLog(
 		fmt.Sprintf("Done: %d total, %d success, %d failed",
 			s.state.Total, s.state.Success, s.state.Failed),
-		0,
+		helpers.LevelInfo,
 	)
-
-	s.gui.UpdateStatusDone(s.state.Success, s.state.Failed, s.state.Total, dir)
+	s.gui.UpdateStatusDone(s.state.Success, s.state.Failed,
+		s.state.Total, dir)
 }
 
-func (s *Scraper) handleJSONLine(line string) {
-	var event JSONEvent
-	if err := json.Unmarshal([]byte(line), &event); err != nil {
-		s.gui.AppendLog("Parse error: "+err.Error(), helpers.LevelError)
-		return
-	}
-
-	switch event.Type {
+// handleEvent 处理一条 JSONL 事件，更新状态与视图。
+func (s *Scraper) handleEvent(ev commands.Event) {
+	switch ev.Type {
 	case "log":
-		s.gui.AppendLog(event.Msg, helpers.LevelInfo)
+		s.gui.AppendLog(ev.Msg, helpers.LevelInfo)
 
 	case "progress":
-		s.state.UpdateProgress(event.Current, event.Total)
-		s.gui.UpdateStatusScraping(event.Current, event.Total, s.state.Dir)
-		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s", event.Current, event.Total, event.File), helpers.LevelInfo)
+		s.state.UpdateProgress(ev.Current, ev.Total)
+		s.gui.UpdateStatusScraping(ev.Current, ev.Total, s.state.Dir)
+		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s",
+			ev.Current, ev.Total, ev.File), helpers.LevelInfo)
 
 	case "success":
 		s.state.IncrementSuccess()
-		fileName := filepath.Base(event.File)
-		s.gui.AddResult(fmt.Sprintf("[OK] %s %s", fileName, event.Suffix), helpers.LevelInfo)
+		fileName := filepath.Base(ev.File)
+		s.gui.AddResult(fmt.Sprintf("[OK] %s %s",
+			fileName, ev.Suffix), helpers.LevelInfo)
 
 	case "failure":
 		s.state.IncrementFailed()
-		fileName := filepath.Base(event.File)
-		s.gui.AddResult(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), helpers.LevelError)
-		s.gui.AppendLog(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), helpers.LevelError)
+		fileName := filepath.Base(ev.File)
+		s.gui.AddResult(fmt.Sprintf("[FAIL] %s: %s",
+			fileName, ev.Reason), helpers.LevelError)
+		s.gui.AppendLog(fmt.Sprintf("[FAIL] %s: %s",
+			fileName, ev.Reason), helpers.LevelError)
 
 	case "done":
-		s.state.Total = event.Total
-		s.state.Success = event.Success
-		s.state.Failed = event.Failed
+		s.state.Total = ev.Total
+		s.state.Success = ev.Success
+		s.state.Failed = ev.Failed
 	}
 }
 
+// Cancel 取消当前刮削任务（kill 进程组，不残留子进程）。
+// 未运行时无操作。
+func (s *Scraper) Cancel() {
+	if !s.state.IsRunning() {
+		return
+	}
+	s.state.SetCancelling(true)
+	s.runner.Cancel()
+}
