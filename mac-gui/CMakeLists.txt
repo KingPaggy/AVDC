@@ -12,5 +12,6 @@ if(APPLE)
 endif()
 
 add_subdirectory(src/core)
+add_subdirectory(src/bridge)
 add_subdirectory(src/ui)
 add_subdirectory(src/shell)
