@@ -166,3 +166,23 @@ Go 子进程：Commands 层 → cli.py --json-output
 ## 6. 执行记录
 
 > 每阶段完成后在此勾选并记录实际偏差。
+
+- [x] **Phase 0**（2026-09-20）：基线确认。build + 3 测试包全绿；
+  网络坑：go-errors 下载需 `GOPROXY=goproxy.cn`（已记 devnotes）
+- [x] **Phase 1**（2026-09-20）：列表模型化。新增 types/（VideoFile/
+  WindowName/ContextKind）、components/ListViewModel[T]（5 单测）；
+  ListController 绑定 ListModel 接口 + 新增翻页键（`,`/`.`、PgUp/
+  PgDn）；Files/Result 面板模型驱动渲染；删除废弃 pkg/util/。
+  偏差：无（行为与现状一致）
+- [x] **Phase 2**（2026-09-20）：Window/Context/View 三层。新增
+  context/ 包（8 个 context 注册表 + Manager 栈路由，10 单测），
+  Focuser 接口防循环依赖；keybindings 按 context 注册（全局键只绑
+  files/log/result，消除 5-view 重复绑定；j/k 滚动仅 log）；4 个弹窗
+  （menu/confirm/help/config）DeleteView 重建 → Visible 显隐常驻
+  （showPopup/hidePopup），无闪烁。偏差：弹窗尚未接入 context 栈
+  （menu 显示时栈顶仍为 files，Esc 由各 controller 处理）——待
+  Phase 4 组件化时接入。
+- [ ] Phase 3：布局与主题
+- [ ] Phase 4：弹出组件复用
+- [ ] Phase 5：Python 命令层
+- [ ] Phase 6：交互增强（可选）

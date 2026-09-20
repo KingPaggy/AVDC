@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"avdc-tui/pkg/gui/context"
 	"avdc-tui/pkg/gui/controllers"
 	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
@@ -16,7 +17,7 @@ type Gui struct {
 	version     string
 	layout      *Layout
 	views       *Views
-	contexts    *ContextMgr
+	contexts    *context.Manager
 	keybindings *Keybindings
 	scraper     *controllers.Scraper
 	filesCtrl   *controllers.FilesController
@@ -35,7 +36,7 @@ func New(version string) (*Gui, error) {
 	g := &Gui{}
 	g.layout = &Layout{gui: g}
 	g.views = &Views{}
-	g.contexts = NewContextMgr(g)
+	g.contexts = context.NewManager(g)
 	g.keybindings = &Keybindings{gui: g}
 	return g, nil
 }

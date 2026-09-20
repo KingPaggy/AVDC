@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
 )
 
@@ -84,25 +83,25 @@ func (h *HelpPanel) Show() error {
 	x0 := 10
 	x1 := x0 + w
 
-	g.DeleteView("help")
-	v, err := g.SetView("help", x0, y0, x1, y1, 0)
-	if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
+	// Create/update the persistent help view
+	v, err := showPopup(g, "help", x0, y0, x1, y1, func(v *gocui.View) {
+		v.Frame = true
+		v.Title = "Help - " + h.tabs[h.activeTab].Name
+		v.Wrap = false
+		v.Clear()
+	})
+	if err != nil {
 		return err
 	}
-	v.Frame = true
-	v.Title = "Help - " + h.tabs[h.activeTab].Name
-	v.Wrap = false
-	v.Clear()
 
 	h.renderTab(v)
 	return h.gui.SetView("help")
 }
 
-// Hide removes the help popup.
+// Hide hides the help popup (persistent view, no rebuild).
 func (h *HelpPanel) Hide() error {
 	h.visible = false
-	g := h.gui.GetGui()
-	g.DeleteView("help")
+	hidePopup(h.gui.GetGui(), "help")
 	return h.gui.SetView("files")
 }
 

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
 )
 
@@ -97,11 +96,10 @@ func (ce *ConfigEditor) Show() error {
 	return nil
 }
 
-// Hide removes the config editor.
+// Hide hides the config editor (persistent view, no rebuild).
 func (ce *ConfigEditor) Hide() error {
 	ce.visible = false
-	g := ce.gui.GetGui()
-	g.DeleteView("config")
+	hidePopup(ce.gui.GetGui(), "config")
 	return ce.gui.SetView("files")
 }
 
@@ -117,15 +115,16 @@ func (ce *ConfigEditor) Render(g *gocui.Gui) error {
 	x0 := 8
 	x1 := x0 + w
 
-	g.DeleteView("config")
-	v, err := g.SetView("config", x0, y0, x1, y1, 0)
-	if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
+	// Create/update the persistent config view
+	v, err := showPopup(g, "config", x0, y0, x1, y1, func(v *gocui.View) {
+		v.Frame = true
+		v.Title = "Config Editor (s: save, Esc: close)"
+		v.Wrap = false
+		v.Clear()
+	})
+	if err != nil {
 		return err
 	}
-	v.Frame = true
-	v.Title = "Config Editor (s: save, Esc: close)"
-	v.Wrap = false
-	v.Clear()
 
 	maxHeight := y1 - y0 - 2
 	ce.renderContent(v, maxHeight)

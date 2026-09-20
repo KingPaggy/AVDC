@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
 )
 
@@ -46,20 +45,18 @@ func (mc *MenuContext) Show() error {
 	}
 	x1 := x0 + w
 
-	// Delete old menu view if exists
-	g.DeleteView("menu")
-
-	// Create menu view
-	v, err := g.SetView("menu", x0, y0, x1, y1, 0)
-	if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
+	// Create/update the persistent menu view
+	v, err := showPopup(g, "menu", x0, y0, x1, y1, func(v *gocui.View) {
+		v.Frame = true
+		v.Title = mc.title
+		v.Highlight = true
+		v.SelBgColor = gocui.ColorGreen
+		v.SelFgColor = gocui.ColorBlack
+		v.Clear()
+	})
+	if err != nil {
 		return err
 	}
-	v.Frame = true
-	v.Title = mc.title
-	v.Highlight = true
-	v.SelBgColor = gocui.ColorGreen
-	v.SelFgColor = gocui.ColorBlack
-	v.Clear()
 
 	// Render items
 	mc.renderItems(v)
@@ -69,10 +66,9 @@ func (mc *MenuContext) Show() error {
 	return mc.gui.SetView("menu")
 }
 
-// Hide removes the menu popup.
+// Hide hides the menu popup (persistent view, no rebuild).
 func (mc *MenuContext) Hide() error {
-	g := mc.gui.GetGui()
-	g.DeleteView("menu")
+	hidePopup(mc.gui.GetGui(), "menu")
 	return nil
 }
 
@@ -144,8 +140,6 @@ func (mc *MenuController) Setup() error {
 func (mc *MenuController) handleSelect(g *gocui.Gui, v *gocui.View) error {
 	selected := mc.ctx.Selected()
 	mc.ctx.Hide()
-	// Remove menu keybindings by deleting view
-	g.DeleteView("menu")
 
 	if mc.onDone != nil {
 		mc.onDone(selected)
@@ -155,7 +149,6 @@ func (mc *MenuController) handleSelect(g *gocui.Gui, v *gocui.View) error {
 
 func (mc *MenuController) handleCancel(g *gocui.Gui, v *gocui.View) error {
 	mc.ctx.Hide()
-	g.DeleteView("menu")
 	// Return focus to files
 	return mc.gui.SetView("files")
 }

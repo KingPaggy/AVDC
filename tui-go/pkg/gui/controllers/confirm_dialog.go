@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
 )
 
@@ -34,14 +33,15 @@ func (cd *ConfirmDialog) Show() error {
 	x0 := 15
 	x1 := x0 + w
 
-	g.DeleteView("confirm")
-	v, err := g.SetView("confirm", x0, y0, x1, y1, 0)
-	if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
+	// Create/update the persistent confirm view
+	v, err := showPopup(g, "confirm", x0, y0, x1, y1, func(v *gocui.View) {
+		v.Frame = true
+		v.Title = "Confirm"
+		v.Clear()
+	})
+	if err != nil {
 		return err
 	}
-	v.Frame = true
-	v.Title = "Confirm"
-	v.Clear()
 	fmt.Fprint(v, cd.message)
 	fmt.Fprint(v, "\n\n  [green]y[/] Yes  |  [red]n[/] No  |  [yellow]Esc[/] Cancel")
 
@@ -71,8 +71,7 @@ func (cd *ConfirmDialog) Show() error {
 }
 
 func (cd *ConfirmDialog) dismiss(action string) error {
-	g := cd.gui.GetGui()
-	g.DeleteView("confirm")
+	hidePopup(cd.gui.GetGui(), "confirm")
 
 	switch action {
 	case "yes":
