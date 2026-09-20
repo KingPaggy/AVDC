@@ -1,10 +1,10 @@
-# AVDC macOS GUI 迁移方案
+# AVDC macOS GUI 迁移方案（纯 SwiftUI 版）
 
-> 目标：用 14-MacApp-C-Cpp 的四层架构（C++ 核心 + ObjC++
-> 薄壳 + ImGui/Metal 自绘 + SwiftUI 原生玻璃）替换 PySide6
-> 主力 GUI。
-> 状态：调研完成，待评审
-> created: 2026-09-20
+> 目标：为 AVDC 构建 macOS 原生 GUI，替换 PySide6 主力前端。
+> 技术选型：**纯 SwiftUI + Swift Process Bridge**（废弃 ImGui/
+> Metal/ObjC++ 薄壳路线）。
+> 状态：调研完成，技术可行性已验证（CLT 环境）
+> updated: 2026-09-20
 
 ## 1. 调研结论
 
@@ -12,156 +12,157 @@
 
 - Python 3.13 + uv workspace，四包：`core/`、`cli/`、
   `pyqt5-gui/`（遗留）、`pyside6_gui/`（主力）
-- `core/`：64 个 .py，约 3450 行——7 站点爬虫（jav321/
-  javbus/javdb/avsox/dmm/mgstage/xcity）、CoreEngine 编排、
-  AppConfig、EventBus、图片水印，零 Qt 依赖
-- `pyside6_gui/`：5 个 QML 页面（Home/Settings/Tools/Log/
-  About）+ 15 个 QML 组件 + 3 个 Python 模型
-  （settings_model 217 行 / processing_model 274 行 /
-  log_model 240 行），共约 3386 行
-- `tui-go/`：Go TUI，已验证「子进程 + JSON」桥接模式
-  （`tui-go/pkg/python/client.go`，调 `uv run python
-  cli.py scan` 解析 JSON）
-- `cli/`：CLI 前端，子命令 scan / config / emby /
-  organize / poster-crop / scrape，已支持 `--json-output`
-  且逐条 `print(json.dumps(...), flush=True)` 流式输出
+- `core/`：64 个 .py，约 3450 行——7 站点爬虫、CoreEngine
+  编排、AppConfig、EventBus、图片水印，零 Qt 依赖
+- `pyside6_gui/`：5 个 QML 页面 + 15 组件 + 3 个 Python 模型
+- `cli/`：CLI 前端，已支持 `--json-output` + 流式 JSONL
+- `tui-go/`：Go TUI（保留），已验证「子进程 + JSON」模式
 
 ### 1.2 关键约束
 
-1. **核心不重构**：业务核心是 Python（爬虫解析依赖
-   lxml/BeautifulSoup、图片处理依赖 Pillow）。已决策
-   （2026-09-20）：**不重构 core/cli**，以 JSONL 契约
-   隔离保未来（评估见第 4 节）
-   → 保留 `core/` + `cli/` 为唯一事实来源，新 GUI 只做前端
-2. **桥接基础现成**：CLI 已支持 `--json-output` + 流式
-   JSONL（逐文件输出 + flush），新 GUI 直接复用，无需
-   改 core；仅需在 ObjC++ 侧实现子进程管理与解析
-3. **GUI 形态不同**：AVDC 是元数据管理工具（表单/列表/
-   日志/图片），非 14-MacApp 的波形绘制；ImGui 层需自绘
-   表单控件（无 QML 级组件库），是本方案主要工作量
-4. **网络在子进程**：爬虫网络请求发生在 Python 子进程，
-   GUI 进程无网络，符合 14-MacApp「本地 GUI」架构约束
-5. **中文界面**：ImGui 默认字体无 CJK，必须加载
-   PingFang SC 入 font atlas（14-MacApp 现有 SF Pro
-   加载路径可扩展）
+1. **核心不重构**：业务核心是 Python（爬虫/lxml/Pillow），
+   已决策以 JSONL 契约隔离保未来（见 §4）
+2. **桥接基础现成**：CLI 已支持 `--json-output` 流式输出，
+   事件契约：log/progress/success/failure/done + scan
+   `{files,total}`
+3. **GUI 形态是标准数据管理界面**（表单/列表/进度/文本/
+   卡片），无任何自绘图形需求——这是弃 ImGui 的根因
+4. **CLT 环境约束**：无 Xcode.app，`@State` 宏不可用
+   （缺 SwiftUIMacros 插件），但 `@Observable` + `@Bindable`
+   宏可用（Observation 框架，已实测验证）
+5. **Swift Process 可用**：Swift 原生 `Process` +
+   `readabilityHandler` 流式读 JSONL（已实测），替代
+   ObjC++ NSTask
 
-## 2. 目标架构
+## 2. 技术选型决策（2026-09-20）
 
-### 2.1 总体分层
+### 2.1 为什么弃 ImGui/Metal 路线
 
-新前端目录 `mac-gui/`（仿 `tui-go/` 同级），复用
-14-MacApp-C-Cpp 的四层架构：
+原计划复用 14-MacApp-C-Cpp 四层架构（C++ core + ObjC++
+薄壳 + ImGui/Metal 自绘 + SwiftUI 原生玻璃）。但 AVDC 与
+14-MacApp 本质不同：
+
+| 维度 | 14-MacApp（波形工具） | AVDC（数据管理） |
+|------|----------------------|------------------|
+| 内容 | 高频自绘波形/坐标轴 | 表单/列表/进度/文本 |
+| ImGui 价值 | 高（自绘曲线） | 低（无自绘需求） |
+| 原生控件可覆盖 | 否 | **完全覆盖** |
+
+ImGui 路线对 AVDC 是过度设计，且引入大量纯负担：
+
+- 中文渲染（PingFang font atlas 手工维护）
+- 表单控件自绘（checkbox/input/slider/radio 全手写）
+- 语义色每帧注入、浅深色手动适配
+- 无障碍（减透明度/动效/高对比）手动处理
+- ImGui 控件事件 → ObjC++ 回调桥接
+- 第三方源码依赖（third_party/imgui）
+
+SwiftUI 全部免费获得：原生控件、无障碍、浅深色、
+国际化、焦点/键盘导航、Liquid Glass（macOS 26 原生）。
+
+### 2.2 可行性验证（CLT 实测）
+
+| 项 | 结果 |
+|----|------|
+| `@State` 宏 | ❌ 缺 SwiftUIMacros 插件（已知坑） |
+| `@Observable`/`@Bindable` | ✅ 可用（Observation 宏） |
+| `@Published`/`@ObservedObject` | ✅ 可用 |
+| Swift `Process` 异步 JSONL | ✅ 可用 |
+| SPM `swift build`（SwiftUI executable） | ✅ 26s 构建通过 |
+| NavigationSplitView | ✅ 编译通过 |
+
+### 2.3 新目标架构
 
 ```
 mac-gui/
-├── CMakeLists.txt          # CMake+Ninja
-├── src/
-│   ├── bridge/             # Python Bridge（新）
-│   │   ├── ProcessRunner.{h,mm}   # NSTask 包装 + JSONL 解析
-│   │   └── Bridge.hpp              # 命令封装与事件回调
-│   ├── core/               # 纯 C++（少量，仅本地 UI 状态）
-│   ├── ui/                 # ImGui/Metal 自绘内容区
-│   │   ├── UIManager.{h,mm}
-│   │   ├── Palette.{h,mm}  # 语义色（复用 14-MacApp）
-│   │   └── widgets/        # 自绘表单组件（新）
-│   └── shell/              # ObjC++ 薄壳 + SwiftUI
-│       ├── AppDelegate.mm  # 无标题栏窗口 + 菜单栏
-│       ├── Sidebar.swift   # 5 页导航（NSHostingView）
-│       └── InfoBar.swift   # 玻璃按钮（.glassEffect）
-└── third_party/imgui/      # submodule
+├── Package.swift              # SPM（替代 CMake）
+├── Sources/AVDCApp/
+│   ├── AVDCApp.swift          # @main App + WindowGroup
+│   ├── AppModel.swift         # @Observable 全局状态
+│   ├── Bridge.swift           # Process 封装（JSONL 事件）
+│   ├── Sidebar.swift          # NavigationSplitView 5 页
+│   ├── HomeView.swift         # 主页（表单/进度/结果）
+│   ├── SettingsView.swift     # 设置页（8 组配置表单）
+│   ├── ToolsView.swift        # 工具页（卡片网格）
+│   ├── LogView.swift          # 日志页（级别过滤）
+│   └── AboutView.swift        # 关于页
+└── Tests/AVDCAppTests/        # Bridge 测试（复用 mock_cli.py）
 ```
 
-依赖关系：Python core/cli 保持不变，GUI 只通过
-`uv run python cli.py <cmd> --json-output` 子进程通信。
+- 状态：`AppModel`（@Observable）承载 page/home/logs，
+  替代 C++ `AppState`
+- Bridge：Swift `Process` 调 `uv run python cli.py`，
+  移植已验证的 AVDCBridge 逻辑
+- 构建：`swift build` / `swift test`，无 CMake/ImGui
 
-### 2.2 页面映射
+### 2.4 待废弃（ImGui 路线投入）
 
-| QML 页面 | 新实现 | 主要组件 |
-|---------|-------|---------|
-| HomePage | ImGui 表单+进度 | 目录选择（NSOpenPanel 桥接）、
-  模式单选、进度条、成功/失败/跳过徽章 |
-| SettingsPage | ImGui 表单（8 组） | checkbox/input/slider/
-  radio/filepicker 自绘控件，读写 config.ini |
-| ToolsPage | ImGui 卡片网格 | 工具卡片 + 操作对话框 |
-| LogPage | ImGui 文本+过滤 | 日志查看器、级别过滤 |
-| AboutPage | SwiftUI/ImGui | 版本、说明 |
-| 侧边栏 | SwiftUI List | 5 页导航 + 选中高亮 |
+| 目录/文件 | 处理 |
+|-----------|------|
+| `third_party/imgui/` | 删除（git 历史保留记录） |
+| `src/ui/`（UIManager/Palette/UIConfig） | 删除 |
+| `src/core/`（C++ AppState） | 删除（Swift AppModel 替代） |
+| `src/bridge/`（ObjC++ AVDCBridge） | 重写为 Swift Bridge.swift |
+| `src/shell/AppDelegate.*`、`Menus.*`、`main.mm` | 删除 |
+| `CMakeLists.txt`（4 个） | 删除（Package.swift 替代） |
+| `src/shell/Sidebar.swift`、`InfoBar.swift` | 参考思路，被原生
+  NavigationSplitView / glassEffect 替代 |
 
-### 2.3 关键实现点
+> 已投入的阶段 0（骨架）、1（Bridge 冒烟测试）、2（Home
+> ImGui）的提交保留在 git 历史；阶段 2 未提交的工作区改动
+> 将随重构废弃。ImGui 的「语义色 + 无障碍」思路已沉淀到
+> 14-MacApp 项目，不丢失。
 
-1. **中文字体**：CoreText 读 PingFang SC（或苹方）构建
-   ImGui font atlas，13pt 正文 + 15/17pt 标题档，
-   与 14-MacApp 的 SF Pro 方案同构
-2. **封面/图片**：`NSImage → CVPixelBuffer → MTLTexture`
-   注册为 ImGui 纹理，供 Home 结果页与 Tools 预览使用
-3. **进度/日志**：子进程 stdout 逐行解析 JSONL
-   （`{type: progress|log|movie|done, ...}`），经
-   Bridge 事件回调驱动 ImGui 进度条与日志面板
-4. **取消任务**：NSTask terminate + 子进程 SIGTERM，
-   CLI 已支持 Ctrl+C 语义（需验证）
-5. **配置读写**：优先走 `cli.py config get/set`
-   （JSON），避免 GUI 直接解析 config.ini 造成双写源
-6. **菜单栏**：标准菜单 + Cmd 快捷键（复用 14-MacApp
-   Menus.mm 模板），Signal 菜单改为页面导航项
+## 3. 执行步骤（纯 SwiftUI 版）
 
-## 3. 迁移步骤
+> 已完成的 ImGui 路线阶段 0/1/2 不继续，重新按以下步骤。
+> 每阶段完成后 git 提交。
 
-### 阶段 0：骨架移植（0.5–1 人日）
+### 阶段 0′：SPM 骨架 + 状态模型 + Swift Bridge（1–2 人日）
 
-- 从 14-MacApp-C-Cpp 复制：CMake 工程、AppKit 窗口
-  （无标题栏 + fullSizeContentView）、SwiftUI 侧边栏
-  与信息条、Menus.mm 标准菜单栏、Palette 语义色
-- 替换波形 Demo 为 5 页导航骨架；加载 PingFang SC
-  字体入 atlas，验证中文渲染
-- 产出：可运行空壳 + 中文正常显示
+- 建 `Package.swift`（.macOS(.v14)，SwiftUI+AppKit 框架）
+- `AppModel.swift`：@Observable 全局状态（page 枚举、
+  HomeState 等价物、logs 数组）
+- `Bridge.swift`：Process 封装 + JSONL 逐行解析 + 事件回调
+  （移植 AVDCBridge.mm：进度/成功/失败/完成/日志 + 取消）
+- `Sidebar.swift`：NavigationSplitView 5 页导航
+  （主页/设置/工具/日志/关于，SF Symbols 图标）
+- `InfoBar.swift` 思路并入：工具栏/标题 + 全屏 `.glassEffect`
+- Bridge 测试：Swift Testing/XCTest + mock_cli.py（复用
+  阶段 1 的 mock，断言事件顺序与取消）
+- 产出：可运行空壳 + 5 页导航 + Bridge 测试通过
 
-### 阶段 1：Python Bridge（2–3 人日）
+### 阶段 1′：Home 页（0.5–1 人日）
 
-- `ProcessRunner.mm`：NSTask + pipe 包装，启动
-  `uv run python cli.py ...`，异步逐行读 stdout
-- JSONL 解析：progress/log/movie/done 事件分发
-  （CLI 现有输出已近此格式，需核对字段对齐）
-- 命令封装：`scan(path)` / `config(get|set)` /
-  `process(path, mode, --json-output)` / `emby` /
-  `poster-crop`
-- 取消与超时处理；进程退出码与 stderr 归集到日志
-- 产出：Bridge 单测（内存 mock CLI）
+- 输入区：TextField 目录 + 排除文件夹 + 目录选择
+  （`.fileImporter`/NSOpenPanel）
+- 模式单选（刮削/整理 Picker）+ 开始/停止按钮
+- `ProgressView` 进度 + 成功/失败/总数徽章
+- 结果列表（List：状态色 + 番号 + 文件 + 详情）
+- 端到端验证：fixtures organize 链路（复用 smoke 思路）
 
-### 阶段 2：Home 页（1–2 人日）
+### 阶段 2′：Settings 页（1–1.5 人日）
 
-- 输入区（目录选择 NSOpenPanel + 排除文件夹）
-- 模式单选（刮削/整理）+ 开始/停止按钮
-- 进度条 + 成功/失败/跳过徽章（接 Bridge 事件）
-- 逐文件结果列表（番号、封面缩略图、状态）
-
-### 阶段 3：Settings 页（2–3 人日）
-
-- 8 组 SectionCard 布局（通用/代理/命名规则/媒体/
-  排除/水印/Emby/其他，对照 SettingsPage.qml 347 行）
-- 自绘表单控件：Checkbox / Input / Slider /
-  RadioGroup / FilePicker / SwitchInt
+- 8 组配置表单（通用/代理/命名规则/媒体/排除/水印/Emby/
+  其他，对照 SettingsPage.qml 347 行）
+- SwiftUI 原生控件：Toggle/TextField/Slider/Picker/
+  FileImporter 对应 QML 8 种控件
 - 读写走 `cli.py config get/set`，保存按钮统一提交
 
-### 阶段 4：Tools / Log / About 页（2–3 人日）
+### 阶段 3′：Tools / Log / About 页（0.5–1 人日）
 
-- Tools：卡片网格 + 批量重命名/封面裁剪/Emby 集成
-  入口（部分现为「待实现」，按现状迁移）
-- Log：日志查看器（级别过滤 + 滚动），桥接
-  `cli.py` stderr/文件日志
+- Tools：卡片网格（LazyVGrid + 工具卡片，部分「待实现」
+  按现状迁移）
+- Log：日志查看（ScrollView + 级别过滤），数据来自
+  AppModel.logs（Home 过程实时追加）
 - About：版本信息 + 项目链接
 
-### 阶段 5：打磨（1–2 人日）
+### 阶段 4′：打磨 + 清理（0.5–1 人日）
 
-- 浅/深色跟随系统（Palette 已支持，验证各页）
-- 封面图片纹理加载性能；日志高频刷新防抖
-- 全屏模式、快捷键、无障碍（减透明度/减动效）
-- 长时间批量处理稳定性（子进程存活/内存）
-
-### 阶段 6：清理与文档（0.5–1 人日）
-
-- 执行第 5 节清理；更新 README、docs/、AGENTS.md
-- 更新 pyproject.toml workspace 成员
-- 归档迁移方案本身，记录踩坑
+- 浅/深色、无障碍、全屏（SwiftUI 原生，验证即可）
+- 删除 ImGui/ObjC++ 残留（§2.4 清单）
+- 更新 README、docs/、AGENTS.md；清理 pyproject workspace
+  成员（pyside6/pyqt5 归档）
 
 ## 4. core/cli 重构评估（决策记录）
 
@@ -173,94 +174,70 @@ mac-gui/
 AVDC 工作负载以 I/O 绑定为主（网络等待 + 站点限速），
 非 CPU 绑定；高性能语言优势不明显。
 
-| 模块 | 负载类型 | Python 现状 | 换 Go/Rust 收益 | 结论 |
-|------|---------|------------|----------------|------|
-| 网络抓取 | I/O 绑定 | requests +
-  cloudscraper | 本地吞吐↑，但瓶颈在远端限速/封禁
-  （JavDB ~30 次封 IP、DMM 需代理）；反爬生态
-  Go/Rust 弱 | 不重构 |
-| HTML 解析 | CPU 轻 | lxml（C 绑定
-  libxml2） | goquery 更慢；Rust 略快差距小 | 类似 |
-| 文件扫描 | I/O 绑定 | os.walk + 正则 |
-  3–10x 提升，但绝对耗时秒级（有进度条掩盖） |
-  可选定点 |
-| 图片水印 | CPU 中 | Pillow（C 加速） |
-  差距小 | 类似 |
-| 批量编排 | 混合 | 线程池 + 事件总线 |
-  瓶颈仍是网络 | 不重构 |
+| 模块 | 负载类型 | 换 Go/Rust 收益 | 结论 |
+|------|---------|----------------|------|
+| 网络抓取 | I/O 绑定 | 瓶颈在远端限速/封禁；反爬生态弱 | 不重构 |
+| HTML 解析 | CPU 轻 | lxml 已 C 绑定，差距小 | 类似 |
+| 文件扫描 | I/O 绑定 | 3–10x 但绝对耗时秒级 | 可选定点 |
+| 图片水印 | CPU 中 | Pillow 已 C 加速 | 类似 |
+| 批量编排 | 混合 | 瓶颈仍是网络 | 不重构 |
 
 ### 4.2 不重构理由
 
 - 重写成本：64 文件 / 3450 行 + 7 爬虫 + 3 套测试
-  （unit/integration/live），约 2–4 周
-- 爬虫站点结构多变，长期维护成本高
-- 反爬是最大隐性成本：Cloudflare 对抗在 Python
-  cloudscraper 生态最成熟
+- 反爬是最大隐性成本（Cloudflare 对抗，Python 生态最成熟）
 
 ### 4.3 契约隔离保障
 
-- 桥接层只认 `cli.py <cmd> --json-output` 的 JSONL
-  契约，GUI/TUI 与实现语言解耦
-- 未来定点替换路径：若 scan 在超大目录（万级文件）
-  实测变慢，单独用 Go 重写 scan（纯文件系统、无网络
-  无爬虫依赖，约 1–2 天），其余命令保持 Python
-- 触发条件：以实际性能痛点为准——迁移完成后跑真实
-  批量抓取，若 Python 自身耗时占比 > 20% 才评估
+- Bridge 只认 `cli.py --json-output` 的 JSONL 契约
+- 未来若 scan 实测变慢，单独 Go 重写（纯文件系统，
+  约 1–2 天），其余保持 Python
+- 触发条件：Python 自身耗时占比 > 20% 才评估
 
 ## 5. 剩余文件清理
 
 | 文件/目录 | 处理 | 理由 |
-|----------|-----|------|
-| `pyside6_gui/` | 迁移完成即移入 `.archive/` |
-  无并行维护期（已决策）；保留历史供对照 |
-| `pyqt5-gui/` | 移入 `.archive/` | 遗留前端，仅维护态 |
-| `tui-go/` | 保留 | 终端场景独立价值，与 GUI 不冲突 |
+|----------|------|------|
+| `pyside6_gui/` | 迁移完成即移入 `.archive/` | 无并行维护期 |
+| `pyqt5-gui/` | 移入 `.archive/` | 遗留前端 |
+| `tui-go/` | 保留 | 终端场景独立价值 |
 | `cli/` + `core/` | 保留 | 事实来源，Bridge 依赖 |
-| `pyproject.toml` | 移除已归档 workspace 成员 |
-  避免 uv sync 失败 |
-| `README.md` | 更新前端说明 | 标注 macOS GUI 为主力 |
-| `docs/` | 更新架构图 + 新增 macosgui 文档 |
-  遵循 00-doc-standards |
-| `AGENTS.md` | 同步项目记忆 | 前端列表与命令更新 |
+| `mac-gui/` 旧残留 | 删除（§2.4） | ImGui/ObjC++ 废弃 |
+| `pyproject.toml` | 移除已归档 workspace 成员 | 避免 uv sync 失败 |
+| `README.md`/`docs/`/`AGENTS.md` | 同步更新 | 前端说明与记忆 |
 
-> 归档执行时机：**迁移完成并验证后**即归档（已决策：
-> 无并行维护期）。开发期保留 PySide6 作为功能对照，
-> 未验证通过前不动。`pyqt5-gui/` 可随 pyside6 一并归档。
+> 归档时机：mac-gui 迁移完成并验证后执行。
 
-## 6. 工作量汇总
+## 6. 工作量汇总（纯 SwiftUI 版）
 
 | 阶段 | 内容 | 工作量（人日） |
 |------|------|---------------|
-| 0 | 骨架移植 | 0.5–1 |
-| 1 | Python Bridge | 2–3 |
-| 2 | Home 页 | 1–2 |
-| 3 | Settings 页 | 2–3 |
-| 4 | Tools/Log/About | 2–3 |
-| 5 | 打磨 | 1–2 |
-| 6 | 清理与文档 | 0.5–1 |
-| **合计** | | **约 9.5–15 人日** |
+| 0′ | SPM 骨架 + AppModel + Bridge | 1–2 |
+| 1′ | Home 页 | 0.5–1 |
+| 2′ | Settings 页 | 1–1.5 |
+| 3′ | Tools/Log/About | 0.5–1 |
+| 4′ | 打磨 + 清理 | 0.5–1 |
+| **合计** | | **约 4–6 人日** |
 
-按每周 5 人日估算约 **2–3 周**（含测试与返工余量）。
+对比 ImGui 路线（9.5–15 人日）**约节省 60%**，且体验更好
+（原生控件 + 无障碍 + 深浅色免费获得）。
 
 ## 7. 风险与未决事项
 
 | 风险 | 等级 | 缓解 |
 |------|------|------|
-| 中文 ImGui 渲染 | 低 | 字体 atlas 路径已验证 |
-| Settings 表单自绘量大 | 中 | 8 种控件先做最小集，
-  边用边补 |
-| 长任务稳定性 | 中 | NSTask 生命周期 + 取消
-  测试 |
-| JSONL 字段与 GUI 期望不符 | 低 | 阶段 1 核对 CLI 输出 |
-| 封面图片纹理内存 | 低 | 缩略图缓存 + LRU |
-
-已定决策（2026-09-20）：
-- PySide6：无并行维护期，迁移完成即归档
-- tui-go：保留
-- 新 GUI 目录：`mac-gui/`
-- core/cli：不重构，契约隔离保未来（见第 4 节）
+| CLT 宏限制（@State 不可用） | 低 | 用 @Observable/@Bindable，
+  已实测验证 |
+| SPM 构建 app bundle 缺失 | 低 | 裸可执行可运行（14-MacApp
+  已验证）；如需图标后续加 bundle |
+| Process 取消语义 | 低 | 阶段 1 ObjC++ 已验证
+  SIGTERM 路径 |
+| Settings 表单量大 | 低 | 8 种控件均原生，工作量小 |
+| SwiftUI 无标题栏观感差异 | 低 | AVDC 用原生 WindowGroup，
+  不复刻 14-MacApp 花活 |
 
 未决事项：
-- 是否要动 `cli.py` 增加专用 JSONL 事件（推荐不
-  动 core，仅必要时加子命令选项）
-
+- 目录命名 `mac-gui/` 已定；是否保留 build 产物
+  （`.build/` 进 .gitignore）
+- Swift 测试框架选 XCTest 还是 Swift Testing
+- 是否要 app bundle（图标/Info.plist），后续按需
