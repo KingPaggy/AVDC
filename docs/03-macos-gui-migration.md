@@ -3,7 +3,8 @@
 > 目标：为 AVDC 构建 macOS 原生 GUI，替换 PySide6 主力前端。
 > 技术选型：**纯 SwiftUI + Swift Process Bridge**（废弃 ImGui/
 > Metal/ObjC++ 薄壳路线）。
-> 状态：调研完成，技术可行性已验证（CLT 环境）
+> 状态：✅ 已执行完成（2026-09-20，5 页全部落地，测试 8/8
+> 通过；PySide6/PyQt5 已归档 .archive/）
 > updated: 2026-09-20
 
 ## 1. 调研结论
