@@ -20,6 +20,8 @@ struct RootView: View {
         switch model.page {
         case .home:
             HomeView(model: model)
+        case .settings:
+            SettingsView(settings: model.settings, bridge: model.bridge)
         default:
             PagePlaceholder(page: model.page)
         }

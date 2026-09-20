@@ -46,6 +46,9 @@ public final class AppModel {
     // Bridge 可注入（测试用 mock 项目根）；默认定位真实 cli/
     public let bridge: Bridge
 
+    // 设置页状态（config.ini 表单）
+    public let settings = SettingsState()
+
     public init(bridge: Bridge = Bridge()) {
         self.bridge = bridge
     }

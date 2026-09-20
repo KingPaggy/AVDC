@@ -259,6 +259,15 @@ public final class Bridge {
         })
     }
 
+    // 配置：cli.py config reset（写回默认值）
+    public func configReset(completion: @escaping (Error?) -> Void) {
+        runCommand(["config", "reset"], onLine: nil,
+                   onExit: { status in
+            completion(status == 0 ? nil
+                       : BridgeError.exit(status, "config reset 失败"))
+        })
+    }
+
     // JSONL 行解析
     public static func parseJSON(_ line: String) -> [String: Any]? {
         guard let data = line.data(using: .utf8) else { return nil }
