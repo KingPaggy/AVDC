@@ -29,6 +29,9 @@ type GUI interface {
 	AddResult(line string, color gocui.Attribute) error
 	ClearResults()
 	GetGui() *gocui.Gui
+	// 弹窗 context 栈操作（menu/confirm/help/config 接入）
+	PushContext(name string) error
+	PopContext() error
 }
 
 // scanCache holds cached scan results to avoid repeated Python subprocess calls.
@@ -46,6 +49,12 @@ type FilesController struct {
 	client  *python.Client
 	cache   scanCache
 	files   *components.ListViewModel[types.VideoFile]
+	// 搜索状态
+	allFiles     []types.VideoFile // 原始完整列表
+	searchActive bool
+	searchQuery  string
+	// 多选状态（key = 文件 Path）
+	marked map[string]bool
 }
 
 // Setup registers file-specific keybindings.
@@ -66,12 +75,22 @@ func (c *FilesController) Setup() error {
 	}{
 		{gocui.KeyEnter, gocui.ModNone, c.handleEnter},
 		{'r', gocui.ModNone, c.handleRefresh},
+		{'/', gocui.ModNone, c.handleSearch},
+		{' ', gocui.ModNone, c.handleToggleMark},
+		{'a', gocui.ModNone, c.handleToggleAll},
 	}
 
 	for _, b := range bindings {
 		if err := g.SetKeybinding(v, b.key, b.mod, b.handler); err != nil {
 			return err
 		}
+	}
+
+	// files 专属 esc：搜索中取消搜索，否则弹栈回退
+	// （全局 esc 不再绑定 files，见 keybindings.go）
+	if err := g.SetKeybinding(v, gocui.KeyEsc, gocui.ModNone,
+		c.handleEsc); err != nil {
+		return err
 	}
 
 	// x: cancel current scrape（files + log 全局语义）
@@ -94,7 +113,134 @@ func (c *FilesController) handleCancelScrape(g *gocui.Gui, v *gocui.View) error 
 	return nil
 }
 
+// --- 搜索过滤 ---
+
+// searchEditor 包装默认编辑器，输入变化时回调过滤。
+type searchEditor struct {
+	onChanged func(query string)
+}
+
+func (e *searchEditor) Edit(v *gocui.View, key gocui.Key, ch rune,
+	mod gocui.Modifier) bool {
+	handled := gocui.DefaultEditor.Edit(v, key, ch, mod)
+	if e.onChanged != nil {
+		e.onChanged(v.TextArea.GetContent())
+	}
+	return handled
+}
+
+// handleSearch 进入搜索模式（/ 键）：view 可编辑，
+// 输入实时过滤文件列表。
+func (c *FilesController) handleSearch(g *gocui.Gui, v *gocui.View) error {
+	if len(c.allFiles) == 0 {
+		return nil
+	}
+	c.searchActive = true
+	c.searchQuery = ""
+	v.Editable = true
+	v.Editor = &searchEditor{onChanged: c.applySearch}
+	c.gui.SetViewTitle(v, "Search: ")
+	v.Clear()
+	v.SetCursor(0, 0)
+	return nil
+}
+
+// applySearch 按查询过滤列表并重渲染（输入回调）。
+func (c *FilesController) applySearch(q string) {
+	c.searchQuery = q
+	v, _ := c.gui.GetView("files")
+	c.gui.SetViewTitle(v, "Search: "+q)
+
+	var filtered []types.VideoFile
+	ql := strings.ToLower(q)
+	for _, f := range c.allFiles {
+		if ql == "" || strings.Contains(strings.ToLower(f.Name), ql) {
+			filtered = append(filtered, f)
+		}
+	}
+	c.files.SetItems(filtered)
+	v.Clear()
+	c.renderFileList(v)
+}
+
+// handleEsc files 专属 esc：搜索中取消并恢复全部，
+// 否则弹栈回退（与全局 esc 语义一致）。
+func (c *FilesController) handleEsc(g *gocui.Gui, v *gocui.View) error {
+	if c.searchActive {
+		c.searchActive = false
+		c.searchQuery = ""
+		v.Editable = false
+		c.files.SetItems(c.allFiles)
+		v.Clear()
+		c.renderFileList(v)
+		c.gui.SetViewTitle(v, "Files")
+		return nil
+	}
+	return c.gui.PopContext()
+}
+
+// --- 多选 ---
+
+// handleToggleMark space：标记/取消当前选中文件。
+func (c *FilesController) handleToggleMark(g *gocui.Gui, v *gocui.View) error {
+	f, ok := c.files.Selected()
+	if !ok {
+		return nil
+	}
+	if c.marked[f.Path] {
+		delete(c.marked, f.Path)
+	} else {
+		c.marked[f.Path] = true
+	}
+	v.Clear()
+	c.renderFileList(v)
+	return nil
+}
+
+// handleToggleAll a：全选/取消全选当前列表。
+func (c *FilesController) handleToggleAll(g *gocui.Gui, v *gocui.View) error {
+	items := c.files.Items()
+	if len(items) == 0 {
+		return nil
+	}
+	allMarked := true
+	for _, f := range items {
+		if !c.marked[f.Path] {
+			allMarked = false
+			break
+		}
+	}
+	for _, f := range items {
+		if allMarked {
+			delete(c.marked, f.Path)
+		} else {
+			c.marked[f.Path] = true
+		}
+	}
+	v.Clear()
+	c.renderFileList(v)
+	return nil
+}
+
+// markedFiles 返回已标记文件的路径列表（按原始列表顺序）。
+func (c *FilesController) markedFiles() []string {
+	var out []string
+	for _, f := range c.allFiles {
+		if c.marked[f.Path] {
+			out = append(out, f.Path)
+		}
+	}
+	return out
+}
+
 func (c *FilesController) handleEnter(g *gocui.Gui, v *gocui.View) error {
+	// 搜索模式：Enter 确认搜索（退出输入，保留过滤）
+	if c.searchActive {
+		c.searchActive = false
+		v.Editable = false
+		return nil
+	}
+
 	if c.gui.GetScanDir() == "" {
 		// In editable mode: read the input as directory path
 		if v.Editable {
@@ -109,26 +255,40 @@ func (c *FilesController) handleEnter(g *gocui.Gui, v *gocui.View) error {
 		return nil // Ignore Enter during scraping
 	}
 
-	// Show mode selection menu
+	// Show mode selection menu（含批量刮削项，有标记时）
+	items := []components.MenuItem{
+		{Display: "1 - Scrape (download metadata)", Value: "1"},
+		{Display: "2 - Organize (rename & move)", Value: "2"},
+	}
+	if marked := c.markedFiles(); len(marked) > 0 {
+		items = append(items, components.MenuItem{
+			Display: fmt.Sprintf("3 - Batch scrape %d marked file(s)",
+				len(marked)),
+			Value: "3",
+		})
+	}
 	menu := components.NewMenu(components.MenuConfig{
 		Title: "Scrape Mode",
-		Items: []components.MenuItem{
-			{Display: "1 - Scrape (download metadata)", Value: "1"},
-			{Display: "2 - Organize (rename & move)", Value: "2"},
-		},
+		Items: items,
 		OnDone: func(selected string) {
-			mode := 1
-			if selected == "2" {
-				mode = 2
+			switch selected {
+			case "3":
+				if c.scraper != nil {
+					c.scraper.StartBatch(c.markedFiles(), 1)
+				}
+			default:
+				mode := 1
+				if selected == "2" {
+					mode = 2
+				}
+				if c.scraper != nil {
+					c.scraper.StartScrape(c.gui.GetScanDir(), mode)
+				}
 			}
-			if c.scraper != nil {
-				c.scraper.StartScrape(c.gui.GetScanDir(), mode)
-			}
-			// 菜单关闭后切回 files 焦点（修复隐藏 view 残留焦点）
-			c.gui.SetView("files")
+			// 焦点由 PopContext 切回 files
 		},
 		OnCancel: func() {
-			c.gui.SetView("files")
+			// 焦点由 PopContext 切回 files
 		},
 	})
 	return menu.Show(c.gui)
@@ -225,6 +385,7 @@ func (c *FilesController) displayFiles(dir string, files []types.VideoFile) erro
 	}
 
 	// Update the list model (single source of truth)
+	c.allFiles = files
 	c.files.SetItems(files)
 	c.gui.SetFileList(files)
 	c.gui.UpdateStatusReady(dir, len(files))
@@ -236,8 +397,8 @@ func (c *FilesController) displayFiles(dir string, files []types.VideoFile) erro
 func (c *FilesController) renderFileList(v *gocui.View) {
 	for i, f := range c.files.Items() {
 		icon := "[ ]"
-		if f.Number != "" {
-			icon = "[*]"
+		if c.marked[f.Path] {
+			icon = "[x]"
 		}
 		line := icon + " " + f.Name
 		if f.Number != "" && f.Number != f.Name {
@@ -271,5 +432,6 @@ func NewFilesController(g GUI, s *Scraper) *FilesController {
 		scraper: s,
 		client:  client,
 		files:   components.NewListViewModel[types.VideoFile](),
+		marked:  make(map[string]bool),
 	}
 }

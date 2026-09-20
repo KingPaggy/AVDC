@@ -38,6 +38,8 @@ func (m *mockGUIForScraper) AddResult(line string, color gocui.Attribute) error 
 }
 func (m *mockGUIForScraper) ClearResults()                                      {}
 func (m *mockGUIForScraper) GetGui() *gocui.Gui                                 { return nil }
+func (m *mockGUIForScraper) PushContext(name string) error                      { return nil }
+func (m *mockGUIForScraper) PopContext() error                                  { return nil }
 
 func TestScrapingState_ThreadSafety(t *testing.T) {
 	s := &ScrapingState{}

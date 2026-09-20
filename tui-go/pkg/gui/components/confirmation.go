@@ -50,7 +50,10 @@ func (c *Confirmation) Show(gui GuiLike) error {
 	fmt.Fprint(v, "\n  "+helpers.Info("y")+" Yes  |  "+
 		helpers.Error("n")+" No  |  "+
 		helpers.Warning("Esc")+" Cancel")
-	return gui.SetView("confirm")
+	if err := gui.SetView("confirm"); err != nil {
+		return err
+	}
+	return gui.PushContext("confirm")
 }
 
 // Hide 隐藏确认弹窗（常驻 view）。
@@ -83,7 +86,9 @@ func (c *Confirmation) ensureKeys(g *gocui.Gui) error {
 }
 
 func (c *Confirmation) handleYes(g *gocui.Gui, v *gocui.View) error {
-	c.Hide(&guiAdapter{g})
+	adapter := &guiAdapter{g}
+	c.Hide(adapter)
+	_ = adapter.PopContext()
 	if c.config.OnYes != nil {
 		c.config.OnYes()
 	}
@@ -91,7 +96,9 @@ func (c *Confirmation) handleYes(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (c *Confirmation) handleNo(g *gocui.Gui, v *gocui.View) error {
-	c.Hide(&guiAdapter{g})
+	adapter := &guiAdapter{g}
+	c.Hide(adapter)
+	_ = adapter.PopContext()
 	if c.config.OnNo != nil {
 		c.config.OnNo()
 	}
@@ -99,7 +106,9 @@ func (c *Confirmation) handleNo(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (c *Confirmation) handleCancel(g *gocui.Gui, v *gocui.View) error {
-	c.Hide(&guiAdapter{g})
+	adapter := &guiAdapter{g}
+	c.Hide(adapter)
+	_ = adapter.PopContext()
 	if c.config.OnCancel != nil {
 		c.config.OnCancel()
 	}

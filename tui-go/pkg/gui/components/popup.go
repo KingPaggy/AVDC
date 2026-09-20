@@ -11,6 +11,8 @@ import (
 type GuiLike interface {
 	GetGui() *gocui.Gui
 	SetView(name string) error
+	PushContext(name string) error
+	PopContext() error
 }
 
 // showPopup 创建/更新弹窗 view 并置顶显示。

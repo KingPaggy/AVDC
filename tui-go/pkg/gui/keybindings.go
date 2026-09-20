@@ -36,11 +36,15 @@ func (kb *Keybindings) setup() error {
 		// 退出
 		{'q', gocui.ModNone, kb.quit},
 		{gocui.KeyCtrlC, gocui.ModNone, kb.quit},
-		// 取消 / 返回（弹栈）
+		// 取消 / 返回（弹栈）；files 的 esc 由 FilesController
+		// 管理（搜索取消），不在此绑定
 		{gocui.KeyEsc, gocui.ModNone, kb.escape},
 	}
 	for _, vn := range views {
 		for _, b := range global {
+			if b.key == gocui.KeyEsc && vn == "files" {
+				continue // files 的 esc 由 FilesController 注册
+			}
 			if err := g.SetKeybinding(vn, b.key, b.mod, b.handler); err != nil {
 				return err
 			}

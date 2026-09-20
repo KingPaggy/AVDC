@@ -66,7 +66,10 @@ func (m *Menu) Show(gui GuiLike) error {
 	m.list.ResetSelection()
 	m.render(v)
 	v.SetCursor(0, m.list.SelectedIndex())
-	return gui.SetView("menu")
+	if err := gui.SetView("menu"); err != nil {
+		return err
+	}
+	return gui.PushContext("menu")
 }
 
 // Hide 隐藏菜单（常驻 view）。
@@ -124,7 +127,9 @@ func (m *Menu) ensureKeys(g *gocui.Gui) error {
 
 func (m *Menu) handleSelect(g *gocui.Gui, v *gocui.View) error {
 	selected := m.Selected()
-	m.Hide(&guiAdapter{g})
+	adapter := &guiAdapter{g}
+	m.Hide(adapter)
+	_ = adapter.PopContext()
 	if m.config.OnDone != nil {
 		m.config.OnDone(selected)
 	}
@@ -132,7 +137,9 @@ func (m *Menu) handleSelect(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (m *Menu) handleCancel(g *gocui.Gui, v *gocui.View) error {
-	m.Hide(&guiAdapter{g})
+	adapter := &guiAdapter{g}
+	m.Hide(adapter)
+	_ = adapter.PopContext()
 	if m.config.OnCancel != nil {
 		m.config.OnCancel()
 	}
@@ -165,3 +172,7 @@ func (a *guiAdapter) SetView(name string) error {
 	_, err := a.g.SetCurrentView(name)
 	return err
 }
+
+func (a *guiAdapter) PushContext(name string) error { return nil }
+
+func (a *guiAdapter) PopContext() error { return nil }

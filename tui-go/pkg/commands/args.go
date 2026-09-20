@@ -20,6 +20,16 @@ func ProcessArgs(dir string, mode int) []string {
 	}
 }
 
+// SingleArgs 构造单文件处理命令参数（多选批量用）。
+// cli.py --single 模式输出单条 done 事件（含 result 字符串）。
+func SingleArgs(file string, mode int) []string {
+	return []string{
+		"--single", file,
+		"--main-mode", fmt.Sprint(mode),
+		"--json-output",
+	}
+}
+
 // argsString 供日志/调试输出。
 func argsString(args []string) string {
 	return strings.Join(args, " ")

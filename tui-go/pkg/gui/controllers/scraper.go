@@ -187,3 +187,58 @@ func (s *Scraper) Cancel() {
 	s.state.SetCancelling(true)
 	s.runner.Cancel()
 }
+
+// StartBatch 批量刮削选中文件（串行 --single）。
+func (s *Scraper) StartBatch(files []string, mode int) error {
+	if s.state.IsRunning() {
+		return fmt.Errorf("scrape already in progress")
+	}
+	if len(files) == 0 {
+		return fmt.Errorf("no files selected")
+	}
+
+	s.state.SetRunning(true)
+	s.state.SetCancelling(false)
+	s.state.Dir = "<selected>"
+	s.state.Total = len(files)
+	s.state.Success = 0
+	s.state.Failed = 0
+	s.state.Current = 0
+
+	s.gui.ClearResults()
+	s.gui.AppendLog(fmt.Sprintf("Starting batch scrape: %d files",
+		len(files)), helpers.LevelInfo)
+
+	go s.runBatch(files, mode)
+	return nil
+}
+
+func (s *Scraper) runBatch(files []string, mode int) {
+	defer s.state.SetRunning(false)
+
+	for i, f := range files {
+		if s.state.IsCancelling() {
+			s.gui.AppendLog("Batch scrape cancelled", helpers.LevelInfo)
+			s.state.SetCancelling(false)
+			return
+		}
+
+		s.state.UpdateProgress(i+1, len(files))
+		s.gui.UpdateStatusScraping(i+1, len(files), filepath.Base(f))
+		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s", i+1, len(files),
+			filepath.Base(f)), helpers.LevelInfo)
+
+		args := commands.SingleArgs(f, mode)
+		err := s.runner.Run(args, s.handleEvent, func(line string) {
+			s.gui.AppendLog("[STDERR] "+line, helpers.LevelInfo)
+		})
+		if err != nil {
+			s.gui.AppendLog("Process error: "+err.Error(),
+				helpers.LevelError)
+		}
+	}
+
+	s.gui.AppendLog(fmt.Sprintf("Batch done: %d files", len(files)),
+		helpers.LevelInfo)
+	s.gui.UpdateStatusDone(len(files), 0, len(files), "<selected>")
+}

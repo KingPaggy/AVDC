@@ -103,7 +103,7 @@ func (ce *ConfigEditor) Show() error {
 func (ce *ConfigEditor) Hide() error {
 	ce.visible = false
 	components.HidePopup(ce.gui.GetGui(), "config")
-	return ce.gui.SetView("files")
+	return ce.gui.PopContext()
 }
 
 // Render draws the config editor to the view.
@@ -253,6 +253,9 @@ func (ce *ConfigEditor) Setup() error {
 func (ce *ConfigEditor) ShowAndRender(g *gocui.Gui, v *gocui.View) error {
 	ce.Show()
 	_ = ce.ReadConfig("config.ini") // ignore error, use defaults
+	if err := ce.gui.PushContext("config"); err != nil {
+		return err
+	}
 	return ce.Render(g)
 }
 

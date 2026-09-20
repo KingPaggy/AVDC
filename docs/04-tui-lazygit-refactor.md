@@ -210,4 +210,19 @@ Go 子进程：Commands 层 → cli.py --json-output
   并发拒绝/args）。偏差：python/client.go 的 Scan 保留同步实现
   （不并入流式 ProcessRunner）；取消状态显示为日志行而非独立
   toast。
-- [ ] Phase 6：交互增强（可选）
+- [x] **Phase 6a**（2026-09-20）：弹窗接入 context 栈（修复 Phase 2/4
+  偏差）。GUI 接口加 PushContext/PopContext；Menu/Confirmation/
+  Help/Config 弹窗 show 时 Push、关闭时 Pop，Esc 语义统一走栈。
+- [x] **Phase 6b**（2026-09-20）：结果面板 Tab 过滤。t 键循环
+  全部/成功/失败，标题显示当前过滤，渲染按 filter 过滤模型。
+- [x] **Phase 6c**（2026-09-20）：搜索过滤。/ 进入搜索模式（view
+  可编辑 + 自定义 Editor 实时回调），输入按文件名增量过滤；
+  Enter 确认保留过滤，Esc 取消恢复；files 专属 esc 接管（全局
+  esc 剔除 files），无键位冲突。
+- [x] **Phase 6d**（2026-09-20）：多选与批量刮削。space 标记/
+  a 全选（行前缀 [x]），Enter 菜单增「Batch scrape N marked」
+  项，Scraper.StartBatch 串行 --single（commands.SingleArgs）；
+  x 可取消批量。偏差：--single 事件流只有 done，批量不做成功/
+  失败统计（显示 N processed）。
+- [ ] Phase 6e：用户配置（tui.yml 主题/键位覆盖）——键位配置化
+  为架构级改动，待确认后实施

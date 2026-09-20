@@ -151,6 +151,16 @@ func (g *Gui) SetView(name string) error {
 	return err
 }
 
+// PushContext 将命名 context 入栈并切换焦点（弹窗）。
+func (g *Gui) PushContext(name string) error {
+	return g.contexts.Push(name)
+}
+
+// PopContext 弹出栈顶 context（弹窗关闭回退）。
+func (g *Gui) PopContext() error {
+	return g.contexts.Pop()
+}
+
 // GetView returns a view by name.
 func (g *Gui) GetView(name string) (*gocui.View, error) {
 	return g.g.View(name)

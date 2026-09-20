@@ -91,14 +91,17 @@ func (h *HelpPanel) Show() error {
 	}
 
 	h.renderTab(v)
-	return h.gui.SetView("help")
+	if err := h.gui.SetView("help"); err != nil {
+		return err
+	}
+	return h.gui.PushContext("help")
 }
 
 // Hide hides the help popup (persistent view, no rebuild).
 func (h *HelpPanel) Hide() error {
 	h.visible = false
 	components.HidePopup(h.gui.GetGui(), "help")
-	return h.gui.SetView("files")
+	return h.gui.PopContext()
 }
 
 // IsVisible returns whether the help panel is shown.
