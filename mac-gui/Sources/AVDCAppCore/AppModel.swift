@@ -28,6 +28,27 @@ public enum Page: Int, CaseIterable, Identifiable {
     }
 }
 
+// 日志级别（Log 页过滤用）
+public enum LogLevel: String, CaseIterable {
+    case info, warn, error
+
+    public var label: String {
+        switch self {
+        case .info: return "信息"
+        case .warn: return "警告"
+        case .error: return "错误"
+        }
+    }
+}
+
+// 日志条目（带级别 + 时间戳）
+public struct LogEntry: Identifiable {
+    public let id = UUID()
+    public let level: LogLevel
+    public let message: String
+    public let timestamp: Date
+}
+
 // 单文件处理结果（Home 结果列表）
 public struct HomeFileResult: Identifiable {
     public let id = UUID()
@@ -68,11 +89,13 @@ public final class AppModel {
     public var results: [HomeFileResult] = []
 
     // ---- 运行日志（cap 500，供 Log 页）----
-    public var logs: [String] = []
+    public var logs: [LogEntry] = []
+    public var logFilter: LogLevel? = nil   // Log 页过滤级别（nil=全部）
+    public var toolMessage: String? = nil   // Tools 页提示（待实现）
 
-    public func appendLog(_ msg: String) {
+    public func appendLog(_ msg: String, level: LogLevel = .info) {
         guard !msg.isEmpty else { return }
-        logs.append(msg)
+        logs.append(LogEntry(level: level, message: msg, timestamp: Date()))
         if logs.count > 500 {
             logs.removeFirst(logs.count - 500)
         }
@@ -131,7 +154,7 @@ public final class AppModel {
     private func handleProcessing(_ event: BridgeEvent) {
         switch event {
         case .log(let msg):
-            appendLog(msg)
+            appendLog(msg, level: .info)
         case .progress(let c, let t, let f):
             current = c
             total = t
@@ -151,7 +174,7 @@ public final class AppModel {
             statusText = "处理完成"
             appendLog("处理完成: 成功 \(s) 失败 \(fail)")
         case .stderr(let msg):
-            if !msg.isEmpty { appendLog(msg) }
+            if !msg.isEmpty { appendLog(msg, level: .error) }
         }
     }
 

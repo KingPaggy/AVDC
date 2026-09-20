@@ -22,8 +22,12 @@ struct RootView: View {
             HomeView(model: model)
         case .settings:
             SettingsView(settings: model.settings, bridge: model.bridge)
-        default:
-            PagePlaceholder(page: model.page)
+        case .tools:
+            ToolsView(model: model)
+        case .log:
+            LogView(model: model)
+        case .about:
+            AboutView()
         }
     }
 }
@@ -39,24 +43,5 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .navigationTitle("AVDC")
-    }
-}
-
-// 未实现页面占位（阶段 1′-3′ 填充）
-struct PagePlaceholder: View {
-    let page: Page
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: page.icon)
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text(page.title)
-                .font(.system(size: 24, weight: .medium))
-            Text("此页面将在后续阶段实现")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
