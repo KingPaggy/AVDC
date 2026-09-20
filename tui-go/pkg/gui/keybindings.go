@@ -11,6 +11,9 @@ import (
 // view 集合（files/log/result）；弹窗 view 的键位由各自
 // controller 注册——弹窗打开时全局键自动失效（gocui
 // 只派发 current view 的键位）。
+//
+// vim 风格键（h/l/q 等）通过键位注册表可配置（用户
+// tui.yml 覆盖）；方向键/Ctrl+C 等平台标准键固定绑定。
 type Keybindings struct {
 	gui *Gui
 }
@@ -18,53 +21,75 @@ type Keybindings struct {
 // setup 注册全局键位（非临时 view 集合）。
 func (kb *Keybindings) setup() error {
 	g := kb.gui.g
+	keys := kb.gui.keys
 
 	// 接收全局键位的 view（非临时 context 对应 view）
 	views := []string{"files", "log", "result"}
 
-	global := []struct {
-		key     interface{}
-		mod     gocui.Modifier
-		handler func(*gocui.Gui, *gocui.View) error
-	}{
-		// 焦点切换：h / LeftArrow
-		{gocui.KeyArrowLeft, gocui.ModNone, kb.focusPrev},
-		{'h', gocui.ModNone, kb.focusPrev},
-		// 焦点切换：l / RightArrow
-		{gocui.KeyArrowRight, gocui.ModNone, kb.focusNext},
-		{'l', gocui.ModNone, kb.focusNext},
-		// 退出
-		{'q', gocui.ModNone, kb.quit},
-		{gocui.KeyCtrlC, gocui.ModNone, kb.quit},
+	for _, vn := range views {
+		// 焦点切换：方向键固定 + vim 键可配置
+		if err := g.SetKeybinding(vn, gocui.KeyArrowLeft,
+			gocui.ModNone, kb.focusPrev); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding(vn, gocui.KeyArrowRight,
+			gocui.ModNone, kb.focusNext); err != nil {
+			return err
+		}
+		if k := keys.Key("global.focusPrev"); k != nil {
+			if err := g.SetKeybinding(vn, k, gocui.ModNone,
+				kb.focusPrev); err != nil {
+				return err
+			}
+		}
+		if k := keys.Key("global.focusNext"); k != nil {
+			if err := g.SetKeybinding(vn, k, gocui.ModNone,
+				kb.focusNext); err != nil {
+				return err
+			}
+		}
+		// 退出：q 可配置 + Ctrl+C 固定双保险
+		if k := keys.Key("global.quit"); k != nil {
+			if err := g.SetKeybinding(vn, k, gocui.ModNone,
+				kb.quit); err != nil {
+				return err
+			}
+		}
+		if err := g.SetKeybinding(vn, gocui.KeyCtrlC,
+			gocui.ModNone, kb.quit); err != nil {
+			return err
+		}
 		// 取消 / 返回（弹栈）；files 的 esc 由 FilesController
 		// 管理（搜索取消），不在此绑定
-		{gocui.KeyEsc, gocui.ModNone, kb.escape},
-	}
-	for _, vn := range views {
-		for _, b := range global {
-			if b.key == gocui.KeyEsc && vn == "files" {
-				continue // files 的 esc 由 FilesController 注册
-			}
-			if err := g.SetKeybinding(vn, b.key, b.mod, b.handler); err != nil {
-				return err
+		if vn != "files" {
+			if k := keys.Key("global.escape"); k != nil {
+				if err := g.SetKeybinding(vn, k, gocui.ModNone,
+					kb.escape); err != nil {
+					return err
+				}
 			}
 		}
 	}
 
 	// log 面板滚动（files/result 由 ListController 提供
 	// 模型导航，不在此重复注册）
-	logScroll := []struct {
-		key     interface{}
-		mod     gocui.Modifier
-		handler func(*gocui.Gui, *gocui.View) error
-	}{
-		{gocui.KeyArrowDown, gocui.ModNone, kb.scrollDown},
-		{'j', gocui.ModNone, kb.scrollDown},
-		{gocui.KeyArrowUp, gocui.ModNone, kb.scrollUp},
-		{'k', gocui.ModNone, kb.scrollUp},
+	if err := g.SetKeybinding("log", gocui.KeyArrowDown,
+		gocui.ModNone, kb.scrollDown); err != nil {
+		return err
 	}
-	for _, b := range logScroll {
-		if err := g.SetKeybinding("log", b.key, b.mod, b.handler); err != nil {
+	if err := g.SetKeybinding("log", gocui.KeyArrowUp,
+		gocui.ModNone, kb.scrollUp); err != nil {
+		return err
+	}
+	if k := keys.Key("log.scrollDown"); k != nil {
+		if err := g.SetKeybinding("log", k, gocui.ModNone,
+			kb.scrollDown); err != nil {
+			return err
+		}
+	}
+	if k := keys.Key("log.scrollUp"); k != nil {
+		if err := g.SetKeybinding("log", k, gocui.ModNone,
+			kb.scrollUp); err != nil {
 			return err
 		}
 	}

@@ -142,21 +142,20 @@ func (h *HelpPanel) Setup() error {
 		}
 	}
 
-	// Global ? to toggle help
+	// Global ? to toggle help（files/log/result；键位可配置）
 	bindGlobal := []struct {
 		view  string
-		key   interface{}
-		mod   gocui.Modifier
 		fn    func(*gocui.Gui, *gocui.View) error
 	}{
-		{"files", '?', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
-		{"log", '?', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
-		{"result", '?', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
-		{"status", '?', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
+		{"files", func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
+		{"log", func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
+		{"result", func(g *gocui.Gui, v *gocui.View) error { return h.Show() }},
 	}
-	for _, b := range bindGlobal {
-		if err := g.SetKeybinding(b.view, b.key, b.mod, b.fn); err != nil {
-			return err
+	if k := h.gui.GetKeys().Key("global.help"); k != nil {
+		for _, b := range bindGlobal {
+			if err := g.SetKeybinding(b.view, k, gocui.ModNone, b.fn); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

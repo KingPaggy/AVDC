@@ -1,10 +1,13 @@
 package gui
 
 import (
+	"avdc-tui/pkg/gui/config"
 	"avdc-tui/pkg/gui/context"
 	"avdc-tui/pkg/gui/controllers"
 	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/gui/types"
+	"fmt"
+	"os"
 	"strconv"
 	"sync"
 
@@ -19,6 +22,7 @@ type Gui struct {
 	views       *Views
 	contexts    *context.Manager
 	keybindings *Keybindings
+	keys        *config.Registry
 	scraper     *controllers.Scraper
 	filesCtrl   *controllers.FilesController
 	resultCtrl  *controllers.ResultController
@@ -34,6 +38,18 @@ type Gui struct {
 // New creates a new Gui instance.
 func New(version string) (*Gui, error) {
 	g := &Gui{}
+
+	// 加载用户配置（主题 + 键位覆盖）；失败不阻塞启动
+	cfg, err := config.Load()
+	if err != nil {
+		// 配置解析失败：记日志，用默认继续
+		fmt.Fprintf(os.Stderr, "warning: invalid config: %v\n", err)
+	}
+	if err := config.ApplyTheme(cfg.Theme); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: invalid theme: %v\n", err)
+	}
+	g.keys = config.NewRegistry(cfg.Keybindings)
+
 	g.layout = &Layout{gui: g}
 	g.views = &Views{}
 	g.contexts = context.NewManager(g)
@@ -154,6 +170,11 @@ func (g *Gui) SetView(name string) error {
 // PushContext 将命名 context 入栈并切换焦点（弹窗）。
 func (g *Gui) PushContext(name string) error {
 	return g.contexts.Push(name)
+}
+
+// GetKeys returns the keybinding registry (user-config merged).
+func (g *Gui) GetKeys() *config.Registry {
+	return g.keys
 }
 
 // PopContext 弹出栈顶 context（弹窗关闭回退）。

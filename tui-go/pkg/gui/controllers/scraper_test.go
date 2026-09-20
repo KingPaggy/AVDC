@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"avdc-tui/pkg/commands"
+	"avdc-tui/pkg/gui/config"
 	"avdc-tui/pkg/gui/types"
 
 	"github.com/jesseduffield/gocui"
@@ -40,6 +41,7 @@ func (m *mockGUIForScraper) ClearResults()                                      
 func (m *mockGUIForScraper) GetGui() *gocui.Gui                                 { return nil }
 func (m *mockGUIForScraper) PushContext(name string) error                      { return nil }
 func (m *mockGUIForScraper) PopContext() error                                  { return nil }
+func (m *mockGUIForScraper) GetKeys() *config.Registry                         { return config.NewRegistry(nil) }
 
 func TestScrapingState_ThreadSafety(t *testing.T) {
 	s := &ScrapingState{}

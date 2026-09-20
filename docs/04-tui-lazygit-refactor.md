@@ -224,5 +224,12 @@ Go 子进程：Commands 层 → cli.py --json-output
   项，Scraper.StartBatch 串行 --single（commands.SingleArgs）；
   x 可取消批量。偏差：--single 事件流只有 done，批量不做成功/
   失败统计（显示 N processed）。
-- [ ] Phase 6e：用户配置（tui.yml 主题/键位覆盖）——键位配置化
-  为架构级改动，待确认后实施
+- [x] **Phase 6e**（2026-09-20）：用户配置。新增 pkg/gui/config/
+  （Config/Load + ParseKey/ParseAttribute + Registry 默认键位表 +
+  ApplyTheme，9 单测）；配置文件 ~/.config/avdc/tui.yml（XDG_
+  CONFIG_HOME 优先）；主题全字段覆盖 + 键位覆盖（global/log/
+  files/result/list 共 18 action，方向键/Ctrl+C 固定不可配，
+  无效覆盖回退默认）；gui.New 加载配置失败不阻塞启动；新增
+  sample-tui.yml 示例（解析验证通过）。偏差：Menu/Confirmation
+  弹窗内部键（enter/esc）与 files 的 Enter/Esc 固定不可配（弹窗
+  通用约定）；键位配置暂不支持热重载（需重启）。

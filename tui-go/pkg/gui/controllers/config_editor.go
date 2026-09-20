@@ -173,26 +173,26 @@ func (ce *ConfigEditor) renderContent(v *gocui.View, maxLines int) {
 func (ce *ConfigEditor) Setup() error {
 	g := ce.gui.GetGui()
 
-	// 'c' to open config editor
-	bindings := []struct {
-		view string
-		key  interface{}
-		mod  gocui.Modifier
-		fn   func(*gocui.Gui, *gocui.View) error
-	}{
-		{"files", 'c', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			return ce.ShowAndRender(g, v)
-		}},
-		{"log", 'c', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			return ce.ShowAndRender(g, v)
-		}},
-		{"result", 'c', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			return ce.ShowAndRender(g, v)
-		}},
-	}
-	for _, b := range bindings {
-		if err := g.SetKeybinding(b.view, b.key, b.mod, b.fn); err != nil {
-			return err
+	// 'c' to open config editor（files/log/result；键位可配置）
+	if k := ce.gui.GetKeys().Key("global.config"); k != nil {
+		bindings := []struct {
+			view string
+			fn   func(*gocui.Gui, *gocui.View) error
+		}{
+			{"files", func(g *gocui.Gui, v *gocui.View) error {
+				return ce.ShowAndRender(g, v)
+			}},
+			{"log", func(g *gocui.Gui, v *gocui.View) error {
+				return ce.ShowAndRender(g, v)
+			}},
+			{"result", func(g *gocui.Gui, v *gocui.View) error {
+				return ce.ShowAndRender(g, v)
+			}},
+		}
+		for _, b := range bindings {
+			if err := g.SetKeybinding(b.view, k, gocui.ModNone, b.fn); err != nil {
+				return err
+			}
 		}
 	}
 

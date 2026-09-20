@@ -44,20 +44,13 @@ func (c *ResultController) Setup() error {
 	}
 
 	// Additional result-specific bindings
-	bindings := []struct {
-		key     interface{}
-		mod     gocui.Modifier
-		handler func(*gocui.Gui, *gocui.View) error
-	}{
+	if k := c.gui.GetKeys().Key("result.filter"); k != nil {
 		// t: cycle result filter (all / success / failed)
-		{'t', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			c.filter = (c.filter + 1) % 3
-			return c.render()
-		}},
-	}
-
-	for _, b := range bindings {
-		if err := g.SetKeybinding(v, b.key, b.mod, b.handler); err != nil {
+		if err := g.SetKeybinding(v, k, gocui.ModNone,
+			func(g *gocui.Gui, v *gocui.View) error {
+				c.filter = (c.filter + 1) % 3
+				return c.render()
+			}); err != nil {
 			return err
 		}
 	}

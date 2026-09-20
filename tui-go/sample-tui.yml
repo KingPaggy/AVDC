@@ -1,0 +1,43 @@
+# AVDC TUI 用户配置示例
+# 复制到 ~/.config/avdc/tui.yml 后按需修改（无此文件时全部用默认值）。
+# 修改后重启 TUI 生效。
+
+# 主题：颜色字符串（空格分隔多属性）
+# 颜色: black/red/green/yellow/blue/magenta/cyan/white/default
+# 修饰: bold/dim/reverse
+theme:
+  borderFocused: "green bold"     # 焦点面板边框
+  borderUnfocused: "default"      # 非焦点面板边框
+  selectedBg: "blue"              # 列表选中行背景
+  selectedFg: "white"             # 列表选中行前景
+  menuSelectedBg: "green"         # 菜单选中项背景
+  menuSelectedFg: "black"         # 菜单选中项前景
+  statusBarFg: "cyan"             # 状态栏文字
+  optionsBarFg: "green"           # 顶部选项栏文字
+
+# 键位：action → 键位字符串（扁平命名，见 registry.go 分组）
+# 键位语法: 单字符("q"/"j"/"/")、功能键("esc"/"enter"/"space"/
+#   "left"/"right"/"up"/"down"/"pgup"/"pgdn"/"home"/"end"/"tab"/
+#   "backspace"/"delete")、组合键("ctrl+c"/"ctrl+r")
+# 方向键与 Ctrl+C 等平台标准键固定不可配；空值保持默认。
+keybindings:
+  global.quit: "q"          # 退出
+  global.escape: "esc"      # 取消/返回
+  global.focusNext: "l"     # 焦点下一个面板
+  global.focusPrev: "h"     # 焦点上一个面板
+  global.help: "?"          # 帮助
+  global.config: "c"        # 配置编辑
+  log.scrollDown: "j"       # log 下滚
+  log.scrollUp: "k"         # log 上滚
+  files.refresh: "r"        # 刷新扫描
+  files.search: "/"         # 搜索过滤
+  files.mark: "space"       # 多选标记
+  files.markAll: "a"        # 全选/取消全选
+  files.cancel: "x"         # 取消刮削
+  result.filter: "t"        # 结果过滤（全部/成功/失败）
+  list.down: "j"            # 列表下移
+  list.up: "k"              # 列表上移
+  list.home: "g"            # 列表顶部
+  list.end: "G"             # 列表底部
+  list.pageUp: ","          # 上一页
+  list.pageDown: "."        # 下一页

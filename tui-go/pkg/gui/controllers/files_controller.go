@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"avdc-tui/pkg/gui/components"
+	"avdc-tui/pkg/gui/config"
 	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
@@ -32,6 +33,8 @@ type GUI interface {
 	// 弹窗 context 栈操作（menu/confirm/help/config 接入）
 	PushContext(name string) error
 	PopContext() error
+	// 键位注册表（用户配置合并后）
+	GetKeys() *config.Registry
 }
 
 // scanCache holds cached scan results to avoid repeated Python subprocess calls.
@@ -69,25 +72,29 @@ func (c *FilesController) Setup() error {
 	}
 
 	bindings := []struct {
-		key     interface{}
-		mod     gocui.Modifier
+		action  string
 		handler func(*gocui.Gui, *gocui.View) error
 	}{
-		{gocui.KeyEnter, gocui.ModNone, c.handleEnter},
-		{'r', gocui.ModNone, c.handleRefresh},
-		{'/', gocui.ModNone, c.handleSearch},
-		{' ', gocui.ModNone, c.handleToggleMark},
-		{'a', gocui.ModNone, c.handleToggleAll},
+		{"files.refresh", c.handleRefresh},
+		{"files.search", c.handleSearch},
+		{"files.mark", c.handleToggleMark},
+		{"files.markAll", c.handleToggleAll},
 	}
 
 	for _, b := range bindings {
-		if err := g.SetKeybinding(v, b.key, b.mod, b.handler); err != nil {
-			return err
+		if k := c.gui.GetKeys().Key(b.action); k != nil {
+			if err := g.SetKeybinding(v, k, gocui.ModNone,
+				b.handler); err != nil {
+				return err
+			}
 		}
 	}
 
-	// files 专属 esc：搜索中取消搜索，否则弹栈回退
-	// （全局 esc 不再绑定 files，见 keybindings.go）
+	// Enter 固定（核心动作），esc 固定（搜索取消/弹栈）
+	if err := g.SetKeybinding(v, gocui.KeyEnter, gocui.ModNone,
+		c.handleEnter); err != nil {
+		return err
+	}
 	if err := g.SetKeybinding(v, gocui.KeyEsc, gocui.ModNone,
 		c.handleEsc); err != nil {
 		return err

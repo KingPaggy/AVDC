@@ -22,29 +22,46 @@ type ListController struct {
 
 // Setup 为指定 view 注册导航键位。
 // list 不能为 nil（调用方保证传入已初始化的模型）。
+// 方向键固定绑定；vim 键（j/k/g/G/翻页）可配置。
 func (c *ListController) Setup(viewName string, list ListModel) error {
 	g := c.gui.GetGui()
+	keys := c.gui.GetKeys()
 
-	bindings := []struct {
+	// 方向键/翻页键固定
+	fixed := []struct {
 		key     interface{}
 		mod     gocui.Modifier
 		handler func(*gocui.Gui, *gocui.View) error
 	}{
-		{'j', gocui.ModNone, c.HandleDown},
-		{'k', gocui.ModNone, c.HandleUp},
 		{gocui.KeyArrowDown, gocui.ModNone, c.HandleDown},
 		{gocui.KeyArrowUp, gocui.ModNone, c.HandleUp},
-		{'g', gocui.ModNone, c.HandleHome},
-		{'G', gocui.ModNone, c.HandleEnd},
-		{',', gocui.ModNone, c.HandlePageUp},
-		{'.', gocui.ModNone, c.HandlePageDown},
 		{gocui.KeyPgup, gocui.ModNone, c.HandlePageUp},
 		{gocui.KeyPgdn, gocui.ModNone, c.HandlePageDown},
 	}
-
-	for _, b := range bindings {
+	for _, b := range fixed {
 		if err := g.SetKeybinding(viewName, b.key, b.mod, b.handler); err != nil {
 			return err
+		}
+	}
+
+	// vim 键（可配置）
+	bindings := []struct {
+		action  string
+		handler func(*gocui.Gui, *gocui.View) error
+	}{
+		{"list.down", c.HandleDown},
+		{"list.up", c.HandleUp},
+		{"list.home", c.HandleHome},
+		{"list.end", c.HandleEnd},
+		{"list.pageUp", c.HandlePageUp},
+		{"list.pageDown", c.HandlePageDown},
+	}
+	for _, b := range bindings {
+		if k := keys.Key(b.action); k != nil {
+			if err := g.SetKeybinding(viewName, k, gocui.ModNone,
+				b.handler); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
