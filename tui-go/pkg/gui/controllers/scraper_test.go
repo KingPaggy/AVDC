@@ -3,7 +3,7 @@ package controllers
 import (
 	"testing"
 
-	"avdc-tui/pkg/util"
+	"avdc-tui/pkg/gui/types"
 
 	"github.com/jesseduffield/gocui"
 )
@@ -21,7 +21,7 @@ func (m *mockGUIForScraper) GetView(name string) (*gocui.View, error)           
 func (m *mockGUIForScraper) SetViewTitle(v *gocui.View, title string)             {}
 func (m *mockGUIForScraper) GetScanDir() string                                   { return "" }
 func (m *mockGUIForScraper) SetScanDir(dir string)                                {}
-func (m *mockGUIForScraper) SetFileList(files []util.VideoFile)                   {}
+func (m *mockGUIForScraper) SetFileList(files []types.VideoFile)                   {}
 func (m *mockGUIForScraper) UpdateStatusReady(dir string, count int)              {}
 func (m *mockGUIForScraper) UpdateStatusScraping(c, t int, d string)              {}
 func (m *mockGUIForScraper) UpdateStatusDone(s, f, t int, d string)               {}

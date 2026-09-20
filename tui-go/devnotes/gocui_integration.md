@@ -87,6 +87,17 @@ func (m *ContextMgr) Push(name string) error {
 }
 ```
 
+## 7. 依赖下载需 goproxy.cn（2026 网络环境）
+
+`go mod download` 直连 proxy.golang.org 会 EOF 失败，
+需走国内镜像：
+
+```bash
+GOPROXY="https://goproxy.cn,direct" go mod download
+```
+
+首次拉全依赖后再 `go build` 即可正常。
+
 ## 6. 项目架构要点
 
 ```

@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"avdc-tui/pkg/gui/components"
+	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
-	"avdc-tui/pkg/util"
 
 	"github.com/jesseduffield/gocui"
 )
@@ -19,7 +20,7 @@ type GUI interface {
 	SetViewTitle(v *gocui.View, title string)
 	GetScanDir() string
 	SetScanDir(dir string)
-	SetFileList(files []util.VideoFile)
+	SetFileList(files []types.VideoFile)
 	UpdateStatusReady(dir string, fileCount int)
 	UpdateStatusScraping(current, total int, dir string)
 	UpdateStatusDone(success, failed, total int, dir string)
@@ -33,7 +34,7 @@ type GUI interface {
 type scanCache struct {
 	mu        sync.Mutex
 	dir       string
-	files     []util.VideoFile
+	files     []types.VideoFile
 	timestamp time.Time
 }
 
@@ -43,6 +44,7 @@ type FilesController struct {
 	scraper *Scraper
 	client  *python.Client
 	cache   scanCache
+	files   *components.ListViewModel[types.VideoFile]
 }
 
 // Setup registers file-specific keybindings.
@@ -50,9 +52,9 @@ func (c *FilesController) Setup() error {
 	g := c.gui.GetGui()
 	v := "files"
 
-	// Add list navigation
-	listCtrl := NewListController(c.gui)
-	if err := listCtrl.Setup(v); err != nil {
+	// Add list navigation (bound to the list model)
+	listCtrl := NewListController(c.gui, c.files)
+	if err := listCtrl.Setup(v, c.files); err != nil {
 		return err
 	}
 
@@ -164,9 +166,9 @@ func (c *FilesController) scanAndDisplay(dir string) error {
 			}
 
 			// Convert Scan results to VideoFile
-			files := make([]util.VideoFile, len(result.Files))
+			files := make([]types.VideoFile, len(result.Files))
 			for i, f := range result.Files {
-				files[i] = util.VideoFile{
+				files[i] = types.VideoFile{
 					Path:   f.File,
 					Name:   f.Name,
 					Number: f.Number,
@@ -187,7 +189,7 @@ func (c *FilesController) scanAndDisplay(dir string) error {
 	return nil
 }
 
-func (c *FilesController) displayFiles(dir string, files []util.VideoFile) error {
+func (c *FilesController) displayFiles(dir string, files []types.VideoFile) error {
 	v, _ := c.gui.GetView("files")
 	v.Editable = false
 	v.Clear()
@@ -198,14 +200,17 @@ func (c *FilesController) displayFiles(dir string, files []util.VideoFile) error
 		return nil
 	}
 
+	// Update the list model (single source of truth)
+	c.files.SetItems(files)
 	c.gui.SetFileList(files)
 	c.gui.UpdateStatusReady(dir, len(files))
-	c.renderFileList(v, files)
+	c.renderFileList(v)
 	return nil
 }
 
-func (c *FilesController) renderFileList(v *gocui.View, files []util.VideoFile) {
-	for i, f := range files {
+// renderFileList draws the file list from the list model.
+func (c *FilesController) renderFileList(v *gocui.View) {
+	for i, f := range c.files.Items() {
 		icon := "[ ]"
 		if f.Number != "" {
 			icon = "[*]"
@@ -214,7 +219,7 @@ func (c *FilesController) renderFileList(v *gocui.View, files []util.VideoFile) 
 		if f.Number != "" && f.Number != f.Name {
 			line += "  (" + f.Number + ")"
 		}
-		if i == 0 {
+		if i == c.files.SelectedIndex() {
 			fmt.Fprintf(v, "[green]%s[-]\n", line)
 		} else {
 			fmt.Fprintln(v, line)
@@ -237,5 +242,10 @@ func (c *FilesController) showError(msg string) error {
 func NewFilesController(g GUI, s *Scraper) *FilesController {
 	projectRoot := python.FindProjectRoot()
 	client := python.NewClient(projectRoot)
-	return &FilesController{gui: g, scraper: s, client: client}
+	return &FilesController{
+		gui:     g,
+		scraper: s,
+		client:  client,
+		files:   components.NewListViewModel[types.VideoFile](),
+	}
 }

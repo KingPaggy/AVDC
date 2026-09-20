@@ -2,8 +2,8 @@ package gui
 
 import (
 	"avdc-tui/pkg/gui/controllers"
+	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
-	"avdc-tui/pkg/util"
 	"strconv"
 	"sync"
 
@@ -20,12 +20,13 @@ type Gui struct {
 	keybindings *Keybindings
 	scraper     *controllers.Scraper
 	filesCtrl   *controllers.FilesController
+	resultCtrl  *controllers.ResultController
 	helpPanel   *controllers.HelpPanel
 	configEdit  *controllers.ConfigEditor
 
 	// State
 	scanDir  string
-	fileList []util.VideoFile
+	fileList []types.VideoFile
 	mu       sync.Mutex
 }
 
@@ -100,14 +101,14 @@ func (g *Gui) SetScanDir(dir string) {
 }
 
 // GetFileList returns the current file list.
-func (g *Gui) GetFileList() []util.VideoFile {
+func (g *Gui) GetFileList() []types.VideoFile {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.fileList
 }
 
 // SetFileList sets the file list.
-func (g *Gui) SetFileList(files []util.VideoFile) {
+func (g *Gui) SetFileList(files []types.VideoFile) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.fileList = files
@@ -134,8 +135,8 @@ func (g *Gui) setupKeybindings() error {
 		return err
 	}
 	// Register result-specific bindings
-	resultCtrl := controllers.NewResultController(g)
-	if err := resultCtrl.Setup(); err != nil {
+	g.resultCtrl = controllers.NewResultController(g)
+	if err := g.resultCtrl.Setup(); err != nil {
 		return err
 	}
 	// Register help panel
@@ -220,8 +221,11 @@ func (g *Gui) AppendLog(msg string, color gocui.Attribute) error {
 	return nil
 }
 
-// AddResult adds a line to the result view.
+// AddResult adds a line to the result view (via the result model).
 func (g *Gui) AddResult(line string, color gocui.Attribute) error {
+	if g.resultCtrl != nil {
+		return g.resultCtrl.Append(line, color)
+	}
 	v, err := g.getView("result")
 	if err != nil {
 		return err
@@ -233,6 +237,10 @@ func (g *Gui) AddResult(line string, color gocui.Attribute) error {
 
 // ClearResults clears the result view.
 func (g *Gui) ClearResults() {
+	if g.resultCtrl != nil {
+		g.resultCtrl.Clear()
+		return
+	}
 	v, err := g.getView("result")
 	if err != nil {
 		return
