@@ -32,32 +32,46 @@
 
 **AVDC** (AV Data Capture) — Python GUI application for scraping JAV website metadata and organizing local video files for Emby/Kodi/Plex.
 
-**Stack**: PyQt5/PySide6 + QML, lxml/BeautifulSoup4, requests/cloudscraper, Pillow, Baidu AIP
-**Python**: 3.13 | **Package manager**: uv | **Workspace**: root `pyproject.toml` with 4 members (`core/`, `cli/`, `pyqt5-gui/`, `pyside6_gui/`)
+**Stack**: SwiftUI（mac-gui 主力前端）· Python core + CLI · lxml/BeautifulSoup4、requests/cloudscraper、Pillow、Baidu AIP
+**Python**: 3.13 | **Package manager**: uv | **Workspace**: root `pyproject.toml` 成员 `core/`、`cli/`（GUI 已归档）
 
 ## Commands
 
 ```bash
 uv sync                                              # Install deps（只能在根目录执行）
-uv run python pyside6_gui/main.py                    # Run PySide6 + QML GUI（primary）
-uv run python pyqt5-gui/main.py                      # Run PyQt5 GUI（legacy）
+# macOS GUI（主力，纯 SwiftUI + Swift Process Bridge）
+cd mac-gui && swift build                            # 构建
+cd mac-gui && swift test                             # 测试（Swift Testing，mock CLI）
+./mac-gui/.build/debug/AVDCApp                       # 运行（需在项目根，cwd 定位 cli/）
+# 其余前端
 uv run python cli/cli.py --path /path/to/movies      # Run CLI
 uv run pytest core/test cli/test/ -v                 # Core/CLI tests
-uv run pytest pyside6_gui/test/ -v                   # PySide6 QML tests
-.venv/bin/pyside6-qmllint pyside6_gui/qml/main.qml  # QML lint
 ```
 
 ## Architecture
 
 ```
 core/              Business logic (typed, no Qt) — _config, _models, _scraper, _services, _files, _media, _net, _event
-pyside6_gui/       PySide6 + QML GUI (primary frontend)
-pyqt5-gui/         PyQt5 GUI (legacy frontend)
+mac-gui/           macOS 原生 GUI（主力，纯 SwiftUI）
+  Package.swift    SPM（swift build / swift test）
+  Sources/AVDCAppCore/  逻辑层：Bridge.swift（Process JSONL）、AppModel.swift（@Observable）、SettingsState.swift
+  Sources/AVDCApp/      视图层：AVDCApp/RootView/Home/Settings/Tools/Log/About
+  Tests/AVDCAppTests/   Bridge/AppModel/Settings 测试（mock_cli.py 离线）
 cli/               CLI frontend (no Qt dependency)
 tui-go/            Go TUI frontend
+.archive/          PySide6/PyQt5 GUI 归档（2026-09-20）
 docs/              Documentation（按编号排序，子文件夹按模块分组）
 resources/         Icons, screenshots
 ```
+
+### mac-gui 要点（2026-09-20 落地）
+
+- 纯 SwiftUI + Swift Process Bridge，**无 ImGui/Metal/ObjC++**
+- CLT 约束：`@State` 宏不可用（缺 SwiftUIMacros）→ 用
+  `@Observable` 单例 + `@Bindable`；XCTest 不可用 → Swift Testing
+- Bridge 只认 `cli.py --json-output` JSONL 契约（4.3 契约隔离）
+- 5 页全部完成：Home/Settings/Tools/Log/About；测试 8/8 通过
+- 构建在项目根 cwd 下运行（Bridge 向上找 cli/cli.py + uv 绝对路径）
 
 ### Docs Structure
 
