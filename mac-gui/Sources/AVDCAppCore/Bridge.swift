@@ -99,6 +99,16 @@ public final class Bridge {
         return nil
     }
 
+    // uv 可执行定位（GUI 从 Finder 启动时 PATH 可能不含 Homebrew）
+    public static func uvPath() -> String {
+        let candidates = ["/opt/homebrew/bin/uv", "/usr/local/bin/uv"]
+        for c in candidates
+        where FileManager.default.isExecutableFile(atPath: c) {
+            return c
+        }
+        return "uv"   // 回退 PATH 查找
+    }
+
     // 底层：uv run python cli.py <args>；onLine 每行（主线程）、onExit 退出码
     public func runCommand(_ args: [String],
                     onLine: ((String) -> Void)?,
@@ -111,10 +121,11 @@ public final class Bridge {
             return
         }
         let cliPath = (root as NSString).appendingPathComponent("cli/cli.py")
-        let fullArgs = ["uv", "run", "python", cliPath] + args
+        let fullArgs = ["run", "python", cliPath] + args
 
         let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        // 直接执行 uv（不依赖 PATH 里的 env/uv）
+        proc.executableURL = URL(fileURLWithPath: Self.uvPath())
         proc.arguments = fullArgs
         proc.currentDirectoryURL = URL(fileURLWithPath: root)
 
