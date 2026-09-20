@@ -1,35 +1,13 @@
 # macOS
 .DS_Store
 
-# Build artifacts
-build/
-cmake-build-*/
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.o
-*.obj
-*.a
-*.so
-*.dylib
-*.dSYM/
+# SwiftPM 构建产物
+.build/
+.swiftpm/
 
 # Xcode
-*.xcuserstate
 xcuserdata/
 DerivedData/
 
-# IDE
-.vscode/
-.idea/
-
-# Package managers
-vcpkg_installed/
-buildtrees/
-
-# Archive (obsolete files, kept locally only)
-.archive/
-
-# ImGui runtime state
+# ImGui 运行时状态（遗留）
 imgui.ini
