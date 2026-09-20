@@ -42,13 +42,18 @@ core/              Business logic (typed, no Qt) — _config,
                    _media, _net, _event
 mac-gui/           macOS 原生 GUI（主力，纯 SwiftUI）
   Package.swift    SPM（swift build / swift test）
-  Sources/AVDCAppCore/  逻辑层：Bridge.swift（Process JSONL）、AppModel.swift（@Observable）、SettingsState.swift
-  Sources/AVDCApp/      视图层：AVDCApp/RootView/Home/Settings/Tools/Log/About
-  Tests/AVDCAppTests/   Bridge/AppModel/Settings 测试（mock_cli.py 离线）
+  Sources/AVDCAppCore/  逻辑层：Bridge.swift（Process
+                         JSONL）、AppModel.swift（@Observable）、
+                         SettingsState.swift
+  Sources/AVDCApp/      视图层：AVDCApp/RootView/Home/
+                         Settings/Tools/Log/About
+  Tests/AVDCAppTests/   Bridge/AppModel/Settings 测试
+                         （mock_cli.py 离线）
 cli/               CLI frontend (no Qt dependency)
 tui-go/            Go TUI frontend
 .archive/          PySide6/PyQt5 GUI 归档（2026-09-20）
-docs/              Documentation（按编号排序，子文件夹按模块分组）
+docs/              Documentation（按编号排序，子文件夹按
+                   模块分组）
 resources/         Icons, screenshots
 ```
 
@@ -100,8 +105,8 @@ docs/
 │   ├── 00-overview.md           目录概览
 │   ├── 01-requirements.md       I/O 规范
 │   └── 02-scraping-flow.md      抓取流程
-├── pyside6gui/                  已归档 GUI 参考（.archive/ 代码），
-│                                d=设计 / t=踩坑，仅作功能对照
+├── pyside6gui/                  已归档 GUI 参考
+│                                （.archive/ 代码，d=设计 / t=踩坑）
 │   ├── 00-overview.md           目录概览 + 学习路径
 │   ├── d01-architecture.md      整体架构 + 数据流
 │   ├── d02-theme-system.md      Theme 常量参考
