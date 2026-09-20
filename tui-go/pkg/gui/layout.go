@@ -3,69 +3,121 @@ package gui
 import (
 	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
+
+	"avdc-tui/pkg/gui/helpers"
 )
 
-// Layout handles view positioning and resizing.
+// Layout 处理 view 定位与重排。
+//
+// 布局采用 flex 比例分配：顶栏 options（1 行）、中间三栏
+// files:log:result = 1:2:1、底栏 status（1 行）。
+// 窄窗口（<60 列）降级：隐藏 result，log 占满剩余宽度。
 type Layout struct {
 	gui *Gui
 }
 
-// layout is called on every screen re-render (e.g., resize).
+// 面板间隔（列）。
+const panelGap = 1
+
+// layout 每次屏幕重绘时调用（含 resize）。
 func (l *Layout) layout(g *gocui.Gui) error {
 	width, height := g.Size()
 
 	topLines := 1
 	bottomLines := 1
+	midY0 := topLines
+	midY1 := height - bottomLines - 1
 
-	// All views get frameOffset=1 (expand by 1 char each side).
-	// Panels are spaced 1 char apart so their borders don't overlap:
-	//   Files [0..W/4-1]  gap  Log [W/4+1..W/4+W/2]  gap  Result [W/4+W/2+1..W-2]
-	filesWidth := width / 4
-	logWidth := width / 2
+	// 窄窗口降级：隐藏 result 栏
+	resultVisible := width >= 60
 
-	views := []struct {
-		name            string
-		x0, y0, x1, y1 int
-	}{
-		{"options", 0, 0, width, topLines},
-		{"files", 0, topLines, filesWidth - 1, height - bottomLines - 1},
-		{"log", filesWidth + 1, topLines, filesWidth + logWidth, height - bottomLines - 1},
-		{"result", filesWidth + logWidth + 1, topLines, width - 2, height - bottomLines - 1},
-		{"status", 0, height - bottomLines, width, height - 1},
+	panels := l.flexPanels(width, midY0, midY1, resultVisible)
+
+	if err := l.setView(g, "options", 0, 0, width, topLines); err != nil {
+		return err
+	}
+	if err := l.setView(g, "files", panels[0][0], panels[0][1],
+		panels[0][2], panels[0][3]); err != nil {
+		return err
+	}
+	if err := l.setView(g, "log", panels[1][0], panels[1][1],
+		panels[1][2], panels[1][3]); err != nil {
+		return err
+	}
+	if err := l.setView(g, "result", panels[2][0], panels[2][1],
+		panels[2][2], panels[2][3]); err != nil {
+		return err
+	}
+	if err := l.setView(g, "status", 0, height-bottomLines,
+		width, height-1); err != nil {
+		return err
 	}
 
-	for _, v := range views {
-		frameOffset := 1
-		_, err := g.SetView(v.name,
-			v.x0-frameOffset, v.y0-frameOffset,
-			v.x1+frameOffset, v.y1+frameOffset, 0)
-		if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
+	// 窄窗口时隐藏 result view（恢复时自动显示）
+	if v, err := g.View("result"); err == nil {
+		v.Visible = resultVisible
 	}
 
 	l.renderOptions()
 	l.renderStatus()
-
 	return nil
 }
 
-// renderOptions draws the top options bar.
+// flexPanels 按权重 1:2:1 计算三栏坐标（与原布局坐标一致：
+// files→log 间留 1 空隙列，log→result 相邻，边框外扩后
+// 由 SupportOverlaps 允许轻微重叠）。
+// 返回 [files, log, result] 三元组，每项为 [x0,y0,x1,y1]。
+func (l *Layout) flexPanels(width, y0, y1 int, showResult bool) [][4]int {
+	filesW := width / 4
+	logW := width / 2
+	if !showResult {
+		// result 隐藏：log 占满剩余
+		logW = width - filesW - 2*panelGap
+	}
+
+	filesX1 := filesW - 1
+	logX0 := filesW + panelGap
+	logX1 := filesW + logW
+	resultX0 := logX1 + panelGap
+	resultX1 := width - 2
+
+	return [][4]int{
+		{0, y0, filesX1, y1},         // files
+		{logX0, y0, logX1, y1},       // log
+		{resultX0, y0, resultX1, y1}, // result
+	}
+}
+
+// setView 定位 view（frameOffset=1 边框外扩 1 字符）。
+func (l *Layout) setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
+	const frameOffset = 1
+	_, err := g.SetView(name,
+		x0-frameOffset, y0-frameOffset,
+		x1+frameOffset, y1+frameOffset, 0)
+	if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
+		return err
+	}
+	return nil
+}
+
+// renderOptions 绘制顶部选项栏（键位提示）。
 func (l *Layout) renderOptions() {
 	v, err := l.gui.getView("options")
 	if err != nil {
 		return
 	}
 	v.Clear()
+	v.FgColor = helpers.Theme.OptionsBarFg
 	v.WriteString("j/k: Nav  |  h/l: Panel  |  Enter: Scrape  |  c: Config  |  q: Quit  |  ?: Help")
 }
 
-// renderStatus draws the bottom status bar.
+// renderStatus 绘制底部状态栏。
 func (l *Layout) renderStatus() {
 	v, err := l.gui.getView("status")
 	if err != nil {
 		return
 	}
 	v.Clear()
+	v.FgColor = helpers.Theme.StatusBarFg
 	v.WriteString("Ready  |  Select a directory to begin  |  AVDC TUI v0.1.0")
 }

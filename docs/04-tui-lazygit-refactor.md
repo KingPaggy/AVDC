@@ -182,7 +182,14 @@ Go 子进程：Commands 层 → cli.py --json-output
   （showPopup/hidePopup），无闪烁。偏差：弹窗尚未接入 context 栈
   （menu 显示时栈顶仍为 files，Esc 由各 controller 处理）——待
   Phase 4 组件化时接入。
-- [ ] Phase 3：布局与主题
+- [x] **Phase 3**（2026-09-20）：布局与主题。新建 helpers/（Theme
+  唯一颜色源 + style 标签辅助 + LevelInfo/LevelError 常量）；
+  layout.go 重写：flexPanels 权重分配 + 窄窗口（<60 列）降级
+  隐藏 result + 弹窗统一 centerRect 居中；4 处弹窗坐标收敛；
+  全部 gocui.ColorXxx 字面量清理（验收 grep 通过）；新增
+  layout_test（宽/窄/极窄 3 测试）。偏差：flexPanels 保持原
+  布局坐标语义（files→log 留空隙、log→result 相邻重叠），
+  未做严格等距对称；config 编辑器非居中弹窗，坐标保留手写。
 - [ ] Phase 4：弹出组件复用
 - [ ] Phase 5：Python 命令层
 - [ ] Phase 6：交互增强（可选）

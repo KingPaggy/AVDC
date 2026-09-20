@@ -6,6 +6,7 @@ import (
 	"github.com/jesseduffield/gocui"
 
 	"avdc-tui/pkg/gui/components"
+	"avdc-tui/pkg/gui/helpers"
 )
 
 // ResultItem 表示结果列表中的一行。
@@ -71,13 +72,12 @@ func (c *ResultController) render() error {
 		return err
 	}
 	v.Clear()
-	v.FgColor = gocui.ColorGreen
 	v.Title = "Result"
 	for _, it := range c.items.Items() {
 		if it.IsError {
-			fmt.Fprintf(v, "[red]%s[-]\n", it.Line)
+			fmt.Fprintln(v, helpers.Error(it.Line))
 		} else {
-			fmt.Fprintf(v, "[green]%s[-]\n", it.Line)
+			fmt.Fprintln(v, helpers.Info(it.Line))
 		}
 	}
 	return nil

@@ -3,6 +3,7 @@ package gui
 import (
 	"avdc-tui/pkg/gui/context"
 	"avdc-tui/pkg/gui/controllers"
+	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
 	"strconv"
@@ -57,17 +58,15 @@ func (g *Gui) Run() error {
 	// Enable Highlight so SelFrameColor is used for the focused panel border.
 	gui.Highlight = true
 
-	// Border colors matching lazygit defaults:
-	// - Inactive panels: default color (terminal adapts, typically gray/white)
+	// Border colors from Theme:
+	// - Inactive panels: default color (terminal adapts)
 	// - Active panel border: green + bold
-	gui.FrameColor = gocui.ColorDefault
-	gui.SelFrameColor = gocui.ColorGreen | gocui.AttrBold
+	gui.FrameColor = helpers.Theme.BorderUnfocused
+	gui.SelFrameColor = helpers.Theme.BorderFocused
 
-	// Selection colors: SelBgColor/SelFgColor on the GUI level should stay
-	// at default so the frame border itself has no background fill.
-	// Each view sets its own SelBgColor/SelFgColor for the selected line.
-	gui.SelBgColor = gocui.ColorDefault
-	gui.SelFgColor = gocui.ColorDefault
+	// Selection colors: each view sets its own SelBgColor/
+	// SelFgColor (from Theme) for the selected line; the
+	// GUI-level defaults (no background fill) are left as-is.
 
 	gui.SetManagerFunc(g.layout.layout)
 
@@ -178,8 +177,9 @@ func (g *Gui) UpdateStatusReady(dir string, fileCount int) {
 		return
 	}
 	v.Clear()
-	v.FgColor = gocui.ColorGreen
-	v.WriteString("Ready  |  Path: " + dir + "  |  " +
+	v.FgColor = helpers.Theme.StatusBarFg
+	v.WriteString(helpers.Info("Ready") +
+		"  |  Path: " + dir + "  |  " +
 		itoa(fileCount) + " files  |  Press Enter to scrape")
 }
 
@@ -194,9 +194,10 @@ func (g *Gui) UpdateStatusScraping(current, total int, dir string) {
 		return
 	}
 	v.Clear()
-	v.FgColor = gocui.ColorYellow
-	v.WriteString("Scraping: " +
-		itoa(current) + "/" + itoa(total) + " (" + itoa(pct) + "%)  |  Path: " + dir)
+	v.FgColor = helpers.Theme.StatusBarFg
+	v.WriteString(helpers.Warning("Scraping") + ": " +
+		itoa(current) + "/" + itoa(total) + " (" +
+		itoa(pct) + "%)  |  Path: " + dir)
 }
 
 // UpdateStatusDone updates the status bar after scraping completes.
@@ -206,9 +207,10 @@ func (g *Gui) UpdateStatusDone(success, failed, total int, dir string) {
 		return
 	}
 	v.Clear()
-	v.FgColor = gocui.ColorGreen
-	v.WriteString("Done  |  " +
-		itoa(total) + " total, " + itoa(success) + " success, " + itoa(failed) + " failed  |  Path: " + dir)
+	v.FgColor = helpers.Theme.StatusBarFg
+	v.WriteString(helpers.Info("Done") + "  |  " +
+		itoa(total) + " total, " + itoa(success) +
+		" success, " + itoa(failed) + " failed  |  Path: " + dir)
 }
 
 // AppendLog adds a line to the log view.
@@ -247,7 +249,6 @@ func (g *Gui) ClearResults() {
 		return
 	}
 	v.Clear()
-	v.FgColor = gocui.ColorGreen
 	v.Title = "Result"
 }
 

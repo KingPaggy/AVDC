@@ -3,6 +3,8 @@ package gui
 import (
 	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
+
+	"avdc-tui/pkg/gui/helpers"
 )
 
 // Unicode box-drawing runes for panel borders (same as lazygit default)
@@ -32,8 +34,7 @@ func (vs *Views) create(g *gocui.Gui) error {
 		case "options":
 			vs.Options = v
 			v.Frame = false
-			v.BgColor = gocui.ColorDefault
-			v.FgColor = gocui.ColorGreen
+			v.FgColor = helpers.Theme.OptionsBarFg
 		case "files":
 			vs.Files = v
 			v.Frame = true
@@ -49,8 +50,7 @@ func (vs *Views) create(g *gocui.Gui) error {
 		case "status":
 			vs.Status = v
 			v.Frame = false
-			v.BgColor = gocui.ColorDefault
-			v.FgColor = gocui.ColorCyan
+			v.FgColor = helpers.Theme.StatusBarFg
 		}
 	}
 
@@ -58,8 +58,8 @@ func (vs *Views) create(g *gocui.Gui) error {
 	for _, v := range []*gocui.View{vs.Files, vs.Log, vs.Result} {
 		v.FrameRunes = frameRunes
 		v.Highlight = true
-		v.SelBgColor = gocui.ColorBlue
-		v.SelFgColor = gocui.ColorWhite
+		v.SelBgColor = helpers.Theme.SelectedBg
+		v.SelFgColor = helpers.Theme.SelectedFg
 	}
 
 	return nil

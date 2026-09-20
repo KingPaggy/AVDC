@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/python"
 )
 
@@ -109,7 +110,7 @@ func (s *Scraper) StartScrape(dir string, mode int) error {
 	s.state.Current = 0
 
 	s.gui.ClearResults()
-	s.gui.AppendLog("Starting scrape: mode="+fmt.Sprint(mode)+" dir="+dir, 0)
+	s.gui.AppendLog("Starting scrape: mode="+fmt.Sprint(mode)+" dir="+dir, helpers.LevelInfo)
 
 	go s.runScrape(dir, mode)
 	return nil
@@ -119,13 +120,13 @@ func (s *Scraper) runScrape(dir string, mode int) {
 	defer s.state.SetRunning(false)
 
 	if s.client == nil {
-		s.gui.AppendLog("Error: Python client not initialized", 1)
+		s.gui.AppendLog("Error: Python client not initialized", helpers.LevelError)
 		return
 	}
 
 	projectRoot := s.client.ProjectRoot()
 	if projectRoot == "" {
-		s.gui.AppendLog("Error: cannot find project root", 1)
+		s.gui.AppendLog("Error: cannot find project root", helpers.LevelError)
 		return
 	}
 
@@ -140,14 +141,14 @@ func (s *Scraper) runScrape(dir string, mode int) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		s.gui.AppendLog("Error creating stdout pipe: "+err.Error(), 1)
+		s.gui.AppendLog("Error creating stdout pipe: "+err.Error(), helpers.LevelError)
 		return
 	}
 
 	stderr, _ := cmd.StderrPipe()
 
 	if err := cmd.Start(); err != nil {
-		s.gui.AppendLog("Error starting cli.py: "+err.Error(), 1)
+		s.gui.AppendLog("Error starting cli.py: "+err.Error(), helpers.LevelError)
 		return
 	}
 
@@ -163,12 +164,12 @@ func (s *Scraper) runScrape(dir string, mode int) {
 	for errScanner.Scan() {
 		line := errScanner.Text()
 		if strings.TrimSpace(line) != "" {
-			s.gui.AppendLog("[STDERR] "+line, 0)
+			s.gui.AppendLog("[STDERR] "+line, helpers.LevelInfo)
 		}
 	}
 
 	if err := cmd.Wait(); err != nil {
-		s.gui.AppendLog("Process exited with error: "+err.Error(), 1)
+		s.gui.AppendLog("Process exited with error: "+err.Error(), helpers.LevelError)
 	}
 
 	s.gui.AppendLog(
@@ -183,29 +184,29 @@ func (s *Scraper) runScrape(dir string, mode int) {
 func (s *Scraper) handleJSONLine(line string) {
 	var event JSONEvent
 	if err := json.Unmarshal([]byte(line), &event); err != nil {
-		s.gui.AppendLog("Parse error: "+err.Error(), 1)
+		s.gui.AppendLog("Parse error: "+err.Error(), helpers.LevelError)
 		return
 	}
 
 	switch event.Type {
 	case "log":
-		s.gui.AppendLog(event.Msg, 0)
+		s.gui.AppendLog(event.Msg, helpers.LevelInfo)
 
 	case "progress":
 		s.state.UpdateProgress(event.Current, event.Total)
 		s.gui.UpdateStatusScraping(event.Current, event.Total, s.state.Dir)
-		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s", event.Current, event.Total, event.File), 0)
+		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s", event.Current, event.Total, event.File), helpers.LevelInfo)
 
 	case "success":
 		s.state.IncrementSuccess()
 		fileName := filepath.Base(event.File)
-		s.gui.AddResult(fmt.Sprintf("[OK] %s %s", fileName, event.Suffix), 0)
+		s.gui.AddResult(fmt.Sprintf("[OK] %s %s", fileName, event.Suffix), helpers.LevelInfo)
 
 	case "failure":
 		s.state.IncrementFailed()
 		fileName := filepath.Base(event.File)
-		s.gui.AddResult(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), 1)
-		s.gui.AppendLog(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), 1)
+		s.gui.AddResult(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), helpers.LevelError)
+		s.gui.AppendLog(fmt.Sprintf("[FAIL] %s: %s", fileName, event.Reason), helpers.LevelError)
 
 	case "done":
 		s.state.Total = event.Total

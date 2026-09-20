@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"avdc-tui/pkg/gui/helpers"
+
 	"github.com/jesseduffield/gocui"
 )
 
@@ -72,16 +74,9 @@ func (h *HelpPanel) Show() error {
 	h.visible = true
 
 	g := h.gui.GetGui()
-	_, height := g.Size()
-	y0 := height/2 - 8
-	if y0 < 2 {
-		y0 = 2
-	}
-	y1 := y0 + 16
 
-	w := 55
-	x0 := 10
-	x1 := x0 + w
+	// Center the help panel
+	x0, y0, x1, y1 := centerRect(g, 55, 16)
 
 	// Create/update the persistent help view
 	v, err := showPopup(g, "help", x0, y0, x1, y1, func(v *gocui.View) {
@@ -173,7 +168,7 @@ func (h *HelpPanel) renderTab(v *gocui.View) {
 	}
 	for _, k := range tab.Keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k.Key)+2)
-		fmt.Fprintf(v, "  [yellow]%s[-]%s %s\n", k.Key, padding, k.Desc)
+		fmt.Fprintf(v, "  %s%s %s\n", helpers.Warning(k.Key), padding, k.Desc)
 	}
-	fmt.Fprint(v, "\n  [dim]Tab: switch category  |  Esc: close[-]")
+	fmt.Fprintln(v, "\n  "+helpers.Dim("Tab: switch category  |  Esc: close"))
 }

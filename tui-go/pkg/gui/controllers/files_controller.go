@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"avdc-tui/pkg/gui/components"
+	"avdc-tui/pkg/gui/helpers"
 	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
 
@@ -154,7 +155,7 @@ func (c *FilesController) scanAndDisplay(dir string) error {
 	v.Editable = false
 	v.Clear()
 	c.gui.SetViewTitle(v, "Scanning...")
-	fmt.Fprint(v, "[yellow]Scanning directory via Python core...")
+	fmt.Fprintln(v, helpers.Warning("Scanning directory via Python core..."))
 
 	// Run scan asynchronously
 	go func() {
@@ -196,7 +197,7 @@ func (c *FilesController) displayFiles(dir string, files []types.VideoFile) erro
 	c.gui.SetViewTitle(v, "Files")
 
 	if len(files) == 0 {
-		fmt.Fprint(v, "[yellow]No video files found")
+		fmt.Fprintln(v, helpers.Warning("No video files found"))
 		return nil
 	}
 
@@ -220,7 +221,7 @@ func (c *FilesController) renderFileList(v *gocui.View) {
 			line += "  (" + f.Number + ")"
 		}
 		if i == c.files.SelectedIndex() {
-			fmt.Fprintf(v, "[green]%s[-]\n", line)
+			fmt.Fprintln(v, helpers.Info(line))
 		} else {
 			fmt.Fprintln(v, line)
 		}
@@ -232,9 +233,9 @@ func (c *FilesController) showError(msg string) error {
 	v.Editable = false
 	v.Clear()
 	c.gui.SetViewTitle(v, "Error")
-	fmt.Fprint(v, "[red]Failed to scan directory:\n\n")
+	fmt.Fprintln(v, helpers.Error("Failed to scan directory:"))
 	fmt.Fprintln(v, msg)
-	fmt.Fprint(v, "\n[yellow]Press 'r' or Enter to try another directory")
+	fmt.Fprintln(v, helpers.Warning("Press 'r' or Enter to try another directory"))
 	return nil
 }
 

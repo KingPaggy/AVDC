@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"avdc-tui/pkg/gui/helpers"
+
 	"github.com/jesseduffield/gocui"
 )
 
@@ -144,7 +146,8 @@ func (ce *ConfigEditor) renderContent(v *gocui.View, maxLines int) {
 		// Section header
 		if f.Section != currentSection {
 			currentSection = f.Section
-			fmt.Fprintf(v, "\n  [cyan]-- %s --[-]\n", strings.ToUpper(f.Section))
+			fmt.Fprintln(v, "  "+helpers.Accent(
+				"-- "+strings.ToUpper(f.Section)+" --"))
 			lineIdx++
 		}
 
@@ -154,13 +157,15 @@ func (ce *ConfigEditor) renderContent(v *gocui.View, maxLines int) {
 		}
 
 		if i == ce.curIdx {
-			fmt.Fprintf(v, "> [green]%s: %s[-]\n", f.Display, masked)
+			fmt.Fprintln(v, "> "+helpers.Info(
+				f.Display+": "+masked))
 		} else {
 			fmt.Fprintf(v, "  %s: %s\n", f.Display, masked)
 		}
 		lineIdx++
 	}
-	fmt.Fprintf(v, "\n  [dim]j/k: navigate | Enter: edit field | s: save | Esc: close[-]")
+	fmt.Fprintln(v, "\n  "+helpers.Dim(
+		"j/k: navigate | Enter: edit field | s: save | Esc: close"))
 }
 
 // Setup registers config editor keybindings.
@@ -228,9 +233,9 @@ func (ce *ConfigEditor) Setup() error {
 		}},
 		{'s', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 			if err := ce.SaveConfig("config.ini"); err != nil {
-				ce.gui.AppendLog("Config save failed: "+err.Error(), 1)
+				ce.gui.AppendLog("Config save failed: "+err.Error(), helpers.LevelError)
 			} else {
-				ce.gui.AppendLog("Config saved", 0)
+				ce.gui.AppendLog("Config saved", helpers.LevelInfo)
 			}
 			return ce.Hide()
 		}},

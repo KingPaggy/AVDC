@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/jesseduffield/gocui"
+
+	"avdc-tui/pkg/gui/helpers"
 )
 
 // MenuItem represents a selectable menu item.
@@ -30,28 +32,15 @@ func (mc *MenuContext) Show() error {
 	g := mc.gui.GetGui()
 
 	// Position menu in center of screen
-	_, height := g.Size()
-	y0 := height/2 - 4
-	if y0 < 2 {
-		y0 = 2
-	}
-	y1 := y0 + len(mc.items) + 2
-
-	// Width: 40 chars
-	w := 40
-	x0 := 20
-	if w > 40 {
-		x0 = 0
-	}
-	x1 := x0 + w
+	x0, y0, x1, y1 := centerRect(g, 40, len(mc.items)+2)
 
 	// Create/update the persistent menu view
 	v, err := showPopup(g, "menu", x0, y0, x1, y1, func(v *gocui.View) {
 		v.Frame = true
 		v.Title = mc.title
 		v.Highlight = true
-		v.SelBgColor = gocui.ColorGreen
-		v.SelFgColor = gocui.ColorBlack
+		v.SelBgColor = helpers.Theme.MenuSelectedBg
+		v.SelFgColor = helpers.Theme.MenuSelectedFg
 		v.Clear()
 	})
 	if err != nil {
@@ -76,7 +65,7 @@ func (mc *MenuContext) Hide() error {
 func (mc *MenuContext) renderItems(v *gocui.View) {
 	for i, item := range mc.items {
 		if i == mc.highlit {
-			fmt.Fprintf(v, "  [green]%s[-]\n", item.Display)
+			fmt.Fprintln(v, "  "+helpers.Info(item.Display))
 		} else {
 			fmt.Fprintf(v, "  %s\n", item.Display)
 		}

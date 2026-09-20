@@ -3,6 +3,8 @@ package controllers
 import (
 	"fmt"
 
+	"avdc-tui/pkg/gui/helpers"
+
 	"github.com/jesseduffield/gocui"
 )
 
@@ -22,16 +24,9 @@ func NewConfirmDialog(g GUI, message string, onYes, onNo func()) *ConfirmDialog 
 // Show displays the confirmation popup.
 func (cd *ConfirmDialog) Show() error {
 	g := cd.gui.GetGui()
-	_, height := g.Size()
-	y0 := height/2 - 1
-	if y0 < 2 {
-		y0 = 2
-	}
-	y1 := y0 + 3
 
-	w := 50
-	x0 := 15
-	x1 := x0 + w
+	// Center the confirm dialog
+	x0, y0, x1, y1 := centerRect(g, 50, 3)
 
 	// Create/update the persistent confirm view
 	v, err := showPopup(g, "confirm", x0, y0, x1, y1, func(v *gocui.View) {
@@ -43,7 +38,9 @@ func (cd *ConfirmDialog) Show() error {
 		return err
 	}
 	fmt.Fprint(v, cd.message)
-	fmt.Fprint(v, "\n\n  [green]y[/] Yes  |  [red]n[/] No  |  [yellow]Esc[/] Cancel")
+	fmt.Fprint(v, "\n\n  "+helpers.Info("y")+
+		" Yes  |  "+helpers.Error("n")+
+		" No  |  "+helpers.Warning("Esc")+" Cancel")
 
 	// Register keys
 	bindings := []struct {

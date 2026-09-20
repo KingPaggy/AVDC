@@ -32,3 +32,19 @@ func hidePopup(g *gocui.Gui, name string) {
 		v.Visible = false
 	}
 }
+
+// centerRect 计算居中的弹窗区域（宽 w 高 h）。
+// 供 menu/confirm/help/config 弹窗统一使用，替代各
+// controller 手写坐标。
+func centerRect(g *gocui.Gui, w, h int) (x0, y0, x1, y1 int) {
+	gw, gh := g.Size()
+	x0 = (gw - w) / 2
+	if x0 < 0 {
+		x0 = 0
+	}
+	y0 = (gh - h) / 2
+	if y0 < 0 {
+		y0 = 0
+	}
+	return x0, y0, x0 + w, y0 + h
+}
