@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"avdc-tui/pkg/gui/components"
 	"avdc-tui/pkg/gui/helpers"
 
 	"github.com/jesseduffield/gocui"
@@ -101,7 +102,7 @@ func (ce *ConfigEditor) Show() error {
 // Hide hides the config editor (persistent view, no rebuild).
 func (ce *ConfigEditor) Hide() error {
 	ce.visible = false
-	hidePopup(ce.gui.GetGui(), "config")
+	components.HidePopup(ce.gui.GetGui(), "config")
 	return ce.gui.SetView("files")
 }
 
@@ -118,7 +119,7 @@ func (ce *ConfigEditor) Render(g *gocui.Gui) error {
 	x1 := x0 + w
 
 	// Create/update the persistent config view
-	v, err := showPopup(g, "config", x0, y0, x1, y1, func(v *gocui.View) {
+	v, err := components.ShowPopup(g, "config", x0, y0, x1, y1, func(v *gocui.View) {
 		v.Frame = true
 		v.Title = "Config Editor (s: save, Esc: close)"
 		v.Wrap = false

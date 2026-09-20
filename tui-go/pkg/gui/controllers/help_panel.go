@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"avdc-tui/pkg/gui/components"
 	"avdc-tui/pkg/gui/helpers"
 
 	"github.com/jesseduffield/gocui"
@@ -76,10 +77,10 @@ func (h *HelpPanel) Show() error {
 	g := h.gui.GetGui()
 
 	// Center the help panel
-	x0, y0, x1, y1 := centerRect(g, 55, 16)
+	x0, y0, x1, y1 := components.CenterRect(g, 55, 16)
 
 	// Create/update the persistent help view
-	v, err := showPopup(g, "help", x0, y0, x1, y1, func(v *gocui.View) {
+	v, err := components.ShowPopup(g, "help", x0, y0, x1, y1, func(v *gocui.View) {
 		v.Frame = true
 		v.Title = "Help - " + h.tabs[h.activeTab].Name
 		v.Wrap = false
@@ -96,7 +97,7 @@ func (h *HelpPanel) Show() error {
 // Hide hides the help popup (persistent view, no rebuild).
 func (h *HelpPanel) Hide() error {
 	h.visible = false
-	hidePopup(h.gui.GetGui(), "help")
+	components.HidePopup(h.gui.GetGui(), "help")
 	return h.gui.SetView("files")
 }
 

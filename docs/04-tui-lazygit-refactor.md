@@ -190,6 +190,16 @@ Go 子进程：Commands 层 → cli.py --json-output
   layout_test（宽/窄/极窄 3 测试）。偏差：flexPanels 保持原
   布局坐标语义（files→log 留空隙、log→result 相邻重叠），
   未做严格等距对称；config 编辑器非居中弹窗，坐标保留手写。
-- [ ] Phase 4：弹出组件复用
+- [x] **Phase 4**（2026-09-20）：弹出组件复用。showPopup/hidePopup/
+  CenterRect 移到 components（导出）；新建 Menu 组件（ListViewModel
+  管理选中，幂等键位注册，OnDone/OnCancel 回调）替代
+  menu_controller.go；新建 Confirmation（y/n/Esc）替代
+  confirm_dialog.go；新建 Toast（状态栏轻提示，不做计时器）。
+  files_controller 改用 Menu 组件，修复选择后隐藏 view 残留焦点
+  （OnDone 切回 files）。组件单测 4 个。偏差：行数净增 ~90
+  （组件自包含键位+渲染，含通用 popup 迁移），未达「净减 200+」
+  目标，但复用模式建立（新增菜单仅需几行 config）；confirm_dialog
+  原无调用点（死代码）一并清除；Menu 未接入 context 栈（仍由
+  调用方切回焦点），留待后续。
 - [ ] Phase 5：Python 命令层
 - [ ] Phase 6：交互增强（可选）

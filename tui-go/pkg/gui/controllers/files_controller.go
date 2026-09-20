@@ -92,23 +92,28 @@ func (c *FilesController) handleEnter(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	// Show mode selection menu
-	menuCtx := NewMenuContext(c.gui, "Scrape Mode", []MenuItem{
-		{Display: "1 - Scrape (download metadata)", Value: "1"},
-		{Display: "2 - Organize (rename & move)", Value: "2"},
+	menu := components.NewMenu(components.MenuConfig{
+		Title: "Scrape Mode",
+		Items: []components.MenuItem{
+			{Display: "1 - Scrape (download metadata)", Value: "1"},
+			{Display: "2 - Organize (rename & move)", Value: "2"},
+		},
+		OnDone: func(selected string) {
+			mode := 1
+			if selected == "2" {
+				mode = 2
+			}
+			if c.scraper != nil {
+				c.scraper.StartScrape(c.gui.GetScanDir(), mode)
+			}
+			// 菜单关闭后切回 files 焦点（修复隐藏 view 残留焦点）
+			c.gui.SetView("files")
+		},
+		OnCancel: func() {
+			c.gui.SetView("files")
+		},
 	})
-	mc := NewMenuController(c.gui, menuCtx, func(selected string) {
-		mode := 1
-		if selected == "2" {
-			mode = 2
-		}
-		if c.scraper != nil {
-			c.scraper.StartScrape(c.gui.GetScanDir(), mode)
-		}
-	})
-	if err := mc.Setup(); err != nil {
-		return err
-	}
-	return menuCtx.Show()
+	return menu.Show(c.gui)
 }
 
 func (c *FilesController) handlePathInput(v *gocui.View) error {
