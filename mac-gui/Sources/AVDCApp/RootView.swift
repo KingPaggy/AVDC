@@ -17,7 +17,12 @@ struct RootView: View {
 
     @ViewBuilder
     private var detail: some View {
-        PagePlaceholder(page: model.page)
+        switch model.page {
+        case .home:
+            HomeView(model: model)
+        default:
+            PagePlaceholder(page: model.page)
+        }
     }
 }
 

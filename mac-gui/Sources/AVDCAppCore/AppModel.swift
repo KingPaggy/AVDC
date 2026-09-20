@@ -42,7 +42,13 @@ public struct HomeFileResult: Identifiable {
 @Observable
 public final class AppModel {
     public static let shared = AppModel()
-    private init() {}
+
+    // Bridge 可注入（测试用 mock 项目根）；默认定位真实 cli/
+    public let bridge: Bridge
+
+    public init(bridge: Bridge = Bridge()) {
+        self.bridge = bridge
+    }
 
     public var page: Page = .home
 
@@ -89,8 +95,6 @@ public final class AppModel {
     }
 
     // ---- 批量处理（Bridge 集成）----
-    public let bridge = Bridge()
-
     public func startProcessing() {
         guard !isRunning else { return }
         guard !inputDir.isEmpty else {

@@ -26,7 +26,10 @@ let package = Package(
             resources: [.copy("Resources/mock_cli.py")],
             swiftSettings: [
                 .unsafeFlags(["-F",
-                    "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"])
+                    "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"]),
+                // CLT 下 SPM 偶发不传 Testing 宏插件路径，手动补齐
+                .unsafeFlags(["-plugin-path",
+                    "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing"])
             ],
             linkerSettings: [
                 .unsafeFlags(["-F",
