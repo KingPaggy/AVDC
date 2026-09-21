@@ -56,30 +56,32 @@ files / result / menu / config 共享（ListController）：
 | `s` | 直接刮削（跳过菜单） | s=scrape |
 | `o` | 直接整理（先弹确认） | o=organize |
 | `r` | 刷新扫描 | r=refresh |
+| `/` | 搜索过滤（PromptContext） | |
 | `space` | 标记 / 取消多选 | 空格=标记 |
 | `a` | 全选 / 取消全选 | a=all |
 | `c` | 打开配置编辑 | c=config |
 | `x` | 取消当前刮削任务 | x=cancel |
-| `d` | 删除选中文件（弹确认） | d=delete |
+| `d` | 删除选中文件（弹确认） | d=delete（未实现） |
 | `h` / `l` | 焦点切换（左/右面板） | |
 
 ### log（主区域）
 
 | 键 | 动作 |
 |----|------|
-| `]` / `[` | 切到 result / 上一 tab |
-| `j` / `k` | 滚动 |
-| `g` / `G` | 顶部 / 底部（含自动跟随） |
-| `/` | 搜索日志 |
+| `]` / `[` | 切到 result / 上一 tab（未实现） |
+| `j` / `k` | 滚动（自动暂停跟随） |
+| `g` / `G` | 顶部（暂停跟随）/ 底部（恢复跟随） |
+| `/` | 搜索日志（未实现） |
 | `x` | 取消当前任务 |
 
 ### result（主区域）
 
 | 键 | 动作 |
 |----|------|
-| `]` / `[` | 切到 log / 上一 tab |
+| `]` / `[` | 切到 log / 上一 tab（未实现） |
 | `t` | 循环过滤：全部 / 成功 / 失败 | t=tab |
-| `<enter>` | 查看选中项详情（文件名/原因） |
+| `<enter>` | 状态栏显示选中项全文 |
+| `x` | 取消当前任务 |
 | `j` / `k` | 移动 |
 
 ### config
@@ -159,12 +161,15 @@ files / result / menu / config 共享（ListController）：
 | `r` 刷新 | 不变 | 保留 |
 | `c` 配置编辑 | 不变 | 保留 |
 | `?` 帮助 | 不变 | 保留，改绑 HelpContext |
-| 无 `s`/`o` 直达键 | 新增 `s`/`o` | 跳过菜单快速操作 |
-| 无 `x` 取消 | 新增 `x` | Phase 5 引入 |
-| 无 `space` 多选 | 新增 `space`/`a` | Phase 6 引入 |
-| log/result 并排 | 改为 Tab 切换 | 布局重构（Phase 3） |
-| 菜单键位散绑各 view | 统一 ListController | 架构重构（Phase 2）
-  |
+| 无 `s`/`o` 直达键 | 新增 `s`/`o` | 跳过菜单快速操作（已实现） |
+| 无 `x` 取消 | 新增 `x` | 已实现（files/log/result） |
+| 无 `space` 多选 | 新增 `space`/`a` | 已实现 |
+| 搜索内联 Editable | 改 PromptContext | d06 重构（修复键位拦截） |
+| log/result 并排 | 改为 Tab 切换 | 未做（保持三栏，见 d06） |
+| 菜单键位散绑各 view | 统一 ListController | 已实现 |
 
 迁移原则：**现有单键语义全部保留**，只新增键位与
 重构注册方式，用户上手成本为零。
+
+> 本次操作逻辑重构（PromptContext/键位/反馈）详见
+> [d06-interaction-refactor.md](d06-interaction-refactor.md)。

@@ -233,3 +233,15 @@ Go 子进程：Commands 层 → cli.py --json-output
   sample-tui.yml 示例（解析验证通过）。偏差：Menu/Confirmation
   弹窗内部键（enter/esc）与 files 的 Enter/Esc 固定不可配（弹窗
   通用约定）；键位配置暂不支持热重载（需重启）。
+- [x] **Phase 7**（2026-09-21）：操作逻辑重构（d06）。PromptContext
+  落地（components.Prompt：目录输入/搜索/配置字段三处复用，搜索
+  实时过滤）；修复弹窗关闭 no-op PopContext（删 guiAdapter）；
+  s/o 直达键 + organize 确认（首次启用 Confirmation）；文件行状态
+  闭环（FileStatus + Scraper.SetStatusHook）；log 自动跟随（滚动
+  暂停、G 恢复）；状态栏状态化（SetStatus，修复 renderStatus 覆盖
+  进度）+ options 随 context 动态；help 键位表从 Registry 生成
+  （六页）；result Enter 详情 + x 取消；config 路径改项目根 + INI
+  写回保留注释/键序。偏差：搜索由内联 Editable 改为弹窗（修复
+  gocui keybinding 优先于 Editor 导致的字符拦截）；result 详情
+  显示在状态栏而非独立弹窗；log 的 g/G 新增独立 action（不共用
+  list.home/end）。

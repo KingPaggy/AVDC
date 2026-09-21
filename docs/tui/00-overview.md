@@ -12,6 +12,7 @@
 | d03 | [lazygit 快捷键体系](d03-lazygit-keybindings.md) | design | lazygit 键位组织逻辑、全局/列表/面板/弹窗键位 |
 | d04 | [AVDC 功能划分与面板](d04-avdc-design.md) | design | AVDC 面板布局、Context/Controller/Model 设计 |
 | d05 | [AVDC 快捷键设计](d05-avdc-keybindings.md) | design | AVDC 各 context 键位表与现有键位差异 |
+| d06 | [操作逻辑重构](d06-interaction-refactor.md) | design | PromptContext 统一输入、键位/反馈闭环、弹窗栈修复 |
 
 ## 文档关系
 
@@ -24,4 +25,5 @@ d03 lazygit 键位 ──┘         │
 
 - d02/d03：**lazygit 方案整理**（参考蓝本，只读沉淀）
 - d04/d05：**本项目功能设计**（基于方案的应用）
+- d06：**交互逻辑重构落地**（PromptContext + 反馈闭环，已实施）
 - d01：实施计划（已有，对应 04-tui-lazygit-refactor.md）
