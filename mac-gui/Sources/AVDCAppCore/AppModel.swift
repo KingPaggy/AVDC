@@ -1,29 +1,26 @@
 import Foundation
 import Observation
 
-// 页面导航枚举（对齐 pyside6_gui 5 个 QML 页面）
+// 页面导航枚举（侧边栏 3 页）
+// 设置走 ⌘, 独立 Settings 场景，关于走 App 菜单 About 面板（HIG 标准入口）
 public enum Page: Int, CaseIterable, Identifiable {
-    case home, settings, tools, log, about
+    case home, tools, log
 
     public var id: Int { rawValue }
 
     public var title: String {
         switch self {
         case .home: return "主页"
-        case .settings: return "设置"
         case .tools: return "工具"
         case .log: return "日志"
-        case .about: return "关于"
         }
     }
 
     public var icon: String {
         switch self {
         case .home: return "house.fill"
-        case .settings: return "gearshape.fill"
         case .tools: return "wrench.and.screwdriver.fill"
         case .log: return "doc.text.fill"
-        case .about: return "info.circle.fill"
         }
     }
 }
@@ -91,6 +88,8 @@ public final class AppModel {
     // ---- 运行日志（cap 500，供 Log 页）----
     public var logs: [LogEntry] = []
     public var logFilter: LogLevel? = nil   // Log 页过滤级别（nil=全部）
+    public var logQuery = ""                // Log 页搜索文本
+    public var pendingClearLogs = false     // 清空确认弹窗（CLT 无 @State）
     public var toolMessage: String? = nil   // Tools 页提示（待实现）
 
     public func appendLog(_ msg: String, level: LogLevel = .info) {
@@ -110,14 +109,15 @@ public final class AppModel {
         results.removeAll()
     }
 
-    // 追加结果（cap 200）
+    // 追加结果（cap 200，新条目置顶，视图无需 reversed）
     public func addResult(file: String, number: String,
                           status: Int, detail: String) {
         if results.count >= 200 {
-            results.removeFirst(results.count - 200)
+            results.removeLast(results.count - 199)
         }
-        results.append(HomeFileResult(file: file, number: number,
-                                      status: status, detail: detail))
+        results.insert(HomeFileResult(file: file, number: number,
+                                      status: status, detail: detail),
+                       at: 0)
     }
 
     // ---- 批量处理（Bridge 集成）----

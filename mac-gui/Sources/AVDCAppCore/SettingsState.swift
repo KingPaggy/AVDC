@@ -139,6 +139,25 @@ public final class SettingsState {
     public var isLoading = false
     public var isSaving = false
     public var message = ""
+    // 工具条交互态（CLT 无 @State，局部 UI 状态放模型）
+    public var query = ""            // 字段搜索
+    public var pendingReset = false   // 恢复默认确认弹窗
+
+    // 按搜索词过滤后的分组（空词 = 全量）
+    public var filteredSections: [SettingsSection] {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return Self.sections }
+        return Self.sections.compactMap { section in
+            let fields = section.fields.filter {
+                $0.label.localizedCaseInsensitiveContains(q)
+                || $0.id.localizedCaseInsensitiveContains(q)
+            }
+            return fields.isEmpty ? nil
+                : SettingsSection(id: section.id,
+                                  title: section.title,
+                                  fields: fields)
+        }
+    }
 
     // 加载：cli.py config list → values
     public func load(using bridge: Bridge) async {

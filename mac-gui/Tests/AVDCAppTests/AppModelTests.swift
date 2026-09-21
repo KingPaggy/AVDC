@@ -48,8 +48,8 @@ struct AppModelTests {
         #expect(model.success == 1)
         #expect(model.fail == 1)
         #expect(model.results.count == 2)
-        #expect(model.results.first?.status == 1)   // 存储序：先 success
-        #expect(model.results.last?.status == 2)    // 后 failure
+        #expect(model.results.first?.status == 2)   // 新条目置顶：先 failure
+        #expect(model.results.last?.status == 1)    // 后 success
         #expect(model.logs.count >= 3)              // 开始 + mock log + 完成
     }
 }

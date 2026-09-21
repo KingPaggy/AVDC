@@ -2,16 +2,17 @@ import SwiftUI
 import AVDCAppCore
 
 // 工具页：工具卡片网格（对齐 QML ToolsPage，均按现状「待实现」）
+// 卡片用系统 GroupBox（不叠自定义背景，避免遮挡系统材质与滚动边缘效果）
 struct ToolsView: View {
     @Bindable var model: AppModel
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Metric.gutter) {
                 toolSection(title: "文件工具", tools: Self.fileTools)
                 toolSection(title: "媒体库工具", tools: Self.libraryTools)
             }
-            .padding(20)
+            .padding(Metric.gutter)
         }
         .navigationTitle("工具")
         .alert("提示", isPresented: alertBinding) {
@@ -59,11 +60,12 @@ struct ToolsView: View {
 
     // ---- 分组渲染 ----
     private func toolSection(title: String, tools: [ToolItem]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Metric.item) {
             Text(title)
                 .font(.headline)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 260),
-                                         spacing: 14)], spacing: 14) {
+                                         spacing: Metric.group)],
+                      spacing: Metric.group) {
                 ForEach(tools) { tool in
                     ToolCardView(tool: tool) {
                         model.toolMessage = "\(tool.title)（待实现）"
@@ -74,32 +76,32 @@ struct ToolsView: View {
     }
 }
 
-// 工具卡片
+// 工具卡片：系统 GroupBox 承载，无自绘背景
 struct ToolCardView: View {
     let tool: ToolsView.ToolItem
     let onOpen: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                Image(systemName: tool.icon)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.tint)
-                Spacer()
-                Button("打开") { onOpen() }
-                    .controlSize(.small)
+        GroupBox {
+            VStack(alignment: .leading, spacing: Metric.item) {
+                HStack(alignment: .top, spacing: Metric.item) {
+                    Image(systemName: tool.icon)
+                        .font(.title3)
+                        .foregroundStyle(.tint)
+                        .accessibilityHidden(true)
+                    Spacer()
+                    Button("打开") { onOpen() }
+                        .controlSize(.small)
+                }
+                Text(tool.title)
+                    .font(.headline)
+                Text(tool.desc)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(tool.title)，\(tool.desc)")
             }
-            Text(tool.title)
-                .font(.headline)
-            Text(tool.desc)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10)
-            .fill(Color(nsColor: .controlBackgroundColor)))
-        .overlay(RoundedRectangle(cornerRadius: 10)
-            .stroke(Color(nsColor: .separatorColor)))
     }
 }

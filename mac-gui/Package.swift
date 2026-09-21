@@ -1,11 +1,16 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.2
 // AVDC macOS GUI — 纯 SwiftUI + Swift Process Bridge
-// 构建：swift build  /  测试：swift test
+// 构建：swift build  /  运行：.build/debug/AVDC  /  测试：swift test
+// 部署目标 macOS 26（Liquid Glass / ToolbarSpacer 等新设计 API 直用，
+// 不再用 #available 分支）；无 bundle，进程名即 App 菜单名 → 产物叫 AVDC
 import PackageDescription
 
 let package = Package(
     name: "AVDCMacGUI",
-    platforms: [.macOS(.v14)],   // min 部署；glassEffect 用 #available 防护
+    platforms: [.macOS(.v26)],   // 决策 3：min macOS 26
+    products: [
+        .executable(name: "AVDC", targets: ["AVDCApp"]),
+    ],
     targets: [
         // 逻辑层（Foundation only，可单测）：Bridge + AppModel
         .target(name: "AVDCAppCore"),
@@ -36,5 +41,8 @@ let package = Package(
                     "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"])
             ]
         ),
-    ]
+    ],
+    // CLT 无 SwiftUIMacros：保持 Swift 5 语义，避免 Swift 6 严格并发
+    // 对 AppModel.shared / SettingsState.sections 等全局态报错
+    swiftLanguageModes: [.v5]
 )

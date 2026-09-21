@@ -27,9 +27,9 @@ Pillow、Baidu AIP
 ```bash
 uv sync                # Install deps（只能在根目录执行）
 # macOS GUI（主力，纯 SwiftUI + Swift Process Bridge）
-cd mac-gui && swift build    # 构建
+cd mac-gui && swift build    # 构建（产物 .build/debug/AVDC）
 cd mac-gui && swift test     # 测试（Swift Testing，mock CLI）
-./mac-gui/.build/debug/AVDCApp   # 运行（需在项目根定位 cli/）
+./mac-gui/.build/debug/AVDC  # 运行（需在项目根 cwd 定位 cli/）
 # 其余前端
 uv run python cli/cli.py --path /path/to/movies   # Run CLI
 uv run pytest core/test cli/test/ -v              # Core/CLI tests
@@ -42,12 +42,13 @@ core/              Business logic (typed, no Qt) — _config,
                    _models, _scraper, _services, _files,
                    _media, _net, _event
 mac-gui/           macOS 原生 GUI（主力，纯 SwiftUI）
-  Package.swift    SPM（swift build / swift test）
+  Package.swift    SPM（min macOS 26；product 名 = AVDC）
   Sources/AVDCAppCore/  逻辑层：Bridge.swift（Process
                          JSONL）、AppModel.swift（@Observable）、
                          SettingsState.swift
   Sources/AVDCApp/      视图层：AVDCApp/RootView/Home/
-                         Settings/Tools/Log/About
+                         Tools/Log + SettingsScene（⌘, 窗口）+
+                         DesignTokens/Commands/AppInfo/AVDCActions
   Tests/AVDCAppTests/   Bridge/AppModel/Settings 测试
                          （mock_cli.py 离线）
 cli/               CLI frontend (no Qt dependency)
@@ -58,16 +59,25 @@ docs/              Documentation（按编号排序，子文件夹按
 resources/         Icons, screenshots
 ```
 
-### mac-gui 要点（2026-09-20 落地）
+### mac-gui 要点（2026-09-21 重排后）
 
 - 纯 SwiftUI + Swift Process Bridge，**无 ImGui/Metal/ObjC++**
+- **部署目标 min macOS 26**（Liquid Glass / ToolbarSpacer
+  直用，无 `#available`）；tools-version 6.2 +
+  `swiftLanguageModes: [.v5]`
+- **侧边栏 3 页**（主页/工具/日志）；设置走独立 `Settings`
+  场景（⌘,）；关于走 App 菜单系统 About 面板
+- 无 app bundle（决策）：`orderFrontStandardAboutPanel
+  (options:)` 传版本；product 名 = AVDC 使 App 菜单显示正常
+- 玻璃只用于导航层，自绘玻璃仅主页进度 HUD 一处
 - CLT 约束：`@State` 宏不可用（缺 SwiftUIMacros）→ 用
   `@Observable` 单例 + `@Bindable`；XCTest 不可用 → Swift Testing
 - Bridge 只认 `cli.py --json-output` JSONL 契约（事件：
   log/progress/success/failure/done + scan `{files,total}`）
-- 5 页全部完成：Home/Settings/Tools/Log/About；测试 8/8 通过
 - 构建/运行：在项目根 cwd 下（Bridge 向上找 cli/cli.py，
   uv 走绝对路径 /opt/homebrew/bin/uv 不依赖 PATH）
+- 设计规范依据：`docs/report-2026-09-21-1016-macGUI-
+  官方设计标准对齐优化方案.md`
 
 ### mac-gui 模块速查
 
@@ -76,11 +86,18 @@ resources/         Icons, screenshots
 | Core 逻辑 | `Bridge.swift` | Process 子进程 + JSONL 流式解析、
   stdout/stderr 分离、scan/config/process 封装 |
 | Core 状态 | `AppModel.swift` | @Observable 全局：page/home/
-  logs(LogEntry) ；startProcessing 事件→状态 |
+  logs(LogEntry)；startProcessing 事件→状态 |
 | Core 配置 | `SettingsState.swift` | 10 组 35 字段定义，
-  config list 加载 / diff 保存（串行 set）/ reset |
-| 视图 | `AVDCApp/` 7 文件 | RootView(NavigationSplitView) +
-  Home/Settings/Tools/Log/About（含入口 AVDCApp.swift） |
+  config list 加载 / diff 保存（串行 set）/ reset；搜索过滤 |
+| 视图入口 | `AVDCApp.swift` | `Window`（单窗口）+ `Settings`
+  场景 + `commands`（菜单栏、⌘1–⌘3/⌘R/⌘./⌘O/⌘E） |
+| 视图令牌 | `DesignTokens.swift` | Metric 间距、Page tint/快捷键、
+  Palette 语义色、Glass 参数 |
+| 视图页面 | `AVDCApp/` 页面 4 文件 | RootView（3 项侧边栏）+
+  Home/Tools/Log + SettingsScene（⌘, grouped 表单） |
+| 视图支撑 | `Commands.swift` / `AppInfo.swift` /
+  `AVDCActions.swift` | 菜单定义 / 版本与 About 面板 /
+  目录选择与日志导出（菜单与工具栏共用） |
 | 测试 | `Tests/AVDCAppTests/` | Bridge/AppModel/Settings
   （Swift Testing + mock_cli.py 离线） |
 
@@ -88,6 +105,8 @@ resources/         Icons, screenshots
 
 - `@State` 不可用 → 局部 UI 状态放 @Observable 模型，
   Binding 手动构造
+- 菜单项与工具栏按钮不要重复注册同一 `.keyboardShortcut`
+  （菜单已含 ⌘R/⌘./⌘E，按钮只写 `.help` 提示）
 - Swift Testing 宏插件偶发不加载 → Package.swift 手动
   `-plugin-path .../plugins/testing`
 - SPM 跨 module 需 public 标注（Core 类型）
@@ -104,6 +123,7 @@ docs/
 ├── 02-architecture.md           系统架构
 ├── 03-macos-gui-migration.md    mac-gui 迁移方案
 ├── 04-tui-lazygit-refactor.md   TUI 重构计划
+├── report-*-macGUI-*.md         设计对齐方案 + 执行记录
 ├── core/                        核心模块
 │   ├── 00-overview.md           目录概览
 │   ├── 01-requirements.md       I/O 规范
@@ -217,6 +237,8 @@ Shared fixtures: `core/test/conftest.py`。
 | `docs/02-architecture.md` | 系统架构、模块关系图 | 理解整体设计 |
 | `docs/03-macos-gui-migration.md` | **mac-gui 迁移方案**（纯 SwiftUI
   选型论证、执行记录、CLI 契约） | mac-gui 开发/维护 |
+| `docs/report-2026-09-21-1016-macGUI-官方设计标准对齐优化方案.md` |
+  **设计系统对齐方案（决策版 + 执行记录）** | 改 mac-gui 观感/交互前必读 |
 | `docs/04-tui-lazygit-refactor.md` | **TUI 重构计划**（lazygit 式
   Window/View/Context 三层，6 阶段） | tui-go 开发/维护 |
 
@@ -266,11 +288,13 @@ Shared fixtures: `core/test/conftest.py`。
 
 ## 待办与未决
 
-- [x] macOS GUI（mac-gui）落地：5 页完成、测试 8/8、依赖清理
-- [x] PySide6/PyQt5 归档 .archive/
-- [ ] mac-gui app bundle（图标/Info.plist）——当前裸可执行
-- [ ] mac-gui 人工视觉验证（深浅色/无障碍/全屏）
-- [ ] 真实批量刮削验证 Bridge 事件链路稳定性
+- [x] macOS GUI（mac-gui）落地：测试 8/8、依赖清理
+- [x] mac-gui 设计系统重排（2026-09-21）：侧边栏 3 页 + ⌘,
+  设置窗口 + 系统 About 面板 + 工具栏/菜单/令牌/无障碍降级；
+  决策：min macOS 26、不打包 .app
+- [ ] mac-gui 人工视觉验证（深浅色 / 无障碍三设置 / 全屏 /
+  侧边栏彩色图标）
+- [ ] 真实批量刮削验证 Bridge 事件链路稳定性（含长时运行）
 
 ## Apple HIG Design
 

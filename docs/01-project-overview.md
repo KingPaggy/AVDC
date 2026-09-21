@@ -43,6 +43,7 @@ docs/           技术文档
 | 02 | [architecture.md](02-architecture.md) | 分层架构、设计原则、包结构 |
 | 03 | [macos-gui-migration.md](03-macos-gui-migration.md) | mac-gui 迁移方案、CLI 契约 |
 | 04 | [tui-lazygit-refactor.md](04-tui-lazygit-refactor.md) | TUI 重构计划（lazygit 式三层） |
+| — | [macGUI 设计对齐方案](report-2026-09-21-1016-macGUI-官方设计标准对齐优化方案.md) | 设计系统对齐（决策版 + 执行记录） |
 
 ### 核心模块（`core/`）
 
