@@ -90,11 +90,14 @@ resources/         Icons, screenshots
 | Core 配置 | `SettingsState.swift` | 10 组 35 字段定义，
   config list 加载 / diff 保存（串行 set）/ reset；搜索过滤 |
 | 视图入口 | `AVDCApp.swift` | `Window`（单窗口）+ `Settings`
-  场景 + `commands`（菜单栏、⌘1–⌘3/⌘R/⌘./⌘O/⌘E） |
+  场景 + `commands`（⌘1–⌘3/⌘R/⌘./⌘O/⌘E/⌘F/⌘⌥S/⌃⌘F） |
 | 视图令牌 | `DesignTokens.swift` | Metric 间距、Page tint/快捷键、
   Palette 语义色、Glass 参数 |
 | 视图页面 | `AVDCApp/` 页面 4 文件 | RootView（3 项侧边栏）+
   Home/Tools/Log + SettingsScene（⌘, grouped 表单） |
+| 视图支撑 | `AppDelegate.swift` | 无 bundle →
+  setActivationPolicy(.regular) + activate()（Dock/菜单栏/快捷键前提）；
+  移除 Help 里 Toggle Sidebar 残留；`AVDC_DUMP_MENU=1` 转储菜单 |
 | 视图支撑 | `Commands.swift` / `AppInfo.swift` /
   `AVDCActions.swift` | 菜单定义 / 版本与 About 面板 /
   目录选择与日志导出（菜单与工具栏共用） |
@@ -107,6 +110,14 @@ resources/         Icons, screenshots
   Binding 手动构造
 - 菜单项与工具栏按钮不要重复注册同一 `.keyboardShortcut`
   （菜单已含 ⌘R/⌘./⌘E，按钮只写 `.help` 提示）
+- **无 bundle → LaunchServices 把进程登记为 BackgroundOnly**：
+  Dock 无图标、菜单栏不归属、菜单快捷键全失效。已修：
+  AppDelegate 启动时 `setActivationPolicy(.regular)` + `activate()`
+- **SwiftUI 会把系统 Toggle Sidebar 残留到 Help 菜单**：
+  AppDelegate 移除 `toggleSidebar:` 项，自己用
+  `CommandGroup(replacing: .sidebar)` 提供 ⌘⌥S（状态放模型）
+- **快捷键改完验证**：`AVDC_DUMP_MENU=1 ./mac-gui/.build/debug/AVDC`
+  打印菜单树（含键位/置灰）后退出
 - Swift Testing 宏插件偶发不加载 → Package.swift 手动
   `-plugin-path .../plugins/testing`
 - SPM 跨 module 需 public 标注（Core 类型）

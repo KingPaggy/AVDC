@@ -73,6 +73,11 @@ public final class AppModel {
 
     public var page: Page = .home
 
+    // 侧边栏显隐（⌘⌥S；CLT 无 @State，放模型由视图绑定）
+    public var sidebarHidden = false
+    // 搜索聚焦请求计数（⌘F；各页 onChange 自增 → 聚焦本页搜索框）
+    public var searchFocusRequest = 0
+
     // ---- Home 页状态 ----
     public var inputDir = ""
     public var escapeFolders = ""

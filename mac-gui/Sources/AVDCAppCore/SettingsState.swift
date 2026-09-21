@@ -142,6 +142,7 @@ public final class SettingsState {
     // 工具条交互态（CLT 无 @State，局部 UI 状态放模型）
     public var query = ""            // 字段搜索
     public var pendingReset = false   // 恢复默认确认弹窗
+    public var searchFocusRequest = 0 // ⌘F 聚焦搜索框
 
     // 按搜索词过滤后的分组（空词 = 全量）
     public var filteredSections: [SettingsSection] {

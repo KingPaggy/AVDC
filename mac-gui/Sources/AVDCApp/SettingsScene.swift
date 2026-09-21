@@ -6,6 +6,7 @@ import AVDCAppCore
 struct SettingsScene: View {
     @Bindable var state: SettingsState
     let bridge: Bridge
+    @FocusState private var searchFocused: Bool   // ⌘F 聚焦搜索框
 
     var body: some View {
         Form {
@@ -32,6 +33,8 @@ struct SettingsScene: View {
         .frame(minWidth: 460, minHeight: 420)
         .searchable(text: $state.query, placement: .toolbar,
                     prompt: "搜索设置项")
+        .searchFocused($searchFocused)
+        .onChange(of: state.searchFocusRequest) { searchFocused = true }
         .toolbar { toolbarContent }
         .task {
             if state.values.isEmpty { await state.load(using: bridge) }

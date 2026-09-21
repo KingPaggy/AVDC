@@ -8,13 +8,20 @@ struct RootView: View {
     @Bindable var model = AppModel.shared
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: sidebarVisibility) {
             SidebarView(model: model)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220,
                                                 max: 280)
         } detail: {
             detail
         }
+    }
+
+    // 侧边栏显隐双向绑定（⌘⌥S 与用户拖拽/按钮同步）
+    private var sidebarVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { model.sidebarHidden ? .detailOnly : .all },
+            set: { model.sidebarHidden = ($0 != .all) })
     }
 
     @ViewBuilder

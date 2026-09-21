@@ -5,6 +5,7 @@ import AVDCAppCore
 // 过滤/导出/清空进工具栏，内容区只放日志行
 struct LogView: View {
     @Bindable var model: AppModel
+    @FocusState private var searchFocused: Bool   // ⌘F 聚焦搜索框
 
     var body: some View {
         Group {
@@ -27,6 +28,8 @@ struct LogView: View {
         }
         .searchable(text: $model.logQuery, placement: .toolbar,
                     prompt: "搜索日志")
+        .searchFocused($searchFocused)
+        .onChange(of: model.searchFocusRequest) { searchFocused = true }
         .navigationTitle("日志")
         .navigationSubtitle("\(filteredLogs.count) 条")
         .toolbar { toolbar }
