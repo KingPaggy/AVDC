@@ -4,7 +4,9 @@
 
 AVDC（AV Data Capture）是一个 Python 桌面 GUI 应用，用于抓取 JAV 网站元数据并组织本地视频文件，供 Emby/Kodi/Plex 等媒体服务器使用。
 
-**技术栈**：PyQt5（GUI）、lxml/BeautifulSoup4（HTML 解析）、requests/cloudscraper（HTTP）、Pillow（图像处理）、Baidu AIP（人脸检测）。
+**技术栈**：SwiftUI（mac-gui 主力 GUI）、lxml/BeautifulSoup4（HTML
+解析）、requests/cloudscraper（HTTP）、Pillow（图像处理）、Baidu
+AIP（人脸检测）。
 
 **Python 版本**：3.13（见 `.python-version`）
 
@@ -12,12 +14,13 @@ AVDC（AV Data Capture）是一个 Python 桌面 GUI 应用，用于抓取 JAV �
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        UI 层 (Qt)                                │
-│  main.py           ── QMainWindow, QTreeWidget, QProgressBar    │
-│  ui/main_window.py ── Qt Designer 编译后的 UI 代码              │
-│  cli.py            ── 独立 CLI 入口（无 Qt 依赖）               │
+│                        UI 层（多前端）                            │
+│  mac-gui/            ── SwiftUI 原生 GUI（主力）                 │
+│                         Bridge 子进程 + JSONL 协议              │
+│  cli/cli.py          ── CLI 命令行（无 Qt 依赖）                 │
+│  tui-go/             ── Go TUI（gocui，子进程调用 CLI）          │
 └───────────────────────────┬──────────────────────────────────────┘
-                            │ AppConfig + 回调函数
+                            │ AppConfig + 回调函数 / JSON 协议
                             ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                    内核层 CoreEngine (零 Qt)                      │
@@ -40,9 +43,9 @@ AVDC（AV Data Capture）是一个 Python 桌面 GUI 应用，用于抓取 JAV �
 
 ## 核心设计原则
 
-**UI 与业务逻辑完全解耦**。`CoreEngine` 不接受任何 Qt 对象，仅通过 `AppConfig` dataclass 获取配置、通过回调函数报告状态。这使得：
+**UI 与业务逻辑完全解耦**。`CoreEngine` 不接受任何 UI 对象，仅通过 `AppConfig` dataclass 获取配置、通过回调函数报告状态。这使得：
 
-- 同一套核心逻辑可同时服务于 GUI（`main.py`）和 CLI（`cli.py`）
+- 同一套核心逻辑可同时服务于 mac-gui、CLI 和 Go TUI
 - 核心模块可在无显示器/无 Qt 环境的服务器上运行
 - 测试时无需初始化 Qt 事件循环
 
@@ -50,14 +53,17 @@ AVDC（AV Data Capture）是一个 Python 桌面 GUI 应用，用于抓取 JAV �
 
 | 入口 | 文件 | 说明 |
 |------|------|------|
-| GUI | `main.py` | PyQt5 窗口应用，`if __name__ == "__main__"` 启动 |
-| CLI | `cli.py` | 无 Qt 依赖的命令行工具，支持 `--path`、`--single`、`--main-mode`、`--site` 等参数 |
+| GUI（主力） | `mac-gui/` | SwiftUI 原生应用，`swift build` 后运行 `.build/debug/AVDCApp` |
+| CLI | `cli/cli.py` | 无 Qt 依赖的命令行工具，支持 `--path`、`--single`、`--main-mode`、`--site` 等参数 |
+| TUI | `tui-go/` | Go TUI，编译后运行 `./avdc-tui` |
 
 ```bash
-uv run python main.py                     # 启动 GUI
-uv run python cli.py --path /path/to/movies # 批量刮削
-uv run python cli.py --path /path/to/movies --main-mode organize --site javbus
-uv run python cli.py --single movie.mp4 --number ABC-123  # 单文件刮削
+cd mac-gui && swift build                      # 构建 macOS GUI（推荐）
+./mac-gui/.build/debug/AVDCApp                 # 运行（需在项目根）
+uv run python cli/cli.py --path /path/to/movies      # 批量刮削
+uv run python cli/cli.py --path /path/to/movies --main-mode organize --site javbus
+uv run python cli/cli.py --single movie.mp4 --number ABC-123  # 单文件刮削
+cd tui-go && make build && ./avdc-tui                # 编译并启动 Go TUI
 ```
 
 ## 配置系统
@@ -71,7 +77,8 @@ config.ini (磁盘)
     │
     ▼
 AppConfig dataclass (core/_config/config.py)
-    │  ←  _get_app_config() 从 UI 控件读取
+    │  ←  mac-gui: SettingsState 加载 config list，diff 后串行保存
+    │  ←  CLI:     命令行参数解析后直接构建
     ▼
 CoreEngine 接收 config 参数
     │
@@ -79,7 +86,10 @@ CoreEngine 接收 config 参数
 core/ 下各子模块通过 config.field_name 读取配置
 ```
 
-`AppConfig` 是核心配置中继 —— UI 层通过 `from_ini()` / `to_ini()` 读写磁盘，通过 `_get_app_config()` 从控件状态构建实例。核心业务模块只依赖 `AppConfig` 字段，**永不直接访问 `self.Ui.*`**。
+`AppConfig` 是核心配置中继 —— UI 层通过 `from_ini()` / `to_ini()`
+读写磁盘。mac-gui 通过 `SettingsState` 加载 config list、diff 后
+串行保存。核心业务模块只依赖 `AppConfig` 字段，**永不直接访问
+UI 对象**。
 
 ## 包结构
 

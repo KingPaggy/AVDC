@@ -96,9 +96,9 @@ Overview 中对每个子文档用一句话总结，格式：
 ```markdown
 | 编号 | 文档 | 类型 | 一句话摘要 |
 |------|------|------|-----------|
-| d01 | [架构设计](d01-architecture.md) | design | 整体架构与数据流向 |
-| d02 | [主题系统](d02-theme-system.md) | design | 颜色/间距/字号常量参考 |
-| t01 | [动态属性陷阱](t01-dynamic-property.md) | trap | Qt 动态 Property 注册失败的解法 |
+| d01 | [架构设计](pyside6gui/d01-architecture.md) | design | 整体架构与数据流向 |
+| d02 | [主题系统](pyside6gui/d02-theme-system.md) | design | 颜色/间距/字号常量参考 |
+| t01 | [动态属性陷阱](pyside6gui/t01-dynamic-property.md) | trap | Qt 动态 Property 注册失败的解法 |
 ```
 
 ## 4. 写作风格

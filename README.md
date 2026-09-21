@@ -1,170 +1,85 @@
 # AVDC
 
+**AV Data Capture** — 自动抓取 JAV 元数据并整理本地视频文件的桌面工具，输出供 Emby / Kodi / Plex 等媒体库使用。
 
-# 目录
-* [1.简介](#1简介)<br>
-* [2.反馈](#2反馈)
-* [3.常见番号命名规范(必看!!!!!!!!!)](#3常见番号命名规范)
-* [4.效果图](#4效果图)
-    * [界面截图](#41界面截图)
-    * [文件结构](#43文件结构)
-    * [媒体库](#44媒体库)
-* [5.如何使用](#5如何使用)
-    * [下载](#51下载)
-    * [简明教程](#52简要教程)
-    * [模块安装](#53模块安装)
-    * [配置设置](#54配置设置)
-* [6.工具](#6工具)
-* [7.异常处理（重要）](#7异常处理重要)
-* [8.关于群晖NAS](#8关于群晖NAS)
-* [9.FAQ](#9FAQ)
-* [10.故事](#10故事)
-* [11.申明](#11申明)
-* [12.写在后面](#12写在后面)
-
-
-# 1.简介
-**[命令行版](https://github.com/yoshiko2/AV_Data_Capture)(原作者)**：<br>
-<a title="Hits" target="_blank" href="https://github.com/yoshiko2/AV_Data_Capture"><img src="https://hits.b3log.org/yoshiko2/AV_Data_Capture.svg"></a>
-![](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)
-![](https://img.shields.io/github/downloads/yoshiko2/av_data_capture/total.svg?style=flat-square)
-![](https://img.shields.io/github/license/yoshiko2/av_data_capture.svg?style=flat-square)
-![](https://img.shields.io/github/release/yoshiko2/av_data_capture.svg?style=flat-square)
-![](https://img.shields.io/badge/Python-3.13-yellow.svg?style=flat-square&logo=python)<br>
-**GUI版(本项目)**：<br>
-<a title="Hits" target="_blank" href="https://github.com/moyy996/avdc"><img src="https://hits.b3log.org/moyy996/AVDC.svg"></a>
-![](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)
-![](https://img.shields.io/github/downloads/moyy996/avdc/total.svg?style=flat-square)
-![](https://img.shields.io/github/license/moyy996/avdc.svg?style=flat-square)
-![](https://img.shields.io/github/release/moyy996/avdc.svg?style=flat-square)
 ![](https://img.shields.io/badge/Python-3.13-yellow.svg?style=flat-square&logo=python)
-![](https://img.shields.io/badge/Pyqt-5-blue.svg?style=flat-square)<br>
+![](https://img.shields.io/badge/GUI-macOS%20SwiftUI-blue.svg?style=flat-square)
+![](https://img.shields.io/badge/TUI-Go%20%2B%20gocui-cyan.svg?style=flat-square)
+![](https://img.shields.io/github/license/pageking/avdc_page.svg?style=flat-square)
+
+---
+
+## 目录
+
+- [主要功能](#主要功能)
+- [项目结构](#项目结构)
+- [快速开始](#快速开始)
+- [番号命名规范](#番号命名规范)
+- [配置说明](#配置说明)
+- [异常处理](#异常处理)
+- [FAQ](#faq)
+- [申明](#申明)
+
+---
+
+## 主要功能
+
+- **元数据抓取** — 从 jav321、javbus、javdb、avsox、dmm、mgstage、xcity 等站点批量抓取影片元数据（封面、演员、简介、类型等）
+- **视频整理** — 自动按演员/番号分类归档，支持多集（-cd1/-cd2）、字幕（-C）识别
+- **多前端** — macOS 原生 GUI（SwiftUI）、Go TUI 终端界面、CLI 命令行
+- **水印系统** — 封面/缩略图可添加无码、字幕、流出水印
+- **Emby 集成** — 批量添加演员头像，元数据直接导入媒体库
+- **子目录遍历** — 递归扫描视频目录及子目录，支持排除指定目录
+
+---
 
 ## 项目结构
 
 ```
 AVDC_Page/
-├── core/               # 核心业务逻辑（元数据抓取、文件整理、图片处理）
-│   └── test/           # 核心测试套件
+├── core/               # 核心业务逻辑（零 Qt 依赖）
+│   ├── _config/        #   配置管理、日志
+│   ├── _models/        #   数据模型（Movie, Actor, ProcessResult）
+│   ├── _scraper/       #   7 个站点爬虫 + 调度管线
+│   ├── _services/      #   编排引擎、Emby 客户端、命名服务
+│   ├── _files/         #   文件操作与工具
+│   ├── _media/         #   图片处理、水印
+│   ├── _net/           #   网络请求
+│   ├── _event/         #   事件总线
+│   └── test/           #   单元测试 + 集成测试 + 实时测试
+├── mac-gui/            # macOS 原生 GUI（主力，纯 SwiftUI）
+│   ├── Sources/        #   AVDCAppCore（Bridge/AppModel/SettingsState）
+│   │                   #   + AVDCApp 视图（Home/Settings/Tools/Log/About）
+│   ├── Tests/          #   Swift Testing（mock CLI 离线）
+│   └── Package.swift   #   SPM 包定义
 ├── cli/                # CLI 命令行前端
-│   └── test/           # CLI 测试
-├── pyqt5-gui/          # PyQt5 图形界面前端
-├── tui-go/             # Go TUI 终端界面前端
+│   └── test/           #   CLI 测试
+├── tui-go/             # Go TUI 终端界面（gocui）
+│   └── pkg/            #   Go 包（gui, python bridge, controllers）
+├── .archive/           # 已归档 GUI（PySide6/PyQt5，2026-09-20）
+├── docs/               # 技术文档
+├── resources/          # 图标资源
 ├── config.ini          # 共享配置文件
-└── docs/               # 文档
+└── pyproject.toml      # uv workspace 根配置
 ```
 
-三个前端（CLI、pyqt5-gui、tui-go）共用 `core/` 核心逻辑。使用 `uv` 管理依赖（uv workspace monorepo）。
+`core/`、`cli/` 两个 Python 包通过 **uv workspace** 管理。mac-gui
+为纯 SwiftUI（SPM），通过子进程调用 `cli.py --json-output`，以
+JSONL 协议通信；Go TUI 亦通过子进程调用 Python CLI。
 
-### 快速开始
+---
 
-```bash
-# 安装依赖
-uv sync
+## 快速开始
 
-# 运行图形界面
-uv run python pyqt5-gui/main.py
+### 环境要求
 
-# 运行命令行
-uv run python cli/cli.py --path /path/to/movies
-uv run python cli/cli.py --path /path/to/movies --main-mode organize --site javbus
+- Python 3.13+
+- [uv](https://github.com/astral-sh/uv)（推荐）或 pip
+- Xcode Command Line Tools（构建 mac-gui 需要）
+- Go 1.26+（仅编译 TUI 时需要）
 
-# 运行全部测试
-uv run pytest core/test cli/test/ -v
-```
+### 安装依赖
 
-## 主要功能
-* **日本电影元数据 抓取工具 | 刮削器**，配合本地影片管理软件EMBY,KODI，PLEX等管理本地影片，该软件起到分类与元数据抓取作用，利用元数据信息来分类，供本地影片分类整理使用。<br>
-* 可**批量抓取**，也可**单个抓取**。可抓取**多集视频**（-cd1/-cd2）,带**字幕**作品（-c., -C.）。<br>
-* 可抓取**子目录下视频**：遍历**视频目录及子目录**（除指定的**排除目录**），对遍历到的所有视频进行刮削，成功则同**元数据、封面图**一起输出到**JAV_output**目录，失败移入**failed**目录。
-* 目前可抓取网站：**jav321,javbus,javdb,avsox,fc2club,dmm,mgstage**。<br>
-* 批量添加Emby演员头像。<br>
-* 封面可添加无码、字幕、流出水印。<br>
-
-# 2.反馈
-* 欢迎使用体验,有**程序BUG问题（带截图提问）、功能建议**,可进**电报群**反馈    [点击进群](https://t.me/joinchat/J54y1g3-a7nxJ_-WS4-KFQ)<br>
-
-# 3.常见番号命名规范
-**刮削前尽量命名规范！！！！**
-**不区分大小写**<br>
-
-### 1、标准有码
-* **Javdb、Javbus、Jav321**:  SSNI-111
-* **Dmm**:  ssni00111
-### 2、无码
-* **Javdb、Javbus、Avsox**:  111111-1111、111111_111、HEYZO-1111、n1111
-* **Ja321**: HEYZO-1111
-### 3、素人
-* **Jav321、Mgstage**:  259LUXU-1111
-* **Jav321、Javdb**:  LUXU-1111
-* **Fc2club**:  FC2-111111、FC2-PPV-111111
-### 4、欧美
-* **Javdb、Javbus**:  sexart.11.11.11(系列.年.月.日)
-### 5、自带字幕影片
-可以把电影命名为类似**ssni-xxx-c.mp4,ssni-xxx-C.mp4，abp-xxx-CD1-C.mp4**的规则。
-### 6、多集影片
-可以把多集电影按照集数后缀命名为类似**ssni-xxx-cd1.mp4,ssni-xxx-cd2.mp4，abp-xxx-CD1-C.mp4**的规则，只要含有```-CDn/-cdn```类似命名规则，即可使用分集功能.**不支持-A -B -1 -2,容易跟字幕的-C混淆**.
-### 7、多集、字幕顺序
-**abp-xxx-CD1-C.mp4**，**分集在前，字幕在后，字幕必须与拓展名靠近，-C.mp4**.
-### 8、外挂字幕文件
-**字幕文件名**必须与**影片文件名**一致，才可以一起移动到新目录，目前支持**srt ass sub**类型的字幕文件。
-### 9、流出影片
-**影片文件名**包含**流出**即可。
-
-# 4.效果图
-## 4.1.界面截图
-**主界面，设置，工具，关于**
-
-<div align="center">
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/main_window.png" height="300">
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/setting.gif" height="300">
-</div>
-<div align="center">
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/tool.png" height="300">
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/about.png" height="300">
-</div>
-
-## 4.2.**查看成功番号的信息(GIF演示)**
-<div>
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/主页面.gif" height="500">
-</div>
-
-
-## 4.3.**文件结构**<br>
-
-<div>
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/tree-jav-output.png" height="700">
-</div>
-
-## 4.4.媒体库
-**以下为刮削、导入后的EMBY**<br>
-
-<div>
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/emby.png" height="400">
-<img src="https://github.com/moyy996/AVDC/blob/master/readme/emby_each.png" height="400">
-</div>
-
-# 5.如何使用
-## 5.1.下载
-* **Release** 的程序可脱离**python环境**运行，源码包需要 [安装模块](#53模块安装)<br>
-* **Release** 下载地址(**仅限Windows**): [点击下载](https://github.com/moyy996/AVDC/releases)<br>
-* **源码包** 下载地址(**Windows,Linux,MacOS**): [点击下载](https://github.com/moyy996/AVDC/archive/master.zip)<br>
-
-* Windows Python环境: [点击前往](https://www.python.org/downloads/windows/) 选中executable installer下载
-* MacOS Python环境： [点击前往](https://www.python.org/downloads/mac-osx/)
-* Linux Python环境：Linux用户懂的吧，不解释下载地址
-
-## 5.2.简要教程:<br>
-* **(1).运行AVDC.exe/AVDC_Main.py，配置设置页各项（配置方法请看以下[教程](54配置设置)）**<br>
-* **(2).把视频所在目录填在设置->目录设置->视频目录。**<br>
-* **(3).在主页面点击开始等待完成(出错请开调试模式后截图)**<br>
-* **(4).软件会自动把元数据获取成功的电影移动到```成功输出目录```中，根据演员分类，失败的电影移动到```失败输出目录```中（可选不移动）。**<br>
-* **(5).把JAV_output导入至KODI,EMBY,PLEX中。**<br>
-
-## 5.3..模块安装
-本项目使用 [uv](https://github.com/astral-sh/uv) 管理 Python 依赖。
-
-### 使用 uv（推荐）
 ```bash
 # 安装 uv（如未安装）
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -173,188 +88,172 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 ```
 
-### 传统 pip 方式（不推荐）
-如果不用 uv，也可以直接 pip 安装所需模块：<br>
->pip install requests pyquery lxml beautifulsoup4 pillow pyqt5 cloudscraper baidu-aip chardet pyuic5-tool<br>
+### 运行
 
-## 5.4.配置设置
-**设置界面**
-![](https://github.com/moyy996/AVDC/blob/master/readme/setting.gif)
+```bash
+# macOS 原生 GUI（推荐，纯 SwiftUI）
+cd mac-gui && swift build
+./mac-gui/.build/debug/AVDCApp  # 需在项目根目录运行
+
+# CLI 命令行
+uv run python cli/cli.py --path /path/to/movies
+uv run python cli/cli.py --path /path/to/movies --main-mode organize --site javbus
+
+# Go TUI（需先编译）
+cd tui-go && make build && ./avdc-tui
+```
+
+### 测试
+
+```bash
+# 核心 + CLI 测试
+uv run pytest core/test cli/test/ -v
+
+# mac-gui 测试（Swift Testing，mock CLI 离线）
+cd mac-gui && swift test
+
+# Go TUI 测试
+cd tui-go && make test
+```
 
 ---
+
+## 番号命名规范
+
+**刮削前请尽量命名规范，不区分大小写。**
+
+### 标准有码
+
+| 站点 | 格式示例 |
+|------|----------|
+| javdb / javbus / jav321 | `SSNI-111` |
+| dmm | `ssni00111` |
+
+### 无码
+
+| 站点 | 格式示例 |
+|------|----------|
+| javdb / javbus / avsox | `111111-1111`、`111111_111`、`HEYZO-1111`、`n1111` |
+| jav321 | `HEYZO-1111` |
+
+### 素人
+
+| 站点 | 格式示例 |
+|------|----------|
+| jav321 / mgstage | `259LUXU-1111` |
+| jav321 / javdb | `LUXU-1111` |
+| fc2club | `FC2-111111`、`FC2-PPV-111111` |
+
+### 欧美
+
+| 站点 | 格式示例 |
+|------|----------|
+| javdb / javbus | `sexart.11.11.11`（系列.年.月.日） |
+
+### 特殊标记
+
+- **字幕影片** — `ssni-xxx-c.mp4`、`abp-xxx-CD1-C.mp4`（分集在前，字幕在后）
+- **多集影片** — `ssni-xxx-cd1.mp4`、`ssni-xxx-cd2.mp4`（含 `-CDn` 即自动识别分集）
+- **外挂字幕** — 字幕文件名须与影片文件名一致（支持 srt/ass/sub）
+- **流出影片** — 文件名包含"流出"即可
+
+---
+
+## 配置说明
+
+配置文件为项目根目录的 `config.ini`，主要分区如下：
+
 ### 普通设置
-### 5.4.1.模式
-  **1、刮削模式**：通过番号刮削数据，包括元数据、封面图、缩略图、背景图。<br>
-  **2、整理模式**：仅根据女优把电影命名为番号并分类到女优名称的文件夹下。<br>
 
-### 5.4.2.软链接模式
-  使用此模式，要以```管理员身份```运行。<br>
-  刮削完**不移动视频**，而是在相应目录创建**软链接**（类似于快捷方式），方便PT下载完既想刮削又想继续上传的仓鼠党同志。<br>
-  但是，只能在媒体库展示，**不能在媒体库播放**。<br>
+| 配置项 | 说明 |
+|--------|------|
+| 模式 | **刮削模式**（元数据+封面+缩略图+背景图）/ **整理模式**（仅按演员分类重命名） |
+| 软链接模式 | 刮削完不移动视频，创建软链接（需管理员权限） |
+| 调试模式 | 输出元数据调试信息 |
+| 失败后移动 | 刮削失败的视频自动移至失败输出目录 |
+| 网站选择 | 全部站点或指定站点（jav321/javbus/javdb/avsox/dmm/mgstage/xcity） |
 
-### 5.4.3.调试模式
-  输出番号的**元数据**，包括封面，导演，演员，简介等。
-
-### 5.4.4.检测更新
-点击**开始**后，检测是否有新版本。<br>
-
-### 5.4.5.保存日志
-开启后日志保存在程序目录的**Log**目录下的**txt文件**内，每次运行会产生一个txt文件，**txt文件可以删除**，不影响程序运行。<br>
-
-### 5.4.6.失败后移动文件
-如果刮削不到影片信息，可选择不移动视频，或者自动移动到**失败输出目录**中。<br>
-
-### 5.4.7.网站选择
-可以使用**所有网站**，或者指定网站（**jav321,avsox,javbus,dmm,javdb,fc2club，mgstage**）进行刮削。<br>
-**仅使用javdb进行刮削**，尽量不要用，刮削30左右会被JAVDB封IP一段时间。<br>
-
----
 ### 目录设置
-### 5.4.8.命名规则
-  **1、目录命名**：存放视频数据的目录名，支持**多层目录**，支持**自定义符号**，例：[actor]/studio/number-【title】。<br>
-  **2、视频标题（媒体库中）**：nfo中的标题命名。例：number-[title]。可以自定义符号。<br>
-  **3、视频标题（本地文件）**：本地视频、图片的命名。例：number-[title]。可以自定义符号。<br>
-  **4、可选项**为title（片名）、actor（演员）、studio（制作商）、director（导演）、release（发售日）、year（发行年份）、number（番号）、runtime（时长）、series（系列）、publisher（发行商）<br>
-  
-### 5.4.9.目录设置
-  **1、视频目录**：要整理的视频的目录，**带盘符的绝对路径**，会遍历此目录下的**所有视频**，包括**子目录**中。<br>
-  **2、排除目录**：在多层目录刮削时，**排除所填目录**。<br>
-  **3、视频、字幕类型**：程序搜索不到想要的文件类型，可自行按格式添加。<br>
-  **4、失败输出目录**：开启失败移动视频后，失败的视频会移动到此目录。<br>
-  **5、成功输出目录**：刮削成功的视频，会在此目录创建文件夹，并移动视频、下载图片、写入nfo到此目录。<br>
-  
----
+
+| 配置项 | 说明 |
+|--------|------|
+| 命名规则 | 目录命名 / 媒体库标题 / 本地文件名，支持 `actor`、`number`、`title`、`studio` 等变量 |
+| 视频目录 | 要扫描的视频根目录（递归遍历） |
+| 排除目录 | 不扫描的目录 |
+| 成功输出目录 | 刮削成功的输出位置（默认 `JAV_output`） |
+| 失败输出目录 | 刮削失败的输出位置（默认 `failed`） |
+
+### 代理设置
+
+| 配置项 | 说明 |
+|--------|------|
+| 代理地址 | 本地代理，如 `127.0.0.1:7890` |
+| 超时 | 连接超时秒数（3-10） |
+| 重试次数 | 失败重试次数（2-5） |
+
+> **注意**：DMM 站点需要日本代理。JavDB 频繁请求会被封 IP。
+
 ### 水印设置
-### 5.4.10.水印设置
-  **1、封面图、缩略图添加水印**：可选择封面图、缩略图是否添加水印。<br>
-  **2、水印类型**：可选择添加无码、字幕、流出三种水印。<br>
-  **3、首个水印位置**：可选择添加左上、左下、右上、右下四个位置。<br>
-  **4、水印大小**：有五个等级可调节。<br>
-  **5、说明**：**多个水印**时，从首个水印开始**顺时针**添加。**水印文件**可**自定义**，要求长宽500x300、背景透明、png格式。  <br>
+
+支持在封面图/缩略图上添加无码、字幕、流出水印，可设置位置（左上/左下/右上/右下）、大小、顺序。水印文件要求 500x300、背景透明、PNG 格式。
+
+### Emby 集成
+
+填写 Emby 服务器地址和 API Key，可批量添加演员头像。头像文件放在程序目录的 `Actor/` 下。
 
 ---
-### 其它设置
-### 5.4.11.代理设置 
-  **1、代理**：设置本地代理地址和端口。代理软件开**全局模式**  ,**使用DMM网站时需要使用日本代理**。<br>
-  **2、超时重试设置**：单位：秒，**可选范围3-10**。<br>
-  **3、连接重试次数**：**可选范围2-5**。<br>
 
-### 5.4.12.排除设置
-**1、排除字符**:指定字符删除，例如```排除字符： \()```，删除创建文件夹时的```\()```字符。<br>
-**2、排除字符串**:提取番号时，先删除指定字符串，提高成功率，字符串之间用','隔开。<br>
+## 异常处理
 
-### 5.4.13.无码封面
-**1、封面类型**:可选官方(完整、不清晰)、裁剪(清晰、不完整)<br>
-**2、说明**:官方无图，会自动使用缩略图裁剪。<br>
+### 网络错误
 
-### 5.4.14.无码番号
-添加HEYZO、n1111、111111-111、111111_111以外的无码番号**前缀**。例如S2M、SMD、LAF。<br>
+出现 `Connect Failed`、`Updata_check`、`JSON` 相关错误时：
+1. 检查代理设置，确认代理软件已开启全局模式
+2. DMM 站点需确认使用日本代理
+3. 尝试清除代理地址后重试
 
----
-# 6.工具
-**工具界面**
-![](https://github.com/moyy996/AVDC/blob/master/readme/tool.png)
-**1、视频移动**：可将**视频目录**下除排除目录下的所有视频以及同名字幕，移动到**视频目录**下的**Movie_moved**目录下。<br><br>
-**2、单文件刮削**：偶尔有失败情况时，选择这个视频文件，使用文件名当番号进行刮削。<br>
-&emsp;&ensp;**建议**的使用流程：到某网站找到这个番号,把番号改成网站上的规范番号,选用对应的网站刮削。<br>
-&emsp;&ensp;**条件**：文件名至少与一个网站上的番号相同，没有多余的内容只有番号为最佳，可以让软件更好获取元数据。<br>
-对于多影片重命名，可以用[ReNamer](http://www.den4b.com/products/renamer)来批量重命名<br><br>
-**3、Emby批量添加头像**：头像文件放在程序所在目录的Actor目录下，填写emby网址、api密钥即可使用。[头像包下载](https://github.com/moyy996/AVDC/releases/tag/%E5%A4%B4%E5%83%8F%E5%8C%85-2)<br>
-可查看有头像，无头像女优，可往emby添加头像的女优。<br><br>
-**功能更强大、头像更丰富的头像仓库及上传工具 ===>>> [GFriend头像库](https://github.com/xinxin8816/gfriends)**<br><br>
-**4、裁剪封面**：针对封面图比例错误，分辨率低的情况，判断人脸位置，裁剪缩略图(thumb)为封面图(poster)。<br><br>
+### 番号提取失败
 
-# 7.异常处理（重要）
+1. 检查文件命名是否符合[番号命名规范](#番号命名规范)
+2. 使用 CLI 的单文件刮削模式，指定网站重试
+3. 确认番号在目标站点可查到
+
+### PLEX 不显示封面
+
+安装插件 [XBMCnfoMoviesImporter](https://github.com/gboudreau/XBMCnfoMoviesImporter.bundle)。
 
 ---
-## 7.1.关于软件打不开
-* 请确保软件是完整的！，**AVDC.exe，ACDV-ico.png,config.ini**需要在同一目录下，确保ini文件内容是和下载提供ini文件内容的一致的！<br>
+
+## FAQ
+
+**Q: 这软件能下片吗？**
+A: 不能。仅提供本地影片分类整理功能。
+
+**Q: 什么是元数据？**
+A: 影片的封面、导演、演员、简介、类型等信息。
+
+**Q: 软件收费吗？**
+A: 永久免费。
+
+**Q: 支持 NAS 吗？**
+A: 支持。群晖等 NAS 开启 SMB 后在 Windows 映射为本地磁盘即可使用。
 
 ---
-## 7.2.关于软件闪退
-* 尝试**重新运行**<br>
-* 还解决不了，查看**log**日志，尝试以下**7.3、7.4**解决<br>
+
+## 申明
+
+当你查阅、下载了本项目源代码或二进制程序，即代表你接受了以下条款：
+
+- 本软件仅供技术交流、学术交流使用
+- **请勿在热门的社交平台上宣传此项目**
+- 本软件作者编写出该软件旨在学习 Python，提高编程水平
+- 本软件不提供任何影片下载的线索
+- 用户在使用本软件前，请了解并遵守当地法律法规
+- 用户在使用本软件时，若产生一切违法行为由用户承担
+- 严禁将本软件使用于商业和个人其他意图
+- 源代码和二进制程序请在下载后 24 小时内删除
+- 若不同意上述条款，请勿使用本软件
 
 ---
-## 7.3.网络错误
-##### * (1).报```Connect Failed! Please check your Proxy or Network!```错误<br>
-##### * (2).报```Updata_check``` 和 ```JSON``` 相关的错误<br>
-##### * (3).关于```Nonetype,xpath```报错<br>
-##### * (4).关于```KeyError```报错<br>
-* 上述错误都可能是**代理问题**，尝试以下办法解决:
-    * 使用DMM，如不是日本代理，**请更换日本代理**，确保可以打开[这个网址](https://www.dmm.co.jp/mono/dvd/-/detail/=/cid=ssni518/?dmmref=aMonoDvd_List/)<br>
-    * 把代理设置中的**代理：后面的地址和端口删除**<br>
-    * 开启代理软件**全局模式**<br>
 
----
-## 7.4.关于番号提取失败或者异常
-* 查看命名是否符合[常见番号命名规范](#3常见番号命名规范)。<br>
-* 目前可以提取信息的网址:**JAV321、JAVBUS、JAVDB、AVSOX、dmm、FC2CLUB、mgstage**，请确保视频名能在这些网站找到<br>
-* 使用**工具页里的单个视频刮削**，选择**刮削网站**，进行刮削。<br>
-
----
-## 7.5.PLEX不显示封面
-请安装插件：[**XBMCnfoMoviesImporter**](https://github.com/gboudreau/XBMCnfoMoviesImporter.bundle)
-
-
-# 8.关于群晖NAS
-开启SMB在Windows上映射为本地磁盘(要分配盘符)即可使用本软件，也适用于其他NAS
-
-# 9.FAQ
-## 9.1.这软件能下片吗？
-* 该软件不提供任何影片下载地址，仅供本地影片分类整理使用。
-## 9.2.什么是元数据？
-* 元数据包括了影片的：封面，导演，演员，简介，类型......
-## 9.3.软件收费吗？
-* 软件永久免费。**除了作者钦点以外**
-## 9.4.软件运行异常怎么办？
-* 认真看 [异常处理（重要）](#7异常处理重要)
-
-# 10.故事
-[点击跳转至原作者博客文章](https://yoshiko2.github.io/2019/10/18/AVDC/)
-
-# 11.申明
-当你查阅、下载了本项目源代码或二进制程序，即代表你接受了以下条款
-
-* 本软件仅供技术交流，学术交流使用
-* **请勿在热门的社交平台上宣传此项目**
-* 本软件作者编写出该软件旨在学习 Python ，提高编程水平
-* 本软件不提供任何影片下载的线索
-* 用户在使用本软件前，请用户了解并遵守当地法律法规，如果本软件使用过程中存在违反当地法律法规的行为，请勿使用该软件
-* 用户在使用本软件时，若用户在当地产生一切违法行为由用户承担
-* 严禁用户将本软件使用于商业和个人其他意图
-* 源代码和二进制程序请在下载后24小时内删除
-* 本软件作者yoshiko2保留最终决定权和最终解释权
-* 若用户不同意上述条款任意一条，请勿使用本软件
----
-When you run the software, you accept the following terms
-
-* This software is only for technical exchange and academic exchange
-* **Please do not promote this project on popular social platforms**
-* The software author wrote this software to learn Python and improve programming
-* This software does not provide any clues for video download
-* Before using this software, please understand and abide by local laws and regulations. If there is any violation of local laws and regulations during the use of this software, * please do not use this software
-* When the user uses this software, if the user has any illegal acts in the local area, the user shall bear
-* It is strictly forbidden for users to use this software for commercial and personal intentions
-* Please delete the source code and binary program within 24 hours after downloading
-* The author of this software yoshiko2 reserves the right of final decision and final interpretation
-* If the user does not agree with any of the above terms, please do not use this software
----
-このソフトウェアを実行すると、次の条件に同意したことになります
-
-* このソフトウェアは、技術交換、学術交換専用です。
-* **人気のソーシャルプラットフォームでこのプロジェクトを宣伝しないでください**
-* ソフトウェアの作成者は、Pythonを学習してプログラミングを改善するためにこのソフトウェアを作成しました
-* このソフトウェアは、ビデオダウンロードの手がかりを提供しません
-* 本ソフトウェアを使用する前に、現地の法令を理解し、遵守してください本ソフトウェアの使用中に現地の法令に違反する場合は、本ソフトウェアを使用しないでください
-* 本ソフトウェアをご利用の際、地域で違法行為を行った場合は、お客様の負担となります。
-* ユーザーがこのソフトウェアを商業的および個人的な目的で使用することは固く禁じられています
-* ダウンロード後24時間以内にソースコードとバイナリプログラムを削除してください
-* このソフトウェアの作者yoshiko2は、最終決定および最終解釈の権利を留保します。
-* ユーザーが上記の条件のいずれかに同意しない場合は、このソフトウェアを使用しないでください
-
-# 12.写在后面
-怎么样，看着自己的日本电影被这样完美地管理，是不是感觉成就感爆棚呢?<br>
-
-
-
+> 基于 [yoshiko2/AV_Data_Capture](https://github.com/yoshiko2/AV_Data_Capture)（原作者）开发，感谢原作者的贡献。

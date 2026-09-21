@@ -10,21 +10,21 @@
 
 | 层次 | 技术 |
 |------|------|
-| 语言 | Python 3.13 |
-| GUI（主力） | PySide6 + QML，Apple HIG 暗色风格 |
-| GUI（遗留） | PyQt5（仅维护） |
+| 语言 | Python 3.13 + Swift |
+| GUI（主力） | macOS 原生 SwiftUI（mac-gui） |
 | 爬取 | lxml / BeautifulSoup4 / requests / cloudscraper |
 | 图像处理 | Pillow + 百度 AI 人脸检测 |
-| 包管理 | uv workspace（4 个成员包） |
+| 包管理 | uv workspace（core + cli 两个成员包） |
+| GUI（归档） | PySide6 / PyQt5（.archive/，仅作参考） |
 
 ## 模块划分
 
 ```
 core/           纯业务逻辑（零 Qt 依赖）
-pyside6_gui/    PySide6 + QML 界面（主力前端）
-pyqt5-gui/      PyQt5 界面（遗留）
+mac-gui/        macOS 原生 GUI（主力，纯 SwiftUI）
 cli/            命令行工具
 tui-go/         Go TUI
+.archive/       已归档 GUI（PySide6/PyQt5，2026-09-20）
 docs/           技术文档
 ```
 
@@ -49,12 +49,12 @@ docs/           技术文档
 | 01 | [core/01-requirements.md](core/01-requirements.md) | 核心 I/O 黑盒规范 |
 | 02 | [core/02-scraping-flow.md](core/02-scraping-flow.md) | 抓取流程、Pipeline、Scraper Chain |
 
-### PySide6 GUI（`pyside6gui/`）
+### PySide6 GUI（`pyside6gui/`，已归档，仅作功能对照参考）
 
 | # | 文档 | 内容 |
 |---|------|------|
-| 01 | [pyside6gui/01-qml-ui-design.md](pyside6gui/01-qml-ui-design.md) | QML 组件规范、布局模式、Theme |
-| 02 | [pyside6gui/02-dynamic-property.md](pyside6gui/02-dynamic-property.md) | 动态 Property 踩坑与类工厂解法 |
+| 01 | [pyside6gui/d12-qml-conventions.md](pyside6gui/d12-qml-conventions.md) | QML 代码规范、命名、布局、import |
+| 02 | [pyside6gui/t01-dynamic-property.md](pyside6gui/t01-dynamic-property.md) | 动态 Property 踩坑与类工厂解法 |
 
 ### 工具链（`tooling/`）
 
