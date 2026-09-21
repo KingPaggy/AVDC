@@ -29,11 +29,15 @@ keybindings:
   global.config: "c"        # 配置编辑
   log.scrollDown: "j"       # log 下滚
   log.scrollUp: "k"         # log 上滚
+  log.top: "g"              # log 顶部（暂停跟随）
+  log.bottom: "G"           # log 底部（恢复跟随）
   files.refresh: "r"        # 刷新扫描
   files.search: "/"         # 搜索过滤
   files.mark: "space"       # 多选标记
   files.markAll: "a"        # 全选/取消全选
   files.cancel: "x"         # 取消刮削
+  files.scrape: "s"         # 直接刮削
+  files.organize: "o"       # 直接整理（弹确认）
   result.filter: "t"        # 结果过滤（全部/成功/失败）
   list.down: "j"            # 列表下移
   list.up: "k"              # 列表上移

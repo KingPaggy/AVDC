@@ -18,15 +18,16 @@ type mockGUIForScraper struct {
 	resultCs []gocui.Attribute
 }
 
-func (m *mockGUIForScraper) SetView(name string) error                            { return nil }
-func (m *mockGUIForScraper) GetView(name string) (*gocui.View, error)             { return nil, nil }
-func (m *mockGUIForScraper) SetViewTitle(v *gocui.View, title string)             {}
-func (m *mockGUIForScraper) GetScanDir() string                                   { return "" }
-func (m *mockGUIForScraper) SetScanDir(dir string)                                {}
-func (m *mockGUIForScraper) SetFileList(files []types.VideoFile)                   {}
-func (m *mockGUIForScraper) UpdateStatusReady(dir string, count int)              {}
-func (m *mockGUIForScraper) UpdateStatusScraping(c, t int, d string)              {}
-func (m *mockGUIForScraper) UpdateStatusDone(s, f, t int, d string)               {}
+func (m *mockGUIForScraper) SetView(name string) error                { return nil }
+func (m *mockGUIForScraper) GetView(name string) (*gocui.View, error) { return nil, nil }
+func (m *mockGUIForScraper) SetViewTitle(v *gocui.View, title string) {}
+func (m *mockGUIForScraper) GetScanDir() string                       { return "" }
+func (m *mockGUIForScraper) SetScanDir(dir string)                    {}
+func (m *mockGUIForScraper) SetFileList(files []types.VideoFile)      {}
+func (m *mockGUIForScraper) UpdateStatusReady(dir string, count int)  {}
+func (m *mockGUIForScraper) UpdateStatusScraping(c, t int, d string)  {}
+func (m *mockGUIForScraper) UpdateStatusDone(s, f, t int, d string)   {}
+func (m *mockGUIForScraper) SetStatus(text string)                    {}
 func (m *mockGUIForScraper) AppendLog(msg string, color gocui.Attribute) error {
 	m.logs = append(m.logs, msg)
 	m.logCs = append(m.logCs, color)
@@ -37,11 +38,11 @@ func (m *mockGUIForScraper) AddResult(line string, color gocui.Attribute) error 
 	m.resultCs = append(m.resultCs, color)
 	return nil
 }
-func (m *mockGUIForScraper) ClearResults()                                      {}
-func (m *mockGUIForScraper) GetGui() *gocui.Gui                                 { return nil }
-func (m *mockGUIForScraper) PushContext(name string) error                      { return nil }
-func (m *mockGUIForScraper) PopContext() error                                  { return nil }
-func (m *mockGUIForScraper) GetKeys() *config.Registry                         { return config.NewRegistry(nil) }
+func (m *mockGUIForScraper) ClearResults()                 {}
+func (m *mockGUIForScraper) GetGui() *gocui.Gui            { return nil }
+func (m *mockGUIForScraper) PushContext(name string) error { return nil }
+func (m *mockGUIForScraper) PopContext() error             { return nil }
+func (m *mockGUIForScraper) GetKeys() *config.Registry     { return config.NewRegistry(nil) }
 
 func TestScrapingState_ThreadSafety(t *testing.T) {
 	s := &ScrapingState{}
@@ -113,8 +114,8 @@ func TestScraperHandleEvent(t *testing.T) {
 			},
 		},
 		{
-			name:  "unknown type ignored",
-			input: commands.Event{Type: "bogus"},
+			name:   "unknown type ignored",
+			input:  commands.Event{Type: "bogus"},
 			verify: func(s *ScrapingState) bool { return true },
 		},
 	}

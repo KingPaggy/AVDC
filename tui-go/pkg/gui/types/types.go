@@ -33,3 +33,13 @@ type ScrapeStats struct {
 	Failed  int
 	Current int
 }
+
+// FileStatus 表示文件在刮削流程中的状态（列表行前缀）。
+type FileStatus int
+
+const (
+	FilePending FileStatus = iota // 待处理 [ ]
+	FileActive                    // 处理中 [>]
+	FileOK                        // 成功 [✓]
+	FileFailed                    // 失败 [✗]
+)

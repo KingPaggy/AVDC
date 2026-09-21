@@ -43,6 +43,9 @@ func (vs *Views) create(g *gocui.Gui) error {
 			vs.Log = v
 			v.Frame = true
 			v.Title = "Log"
+			// 刮削日志自动跟随（手动滚动时暂停，
+			// 见 Keybindings.scrollUp/Down）
+			v.Autoscroll = true
 		case "result":
 			vs.Result = v
 			v.Frame = true

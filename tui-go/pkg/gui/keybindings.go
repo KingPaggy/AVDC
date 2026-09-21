@@ -59,14 +59,12 @@ func (kb *Keybindings) setup() error {
 			gocui.ModNone, kb.quit); err != nil {
 			return err
 		}
-		// 取消 / 返回（弹栈）；files 的 esc 由 FilesController
-		// 管理（搜索取消），不在此绑定
-		if vn != "files" {
-			if k := keys.Key("global.escape"); k != nil {
-				if err := g.SetKeybinding(vn, k, gocui.ModNone,
-					kb.escape); err != nil {
-					return err
-				}
+		// 取消 / 返回（弹栈）：所有非临时 view 统一，
+		// 包括 files（搜索已移至 PromptContext）
+		if k := keys.Key("global.escape"); k != nil {
+			if err := g.SetKeybinding(vn, k, gocui.ModNone,
+				kb.escape); err != nil {
+				return err
 			}
 		}
 	}
@@ -94,6 +92,29 @@ func (kb *Keybindings) setup() error {
 		}
 	}
 
+	// log 顶部/底部：g/G 可配置，Home/End 固定。
+	// g 暂停自动跟随（查看历史），G 恢复跟随。
+	if k := keys.Key("log.top"); k != nil {
+		if err := g.SetKeybinding("log", k, gocui.ModNone,
+			kb.scrollTop); err != nil {
+			return err
+		}
+	}
+	if k := keys.Key("log.bottom"); k != nil {
+		if err := g.SetKeybinding("log", k, gocui.ModNone,
+			kb.scrollBottom); err != nil {
+			return err
+		}
+	}
+	if err := g.SetKeybinding("log", gocui.KeyHome, gocui.ModNone,
+		kb.scrollTop); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("log", gocui.KeyEnd, gocui.ModNone,
+		kb.scrollBottom); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -107,6 +128,7 @@ func (kb *Keybindings) focusNext(g *gocui.Gui, v *gocui.View) error {
 
 func (kb *Keybindings) scrollDown(g *gocui.Gui, v *gocui.View) error {
 	if v != nil {
+		v.Autoscroll = false // 用户主动滚动：暂停跟随
 		v.ScrollDown(1)
 	}
 	return nil
@@ -114,7 +136,25 @@ func (kb *Keybindings) scrollDown(g *gocui.Gui, v *gocui.View) error {
 
 func (kb *Keybindings) scrollUp(g *gocui.Gui, v *gocui.View) error {
 	if v != nil {
+		v.Autoscroll = false // 用户主动滚动：暂停跟随
 		v.ScrollUp(1)
+	}
+	return nil
+}
+
+// scrollTop 跳到日志顶部（暂停自动跟随）。
+func (kb *Keybindings) scrollTop(g *gocui.Gui, v *gocui.View) error {
+	if v != nil {
+		v.Autoscroll = false
+		v.SetOriginY(0)
+	}
+	return nil
+}
+
+// scrollBottom 跳到日志底部（恢复自动跟随）。
+func (kb *Keybindings) scrollBottom(g *gocui.Gui, v *gocui.View) error {
+	if v != nil {
+		v.Autoscroll = true
 	}
 	return nil
 }

@@ -20,12 +20,16 @@ var DefaultKeybindings = map[string]string{
 	// log 滚动
 	"log.scrollDown": "j",
 	"log.scrollUp":   "k",
+	"log.top":        "g",
+	"log.bottom":     "G",
 	// files 面板
-	"files.refresh": "r",
-	"files.search":  "/",
-	"files.mark":    "space",
-	"files.markAll": "a",
-	"files.cancel":  "x",
+	"files.refresh":  "r",
+	"files.search":   "/",
+	"files.mark":     "space",
+	"files.markAll":  "a",
+	"files.cancel":   "x",
+	"files.scrape":   "s",
+	"files.organize": "o",
 	// result 面板
 	"result.filter": "t",
 	// 列表导航（vim 键可配置；方向键固定不配置）

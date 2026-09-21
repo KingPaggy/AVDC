@@ -54,6 +54,23 @@ func (c *ResultController) Setup() error {
 			return err
 		}
 	}
+
+	// Enter: 在状态栏显示选中项全文（失败原因等）
+	if err := g.SetKeybinding(v, gocui.KeyEnter, gocui.ModNone,
+		c.handleDetail); err != nil {
+		return err
+	}
+	return nil
+}
+
+// handleDetail Enter：在状态栏显示选中项全文。
+func (c *ResultController) handleDetail(g *gocui.Gui,
+	v *gocui.View) error {
+	it, ok := c.items.Selected()
+	if !ok {
+		return nil
+	}
+	c.gui.SetStatus(helpers.Info("Detail") + "  |  " + it.Line)
 	return nil
 }
 

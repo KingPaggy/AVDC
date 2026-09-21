@@ -3,11 +3,14 @@ package controllers
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
 	"avdc-tui/pkg/gui/components"
 	"avdc-tui/pkg/gui/helpers"
+	"avdc-tui/pkg/python"
 
 	"github.com/jesseduffield/gocui"
 )
@@ -57,9 +60,15 @@ func (ce *ConfigEditor) defineFields() {
 	}
 }
 
+// configPath 返回 config.ini 的绝对路径（项目根，
+// 不依赖当前工作目录）。
+func (ce *ConfigEditor) configPath() string {
+	return filepath.Join(python.FindProjectRoot(), "config.ini")
+}
+
 // ReadConfig reads current values from config.ini.
-func (ce *ConfigEditor) ReadConfig(configPath string) error {
-	data, err := readIniFile(configPath)
+func (ce *ConfigEditor) ReadConfig() error {
+	data, err := readIniFile(ce.configPath())
 	if err != nil {
 		return err
 	}
@@ -74,21 +83,17 @@ func (ce *ConfigEditor) ReadConfig(configPath string) error {
 	return nil
 }
 
-// SaveConfig writes all fields back to config.ini.
-func (ce *ConfigEditor) SaveConfig(configPath string) error {
-	data, _ := readIniFile(configPath)
-	if data == nil {
-		data = make(map[string]map[string]string)
-	}
-
+// SaveConfig writes all fields back to config.ini，保留原文件
+// 的注释、空行与键顺序（仅更新列出的键值）。
+func (ce *ConfigEditor) SaveConfig() error {
+	updates := make(map[string]map[string]string)
 	for _, f := range ce.fields {
-		if _, ok := data[f.Section]; !ok {
-			data[f.Section] = make(map[string]string)
+		if updates[f.Section] == nil {
+			updates[f.Section] = make(map[string]string)
 		}
-		data[f.Section][f.Key] = f.Value
+		updates[f.Section][f.Key] = f.Value
 	}
-
-	return writeIniFile(configPath, data)
+	return writeIniFilePreserving(ce.configPath(), updates)
 }
 
 // Show displays the config editor.
@@ -198,9 +203,9 @@ func (ce *ConfigEditor) Setup() error {
 
 	// Config view keybindings
 	cfgBindings := []struct {
-		key  interface{}
-		mod  gocui.Modifier
-		fn   func(*gocui.Gui, *gocui.View) error
+		key interface{}
+		mod gocui.Modifier
+		fn  func(*gocui.Gui, *gocui.View) error
 	}{
 		{gocui.KeyEsc, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 			return ce.Hide()
@@ -233,7 +238,7 @@ func (ce *ConfigEditor) Setup() error {
 			return ce.promptEditField(g, v)
 		}},
 		{'s', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-			if err := ce.SaveConfig("config.ini"); err != nil {
+			if err := ce.SaveConfig(); err != nil {
 				ce.gui.AppendLog("Config save failed: "+err.Error(), helpers.LevelError)
 			} else {
 				ce.gui.AppendLog("Config saved", helpers.LevelInfo)
@@ -252,44 +257,36 @@ func (ce *ConfigEditor) Setup() error {
 // ShowAndRender displays and renders the config editor.
 func (ce *ConfigEditor) ShowAndRender(g *gocui.Gui, v *gocui.View) error {
 	ce.Show()
-	_ = ce.ReadConfig("config.ini") // ignore error, use defaults
+	_ = ce.ReadConfig() // ignore error, use defaults
 	if err := ce.gui.PushContext("config"); err != nil {
 		return err
 	}
 	return ce.Render(g)
 }
 
+// promptEditField 弹输入弹窗编辑当前字段（PromptContext）。
+// 不再复用 config view、不再临时重注册 Enter 键位。
 func (ce *ConfigEditor) promptEditField(g *gocui.Gui, v *gocui.View) error {
 	if ce.curIdx >= len(ce.fields) {
 		return nil
 	}
-	f := ce.fields[ce.curIdx]
+	idx := ce.curIdx
+	f := ce.fields[idx]
 
-	// Use a simple inline prompt via the view
-	v.Clear()
-	fmt.Fprintf(v, "Edit: %s\nCurrent: %s\nNew value: ", f.Display, f.Value)
-
-	v.Editable = true
-	v.ClearTextArea()
-
-	// For simplicity, we'll use the existing gocui editor
-	// User types value, presses Enter to confirm
-	// We'll handle the actual value capture on next Enter
-	v.Title = "Editing: " + f.Display + " (Enter to confirm, Esc to cancel)"
-
-	// Register temporary edit-done handler
-	return g.SetKeybinding("config", gocui.KeyEnter, gocui.ModNone,
-		func(g2 *gocui.Gui, v2 *gocui.View) error {
-			newVal := strings.TrimSpace(v2.TextArea.GetContent())
-			v2.Editable = false
-			v2.ClearTextArea()
-			v2.Title = "Config Editor (s: save, Esc: close)"
-
-			if newVal != "" {
-				ce.fields[ce.curIdx].Value = newVal
+	prompt := components.NewPrompt(components.PromptConfig{
+		Title:   "Edit: " + f.Display,
+		Initial: f.Value,
+		OnSubmit: func(value string) {
+			if value != "" {
+				ce.fields[idx].Value = value
 			}
-			return ce.Render(g2)
-		})
+			_ = ce.Render(g)
+		},
+		OnCancel: func() {
+			_ = ce.Render(g)
+		},
+	})
+	return prompt.Show(ce.gui)
 }
 
 // --- Minimal INI file reader/writer ---
@@ -340,6 +337,100 @@ func writeIniFile(path string, data map[string]map[string]string) error {
 	}
 
 	return os.WriteFile(path, []byte(sb.String()), 0644)
+}
+
+// writeIniFilePreserving 按行更新 INI：保留原文件的注释、
+// 空行与键顺序，仅替换 updates 中列出的键值；缺失的键
+// 追加到对应 section 末尾（section 不存在则新建）。
+// 文件不存在时回退到 writeIniFile。
+func writeIniFilePreserving(path string,
+	updates map[string]map[string]string) error {
+	original, err := os.ReadFile(path)
+	if err != nil {
+		return writeIniFile(path, updates)
+	}
+	lines := strings.Split(string(original), "\n")
+
+	sectionEnd := map[string]int{} // section → 最后一行索引
+	updated := map[string]map[string]bool{}
+	current := ""
+	for i, line := range lines {
+		t := strings.TrimSpace(line)
+		if strings.HasPrefix(t, "[") && strings.HasSuffix(t, "]") {
+			current = t[1 : len(t)-1]
+			sectionEnd[current] = i
+			continue
+		}
+		if current != "" {
+			sectionEnd[current] = i
+		}
+		k, ok := iniKey(t)
+		if !ok || current == "" {
+			continue
+		}
+		sec, ok := updates[current]
+		if !ok {
+			continue
+		}
+		val, ok := sec[k]
+		if !ok {
+			continue
+		}
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		lines[i] = indent + k + " = " + val
+		if updated[current] == nil {
+			updated[current] = map[string]bool{}
+		}
+		updated[current][k] = true
+	}
+
+	// 未更新的键：追加到对应 section 末尾（从后往前插入）
+	type insertion struct {
+		idx  int
+		text []string
+	}
+	var inserts []insertion
+	for sec, kv := range updates {
+		var missing []string
+		for k, v := range kv {
+			if !updated[sec][k] {
+				missing = append(missing, k+" = "+v)
+			}
+		}
+		if len(missing) == 0 {
+			continue
+		}
+		slices.Sort(missing)
+		if end, ok := sectionEnd[sec]; ok {
+			inserts = append(inserts, insertion{idx: end + 1, text: missing})
+		} else {
+			inserts = append(inserts, insertion{
+				idx:  len(lines),
+				text: append([]string{"[" + sec + "]"}, missing...),
+			})
+		}
+	}
+	slices.SortFunc(inserts, func(a, b insertion) int {
+		return b.idx - a.idx
+	})
+	for _, ins := range inserts {
+		lines = slices.Insert(lines, ins.idx, ins.text...)
+	}
+
+	return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
+}
+
+// iniKey 解析 "k = v" 行并返回键名。
+func iniKey(line string) (string, bool) {
+	if line == "" || strings.HasPrefix(line, "#") ||
+		strings.HasPrefix(line, ";") || strings.HasPrefix(line, "[") {
+		return "", false
+	}
+	parts := strings.SplitN(line, "=", 2)
+	if len(parts) != 2 {
+		return "", false
+	}
+	return strings.TrimSpace(parts[0]), true
 }
 
 // Itoa helper

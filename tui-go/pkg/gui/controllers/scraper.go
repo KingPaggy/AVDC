@@ -7,6 +7,7 @@ import (
 
 	"avdc-tui/pkg/commands"
 	"avdc-tui/pkg/gui/helpers"
+	"avdc-tui/pkg/gui/types"
 	"avdc-tui/pkg/python"
 )
 
@@ -78,6 +79,8 @@ type Scraper struct {
 	gui    GUI
 	state  *ScrapingState
 	runner *commands.ProcessRunner
+	// statusHook 文件状态变更回调（FilesController 注入）
+	statusHook func(path string, status types.FileStatus)
 }
 
 // NewScraper creates a new scraper with a ProcessRunner
@@ -95,6 +98,18 @@ func NewScraper(g GUI) *Scraper {
 // GetState returns the current scraping state.
 func (s *Scraper) GetState() *ScrapingState {
 	return s.state
+}
+
+// SetStatusHook 注入文件状态变更回调（列表行状态渲染）。
+func (s *Scraper) SetStatusHook(h func(string, types.FileStatus)) {
+	s.statusHook = h
+}
+
+// notifyStatus 通知单个文件的状态变更（无 hook 时忽略）。
+func (s *Scraper) notifyStatus(path string, st types.FileStatus) {
+	if s.statusHook != nil {
+		s.statusHook(path, st)
+	}
 }
 
 // StartScrape launches cli.py as a subprocess and streams JSON output.
@@ -156,12 +171,14 @@ func (s *Scraper) handleEvent(ev commands.Event) {
 		s.gui.UpdateStatusScraping(ev.Current, ev.Total, s.state.Dir)
 		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s",
 			ev.Current, ev.Total, ev.File), helpers.LevelInfo)
+		s.notifyStatus(ev.File, types.FileActive)
 
 	case "success":
 		s.state.IncrementSuccess()
 		fileName := filepath.Base(ev.File)
 		s.gui.AddResult(fmt.Sprintf("[OK] %s %s",
 			fileName, ev.Suffix), helpers.LevelInfo)
+		s.notifyStatus(ev.File, types.FileOK)
 
 	case "failure":
 		s.state.IncrementFailed()
@@ -170,6 +187,7 @@ func (s *Scraper) handleEvent(ev commands.Event) {
 			fileName, ev.Reason), helpers.LevelError)
 		s.gui.AppendLog(fmt.Sprintf("[FAIL] %s: %s",
 			fileName, ev.Reason), helpers.LevelError)
+		s.notifyStatus(ev.File, types.FileFailed)
 
 	case "done":
 		s.state.Total = ev.Total
@@ -227,6 +245,7 @@ func (s *Scraper) runBatch(files []string, mode int) {
 		s.gui.UpdateStatusScraping(i+1, len(files), filepath.Base(f))
 		s.gui.AppendLog(fmt.Sprintf("[%d/%d] %s", i+1, len(files),
 			filepath.Base(f)), helpers.LevelInfo)
+		s.notifyStatus(f, types.FileActive)
 
 		args := commands.SingleArgs(f, mode)
 		err := s.runner.Run(args, s.handleEvent, func(line string) {
@@ -235,6 +254,9 @@ func (s *Scraper) runBatch(files []string, mode int) {
 		if err != nil {
 			s.gui.AppendLog("Process error: "+err.Error(),
 				helpers.LevelError)
+			s.notifyStatus(f, types.FileFailed)
+		} else {
+			s.notifyStatus(f, types.FileOK)
 		}
 	}
 

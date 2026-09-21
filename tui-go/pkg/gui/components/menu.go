@@ -31,7 +31,8 @@ type MenuConfig struct {
 type Menu struct {
 	config MenuConfig
 	list   *ListViewModel[int]
-	keys   bool // 键位是否已注册（常驻 view 只注册一次）
+	keys   bool    // 键位是否已注册（常驻 view 只注册一次）
+	gui    GuiLike // Show 时保存，关闭时走真实 PopContext
 }
 
 // NewMenu 创建菜单组件。
@@ -51,6 +52,7 @@ func (m *Menu) Show(gui GuiLike) error {
 	if err := m.ensureKeys(g); err != nil {
 		return err
 	}
+	m.gui = gui
 	x0, y0, x1, y1 := CenterRect(g, 40, len(m.config.Items)+2)
 	v, err := ShowPopup(g, "menu", x0, y0, x1, y1, func(v *gocui.View) {
 		v.Frame = true
@@ -127,9 +129,7 @@ func (m *Menu) ensureKeys(g *gocui.Gui) error {
 
 func (m *Menu) handleSelect(g *gocui.Gui, v *gocui.View) error {
 	selected := m.Selected()
-	adapter := &guiAdapter{g}
-	m.Hide(adapter)
-	_ = adapter.PopContext()
+	m.close()
 	if m.config.OnDone != nil {
 		m.config.OnDone(selected)
 	}
@@ -137,13 +137,19 @@ func (m *Menu) handleSelect(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (m *Menu) handleCancel(g *gocui.Gui, v *gocui.View) error {
-	adapter := &guiAdapter{g}
-	m.Hide(adapter)
-	_ = adapter.PopContext()
+	m.close()
 	if m.config.OnCancel != nil {
 		m.config.OnCancel()
 	}
 	return nil
+}
+
+// close 隐藏弹窗并真实弹栈（焦点恢复由 PopContext 负责）。
+func (m *Menu) close() {
+	if m.gui != nil {
+		m.Hide(m.gui)
+		_ = m.gui.PopContext()
+	}
 }
 
 func (m *Menu) handleDown(g *gocui.Gui, v *gocui.View) error {
@@ -159,20 +165,3 @@ func (m *Menu) handleUp(g *gocui.Gui, v *gocui.View) error {
 	v.SetCursor(0, m.list.SelectedIndex())
 	return nil
 }
-
-// guiAdapter 把 *gocui.Gui 适配为 GuiLike（handler 中
-// Hide 需要 GetGui 时使用）。
-type guiAdapter struct {
-	g *gocui.Gui
-}
-
-func (a *guiAdapter) GetGui() *gocui.Gui { return a.g }
-
-func (a *guiAdapter) SetView(name string) error {
-	_, err := a.g.SetCurrentView(name)
-	return err
-}
-
-func (a *guiAdapter) PushContext(name string) error { return nil }
-
-func (a *guiAdapter) PopContext() error { return nil }

@@ -100,24 +100,50 @@ func (l *Layout) setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
 	return nil
 }
 
-// renderOptions 绘制顶部选项栏（键位提示）。
+// optionsHints 各 context 的顶栏键位提示（随焦点切换）。
+var optionsHints = map[string]string{
+	"files": "j/k: Nav  |  Enter: Menu  |  s: Scrape  |  " +
+		"o: Organize  |  space: Mark  |  /: Search  |  " +
+		"r: Refresh  |  c: Config  |  ?: Help  |  q: Quit",
+	"log": "j/k: Scroll  |  g/G: Top/Bottom  |  x: Cancel  |  " +
+		"h/l: Panel  |  ?: Help",
+	"result": "j/k: Nav  |  Enter: Detail  |  t: Filter  |  " +
+		"x: Cancel  |  h/l: Panel  |  ?: Help",
+	"menu":    "j/k: Move  |  Enter: Confirm  |  Esc: Cancel",
+	"confirm": "y: Yes  |  n: No  |  Esc: Cancel",
+	"prompt":  "Enter: Confirm  |  Ctrl+U: Clear  |  Esc: Cancel",
+	"help":    "Tab: Category  |  Esc/q: Close",
+	"config":  "j/k: Field  |  Enter: Edit  |  s: Save  |  Esc: Close",
+}
+
+// renderOptions 绘制顶部选项栏（当前 context 的键位提示）。
 func (l *Layout) renderOptions() {
 	v, err := l.gui.getView("options")
 	if err != nil {
 		return
 	}
+	text := optionsHints[l.gui.contexts.Current().Name]
+	if text == "" {
+		text = "?: Help  |  q: Quit"
+	}
 	v.Clear()
 	v.FgColor = helpers.Theme.OptionsBarFg
-	v.WriteString("j/k: Nav  |  h/l: Panel  |  Enter: Scrape  |  c: Config  |  q: Quit  |  ?: Help")
+	v.WriteString(text)
 }
 
-// renderStatus 绘制底部状态栏。
+// renderStatus 绘制底部状态栏（从 Gui 状态渲染，不覆盖
+// 已设置的状态文本）。
 func (l *Layout) renderStatus() {
 	v, err := l.gui.getView("status")
 	if err != nil {
 		return
 	}
+	text := l.gui.StatusText()
+	if text == "" {
+		text = "Ready  |  Select a directory to begin  |  AVDC TUI v" +
+			l.gui.version
+	}
 	v.Clear()
 	v.FgColor = helpers.Theme.StatusBarFg
-	v.WriteString("Ready  |  Select a directory to begin  |  AVDC TUI v0.1.0")
+	v.WriteString(text)
 }

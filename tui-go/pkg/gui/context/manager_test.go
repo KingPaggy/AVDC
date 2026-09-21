@@ -55,6 +55,18 @@ func TestManager_PopDoesNotRemoveRoot(t *testing.T) {
 	}
 }
 
+// TestManager_PopAtRootNoFocus 验证栈底 Pop 不切换焦点。
+func TestManager_PopAtRootNoFocus(t *testing.T) {
+	f := &mockFocuser{}
+	m := NewManager(f)
+	if err := m.Pop(); err != nil {
+		t.Fatalf("Pop at root: %v", err)
+	}
+	if len(f.views) != 0 {
+		t.Errorf("expected no focus calls, got %v", f.views)
+	}
+}
+
 func TestManager_Switch(t *testing.T) {
 	m := NewManager(nil)
 	m.Push("log")

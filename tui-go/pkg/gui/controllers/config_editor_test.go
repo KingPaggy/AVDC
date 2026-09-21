@@ -3,6 +3,7 @@ package controllers
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -177,4 +178,63 @@ func TestWriteIniFile(t *testing.T) {
 			t.Error("empty section should not be written")
 		}
 	})
+}
+
+// TestWriteIniFilePreserving 验证写回保留注释/空行/键顺序，
+// 仅更新目标键，缺失键追加到 section 末尾，新 section 追加到
+// 文件末尾。
+func TestWriteIniFilePreserving(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "config.ini")
+	original := "# top comment\n[common]\nmain_mode = 1\n\n" +
+		"# media note\nmedia_path = /old\n\n[proxy]\nproxy = \n"
+	if err := os.WriteFile(path, []byte(original), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	updates := map[string]map[string]string{
+		"common": {"media_path": "/new", "extra_key": "x"},
+		"emby":   {"api_key": "secret"},
+	}
+	if err := writeIniFilePreserving(path, updates); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(raw)
+
+	for _, want := range []string{
+		"# top comment", "# media note",
+		"media_path = /new", "main_mode = 1",
+		"extra_key = x", "[emby]", "api_key = secret",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("expected output to contain %q, got:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "/old") {
+		t.Errorf("old value should be replaced, got:\n%s", got)
+	}
+	if strings.Count(got, "[common]") != 1 {
+		t.Errorf("section must not be duplicated, got:\n%s", got)
+	}
+
+	// 回读验证
+	data, err := readIniFile(path)
+	if err != nil {
+		t.Fatalf("re-read: %v", err)
+	}
+	if data["common"]["media_path"] != "/new" {
+		t.Errorf("media_path = %q, want /new",
+			data["common"]["media_path"])
+	}
+	if data["common"]["extra_key"] != "x" {
+		t.Errorf("extra_key = %q, want x", data["common"]["extra_key"])
+	}
+	if data["emby"]["api_key"] != "secret" {
+		t.Errorf("api_key = %q, want secret", data["emby"]["api_key"])
+	}
 }

@@ -30,9 +30,10 @@ type Gui struct {
 	configEdit  *controllers.ConfigEditor
 
 	// State
-	scanDir  string
-	fileList []types.VideoFile
-	mu       sync.Mutex
+	scanDir    string
+	fileList   []types.VideoFile
+	statusText string // 状态栏文本（空=默认提示）
+	mu         sync.Mutex
 }
 
 // New creates a new Gui instance.
@@ -197,17 +198,30 @@ func (g *Gui) SetViewTitle(v *gocui.View, title string) {
 	v.Title = title
 }
 
+// SetStatus 设置状态栏文本（由 Layout.renderStatus 渲染）。
+// 空字符串表示回退到默认提示。
+func (g *Gui) SetStatus(text string) {
+	g.mu.Lock()
+	g.statusText = text
+	g.mu.Unlock()
+	if g.g != nil {
+		// 异步请求重绘（不阻塞调用方）
+		g.g.Update(func(*gocui.Gui) error { return nil })
+	}
+}
+
+// StatusText 返回当前状态栏文本。
+func (g *Gui) StatusText() string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.statusText
+}
+
 // UpdateStatusReady updates the status bar to ready state.
 func (g *Gui) UpdateStatusReady(dir string, fileCount int) {
-	v, err := g.getView("status")
-	if err != nil {
-		return
-	}
-	v.Clear()
-	v.FgColor = helpers.Theme.StatusBarFg
-	v.WriteString(helpers.Info("Ready") +
-		"  |  Path: " + dir + "  |  " +
-		itoa(fileCount) + " files  |  Press Enter to scrape")
+	g.SetStatus(helpers.Info("Ready") + "  |  Path: " + dir +
+		"  |  " + itoa(fileCount) +
+		" files  |  Enter: menu  |  s: scrape")
 }
 
 // UpdateStatusScraping updates the status bar during scraping.
@@ -216,28 +230,16 @@ func (g *Gui) UpdateStatusScraping(current, total int, dir string) {
 	if total > 0 {
 		pct = current * 100 / total
 	}
-	v, err := g.getView("status")
-	if err != nil {
-		return
-	}
-	v.Clear()
-	v.FgColor = helpers.Theme.StatusBarFg
-	v.WriteString(helpers.Warning("Scraping") + ": " +
-		itoa(current) + "/" + itoa(total) + " (" +
-		itoa(pct) + "%)  |  Path: " + dir)
+	g.SetStatus(helpers.Warning("Scraping") + ": " +
+		itoa(current) + "/" + itoa(total) + " (" + itoa(pct) +
+		"%)  |  " + dir + "  |  x: cancel")
 }
 
 // UpdateStatusDone updates the status bar after scraping completes.
 func (g *Gui) UpdateStatusDone(success, failed, total int, dir string) {
-	v, err := g.getView("status")
-	if err != nil {
-		return
-	}
-	v.Clear()
-	v.FgColor = helpers.Theme.StatusBarFg
-	v.WriteString(helpers.Info("Done") + "  |  " +
-		itoa(total) + " total, " + itoa(success) +
-		" success, " + itoa(failed) + " failed  |  Path: " + dir)
+	g.SetStatus(helpers.Info("Done") + "  |  " + itoa(total) +
+		" total, " + itoa(success) + " success, " + itoa(failed) +
+		" failed  |  " + dir)
 }
 
 // AppendLog adds a line to the log view.

@@ -10,10 +10,10 @@ import (
 
 // ConfirmationConfig 定义确认弹窗的内容与回调。
 type ConfirmationConfig struct {
-	Title    string
-	Message  string
-	OnYes    func()
-	OnNo     func()
+	Title   string
+	Message string
+	OnYes   func()
+	OnNo    func()
 	// OnCancel 可空：Esc 取消时回调。
 	OnCancel func()
 }
@@ -22,7 +22,8 @@ type ConfirmationConfig struct {
 // 破坏性操作（如 organize 移动文件）前必须经它确认。
 type Confirmation struct {
 	config ConfirmationConfig
-	keys   bool // 键位是否已注册
+	keys   bool    // 键位是否已注册
+	gui    GuiLike // Show 时保存，关闭时走真实 PopContext
 }
 
 // NewConfirmation 创建确认弹窗组件。
@@ -36,6 +37,7 @@ func (c *Confirmation) Show(gui GuiLike) error {
 	if err := c.ensureKeys(g); err != nil {
 		return err
 	}
+	c.gui = gui
 	x0, y0, x1, y1 := CenterRect(g, 50, 3)
 	v, err := ShowPopup(g, "confirm", x0, y0, x1, y1,
 		func(v *gocui.View) {
@@ -86,9 +88,7 @@ func (c *Confirmation) ensureKeys(g *gocui.Gui) error {
 }
 
 func (c *Confirmation) handleYes(g *gocui.Gui, v *gocui.View) error {
-	adapter := &guiAdapter{g}
-	c.Hide(adapter)
-	_ = adapter.PopContext()
+	c.close()
 	if c.config.OnYes != nil {
 		c.config.OnYes()
 	}
@@ -96,9 +96,7 @@ func (c *Confirmation) handleYes(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (c *Confirmation) handleNo(g *gocui.Gui, v *gocui.View) error {
-	adapter := &guiAdapter{g}
-	c.Hide(adapter)
-	_ = adapter.PopContext()
+	c.close()
 	if c.config.OnNo != nil {
 		c.config.OnNo()
 	}
@@ -106,11 +104,17 @@ func (c *Confirmation) handleNo(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (c *Confirmation) handleCancel(g *gocui.Gui, v *gocui.View) error {
-	adapter := &guiAdapter{g}
-	c.Hide(adapter)
-	_ = adapter.PopContext()
+	c.close()
 	if c.config.OnCancel != nil {
 		c.config.OnCancel()
 	}
 	return nil
+}
+
+// close 隐藏弹窗并真实弹栈（焦点恢复由 PopContext 负责）。
+func (c *Confirmation) close() {
+	if c.gui != nil {
+		c.Hide(c.gui)
+		_ = c.gui.PopContext()
+	}
 }
