@@ -1,14 +1,15 @@
 # AGENTS.md — AVDC_Page 项目记忆
 
 > 来源：原 pi-hermes-memory 项目记忆迁移（2026-09-09）
-> 更新：2026-09-20（mac-gui 主力前端落地，PySide6/PyQt5 归档）
+> 更新：2026-09-21（补 docs/tui 索引，修正 Import Paths）
 
 ## 项目指引（合并自原 CLAUDE.md，2026-09-12）
 
 
 > AI assistant reference for working with this repository.
 
-**⚠️ 全局约束**：Do NOT create git worktrees. Always work directly in the project root.
+**⚠️ 全局约束**：Do NOT create git worktrees. Always work
+directly in the project root.
 
 ## Project Overview
 
@@ -78,8 +79,8 @@ resources/         Icons, screenshots
   logs(LogEntry) ；startProcessing 事件→状态 |
 | Core 配置 | `SettingsState.swift` | 10 组 35 字段定义，
   config list 加载 / diff 保存（串行 set）/ reset |
-| 视图 | `AVDCApp/` 6 文件 | RootView(NavigationSplitView) +
-  Home/Settings/Tools/Log/About |
+| 视图 | `AVDCApp/` 7 文件 | RootView(NavigationSplitView) +
+  Home/Settings/Tools/Log/About（含入口 AVDCApp.swift） |
 | 测试 | `Tests/AVDCAppTests/` | Bridge/AppModel/Settings
   （Swift Testing + mock_cli.py 离线） |
 
@@ -101,10 +102,19 @@ docs/
 ├── 00-doc-standards.md          文档写作标准（必读）
 ├── 01-project-overview.md       项目总览
 ├── 02-architecture.md           系统架构
+├── 03-macos-gui-migration.md    mac-gui 迁移方案
+├── 04-tui-lazygit-refactor.md   TUI 重构计划
 ├── core/                        核心模块
 │   ├── 00-overview.md           目录概览
 │   ├── 01-requirements.md       I/O 规范
 │   └── 02-scraping-flow.md      抓取流程
+├── tui/                         TUI 重构文档（d=设计）
+│   ├── 00-overview.md           目录概览 + 文档关系
+│   ├── d01-phase-plan.md        Phase 0-6 分阶段计划
+│   ├── d02-lazygit-architecture.md  lazygit 架构方案
+│   ├── d03-lazygit-keybindings.md   lazygit 键位体系
+│   ├── d04-avdc-design.md       AVDC 面板/Context 设计
+│   └── d05-avdc-keybindings.md  AVDC 各 context 键位表
 ├── pyside6gui/                  已归档 GUI 参考
 │                                （.archive/ 代码，d=设计 / t=踩坑）
 │   ├── 00-overview.md           目录概览 + 学习路径
@@ -131,7 +141,9 @@ docs/
 
 > **写任何文档之前，必须先阅读 [docs/00-doc-standards.md](docs/00-doc-standards.md)。**
 
-所有文档遵循该标准，包括：文件组织（单主题 / 10KB 上限 / 零重叠）、命名规范（`00-` overview / `d` design / `t` trap）、内容结构（摘要行 / 索引表格）等。
+所有文档遵循该标准，包括：文件组织（单主题 / 10KB 上限 /
+零重叠）、命名规范（`00-` overview / `d` design / `t` trap）、
+内容结构（摘要行 / 索引表格）等。
 
 ### 🛠️ Edit / Write 工具使用规范
 
@@ -162,7 +174,7 @@ from core._config.config import AppConfig
 from core._services.orchestrator import CoreEngine
 from core._event.event_bus import EventBus
 from core._models.models import Movie
-from core._scraper.pipeline import getDataFromJSON
+from core._scraper.scrape_pipeline import getDataFromJSON
 from core._files.file_utils import getNumber, movie_lists
 from core._net.networking import get_html, get_html_javdb
 from core._config.logger import logger, get_log_file_path
@@ -171,9 +183,12 @@ from core._config.errors import AVDCError, ScrapingError
 
 ## Config & Dependencies
 
-**config.ini** sections: `common`, `proxy`, `Name_Rule`, `update`, `log`, `media`, `escape`, `debug_mode`, `emby`, `mark`, `uncensored`, `file_download`, `extrafanart`, `baidu`.
+**config.ini** sections: `common`, `proxy`, `Name_Rule`,
+`update`, `log`, `media`, `escape`, `debug_mode`, `emby`,
+`mark`, `uncensored`, `file_download`, `extrafanart`, `baidu`.
 
-> ⚠️ `[emby] api_key` is sensitive. DMM requires Japan proxy. JavDB bans IP after ~30 requests.
+> ⚠️ `[emby] api_key` is sensitive. DMM requires Japan proxy.
+> JavDB bans IP after ~30 requests.
 
 ### Testing
 
@@ -202,6 +217,8 @@ Shared fixtures: `core/test/conftest.py`。
 | `docs/02-architecture.md` | 系统架构、模块关系图 | 理解整体设计 |
 | `docs/03-macos-gui-migration.md` | **mac-gui 迁移方案**（纯 SwiftUI
   选型论证、执行记录、CLI 契约） | mac-gui 开发/维护 |
+| `docs/04-tui-lazygit-refactor.md` | **TUI 重构计划**（lazygit 式
+  Window/View/Context 三层，6 阶段） | tui-go 开发/维护 |
 
 ### 核心模块（`docs/core/`）
 
@@ -229,6 +246,17 @@ Shared fixtures: `core/test/conftest.py`。
 | `pyside6gui/d13-modern-qml-page.md` | 现代化页面编写指南 | 对照旧样式 |
 | `pyside6gui/t01-dynamic-property.md` | 动态 Property 陷阱 | 对照旧坑 |
 | `pyside6gui/t02-debugging-guide.md` | QML 调试指南 | 对照旧调试 |
+
+### TUI 重构（`docs/tui/`）
+
+| 文档 | 内容 | 何时阅读 |
+|------|------|----------|
+| `tui/00-overview.md` | 目录概览 + 文档关系 | 首次接触 tui-go |
+| `tui/d01-phase-plan.md` | Phase 0-6 每阶段动作与验收 | tui-go 阶段开发 |
+| `tui/d02-lazygit-architecture.md` | lazygit 包结构/分层/事件循环 | 理解三层架构 |
+| `tui/d03-lazygit-keybindings.md` | lazygit 键位组织逻辑 | 键位体系设计 |
+| `tui/d04-avdc-design.md` | AVDC 面板/Context/Controller 设计 | AVDC 页面开发 |
+| `tui/d05-avdc-keybindings.md` | AVDC 各 context 键位表 | 键位实现 |
 
 ### 工具链（`docs/tooling/`）
 

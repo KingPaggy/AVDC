@@ -5,7 +5,7 @@
 ![](https://img.shields.io/badge/Python-3.13-yellow.svg?style=flat-square&logo=python)
 ![](https://img.shields.io/badge/GUI-macOS%20SwiftUI-blue.svg?style=flat-square)
 ![](https://img.shields.io/badge/TUI-Go%20%2B%20gocui-cyan.svg?style=flat-square)
-![](https://img.shields.io/github/license/pageking/avdc_page.svg?style=flat-square)
+![](https://img.shields.io/github/license/KingPaggy/AVDC.svg?style=flat-square)
 
 ---
 
@@ -14,6 +14,7 @@
 - [主要功能](#主要功能)
 - [项目结构](#项目结构)
 - [快速开始](#快速开始)
+- [文档](#文档)
 - [番号命名规范](#番号命名规范)
 - [配置说明](#配置说明)
 - [异常处理](#异常处理)
@@ -118,6 +119,18 @@ cd tui-go && make test
 
 ---
 
+## 文档
+
+技术文档见 `docs/`，从
+[`01-project-overview.md`](docs/01-project-overview.md) 开始：
+
+- [`docs/01-project-overview.md`](docs/01-project-overview.md) — 总览/技术栈/导航
+- [`docs/02-architecture.md`](docs/02-architecture.md) — 架构与设计原则
+- [`docs/03-macos-gui-migration.md`](docs/03-macos-gui-migration.md) — mac-gui 迁移方案与 CLI 契约
+- [`docs/04-tui-lazygit-refactor.md`](docs/04-tui-lazygit-refactor.md) — TUI 重构计划
+
+---
+
 ## 番号命名规范
 
 **刮削前请尽量命名规范，不区分大小写。**
@@ -207,7 +220,7 @@ cd tui-go && make test
 
 ### 网络错误
 
-出现 `Connect Failed`、`Updata_check`、`JSON` 相关错误时：
+出现 `Connect Failed`、`update_check`、`JSON` 相关错误时：
 1. 检查代理设置，确认代理软件已开启全局模式
 2. DMM 站点需确认使用日本代理
 3. 尝试清除代理地址后重试
@@ -236,7 +249,7 @@ A: 影片的封面、导演、演员、简介、类型等信息。
 A: 永久免费。
 
 **Q: 支持 NAS 吗？**
-A: 支持。群晖等 NAS 开启 SMB 后在 Windows 映射为本地磁盘即可使用。
+A: 支持。CLI 版无 Qt 依赖，可直接在群晖等 NAS/服务器上运行。
 
 ---
 

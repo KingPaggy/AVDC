@@ -41,6 +41,8 @@ docs/           技术文档
 | # | 文档 | 内容 |
 |---|------|------|
 | 02 | [architecture.md](02-architecture.md) | 分层架构、设计原则、包结构 |
+| 03 | [macos-gui-migration.md](03-macos-gui-migration.md) | mac-gui 迁移方案、CLI 契约 |
+| 04 | [tui-lazygit-refactor.md](04-tui-lazygit-refactor.md) | TUI 重构计划（lazygit 式三层） |
 
 ### 核心模块（`core/`）
 
@@ -55,6 +57,16 @@ docs/           技术文档
 |---|------|------|
 | 01 | [pyside6gui/d12-qml-conventions.md](pyside6gui/d12-qml-conventions.md) | QML 代码规范、命名、布局、import |
 | 02 | [pyside6gui/t01-dynamic-property.md](pyside6gui/t01-dynamic-property.md) | 动态 Property 踩坑与类工厂解法 |
+
+### TUI 重构（`tui/`）
+
+| # | 文档 | 内容 |
+|---|------|------|
+| 01 | [tui/d01-phase-plan.md](tui/d01-phase-plan.md) | Phase 0-6 分阶段计划 |
+| 02 | [tui/d02-lazygit-architecture.md](tui/d02-lazygit-architecture.md) | lazygit 架构方案 |
+| 03 | [tui/d03-lazygit-keybindings.md](tui/d03-lazygit-keybindings.md) | lazygit 键位体系 |
+| 04 | [tui/d04-avdc-design.md](tui/d04-avdc-design.md) | AVDC 面板/Context 设计 |
+| 05 | [tui/d05-avdc-keybindings.md](tui/d05-avdc-keybindings.md) | AVDC 各 context 键位表 |
 
 ### 工具链（`tooling/`）
 
