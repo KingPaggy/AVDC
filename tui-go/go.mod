@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/go-errors/errors v1.0.2
 	github.com/jesseduffield/gocui v0.3.1-0.20260327132312-944dab3bc980
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -15,5 +16,4 @@ require (
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/term v0.38.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
